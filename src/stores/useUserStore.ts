@@ -1,0 +1,174 @@
+import { useState, useEffect, useCallback } from "react";
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  quantity?: string;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  duration: number; // minutes
+  caloriesBurned: number;
+}
+
+export interface MealEntry {
+  type: "breakfast" | "lunch" | "dinner" | "snack";
+  items: FoodItem[];
+}
+
+export interface DayEntry {
+  date: string; // YYYY-MM-DD
+  meals: MealEntry[];
+  exercises: Exercise[];
+}
+
+export interface SavedMeal {
+  id: string;
+  name: string;
+  items: FoodItem[];
+}
+
+export interface UserProfile {
+  onboardingComplete: boolean;
+  goal: string;
+  currentWeight: number;
+  height: number;
+  heightUnit: "cm" | "ft";
+  targetWeight: number;
+  dietaryPreferences: string[];
+  dietaryRestrictions: string[];
+  healthConcerns: string[];
+  dailyCalorieTarget: number;
+  goalDate: string;
+  weightHistory: { date: string; weight: number }[];
+  savedMeals: SavedMeal[];
+  subscription: "free" | "pro";
+  aiScansUsed: number;
+}
+
+const DEFAULT_PROFILE: UserProfile = {
+  onboardingComplete: false,
+  goal: "",
+  currentWeight: 70,
+  height: 170,
+  heightUnit: "cm",
+  targetWeight: 65,
+  dietaryPreferences: [],
+  dietaryRestrictions: [],
+  healthConcerns: [],
+  dailyCalorieTarget: 2000,
+  goalDate: "",
+  weightHistory: [],
+  savedMeals: [],
+  subscription: "free",
+  aiScansUsed: 0,
+};
+
+function loadProfile(): UserProfile {
+  try {
+    const stored = localStorage.getItem("nuria_profile");
+    if (stored) return { ...DEFAULT_PROFILE, ...JSON.parse(stored) };
+  } catch {}
+  return DEFAULT_PROFILE;
+}
+
+function loadDiary(): Record<string, DayEntry> {
+  try {
+    const stored = localStorage.getItem("nuria_diary");
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return {};
+}
+
+export function useUserStore() {
+  const [profile, setProfileState] = useState<UserProfile>(loadProfile);
+  const [diary, setDiaryState] = useState<Record<string, DayEntry>>(loadDiary);
+
+  useEffect(() => {
+    localStorage.setItem("nuria_profile", JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem("nuria_diary", JSON.stringify(diary));
+  }, [diary]);
+
+  const setProfile = useCallback((updates: Partial<UserProfile>) => {
+    setProfileState((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const getDayEntry = useCallback(
+    (date: string): DayEntry => {
+      return diary[date] || { date, meals: [], exercises: [] };
+    },
+    [diary]
+  );
+
+  const setDayEntry = useCallback((date: string, entry: DayEntry) => {
+    setDiaryState((prev) => ({ ...prev, [date]: entry }));
+  }, []);
+
+  const addFoodToMeal = useCallback(
+    (date: string, mealType: MealEntry["type"], item: FoodItem) => {
+      setDiaryState((prev) => {
+        const day = prev[date] || { date, meals: [], exercises: [] };
+        const mealIndex = day.meals.findIndex((m) => m.type === mealType);
+        const meals = [...day.meals];
+        if (mealIndex >= 0) {
+          meals[mealIndex] = {
+            ...meals[mealIndex],
+            items: [...meals[mealIndex].items, item],
+          };
+        } else {
+          meals.push({ type: mealType, items: [item] });
+        }
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
+  const addExercise = useCallback((date: string, exercise: Exercise) => {
+    setDiaryState((prev) => {
+      const day = prev[date] || { date, meals: [], exercises: [] };
+      return {
+        ...prev,
+        [date]: { ...day, exercises: [...day.exercises, exercise] },
+      };
+    });
+  }, []);
+
+  const getDayTotals = useCallback(
+    (date: string) => {
+      const day = getDayEntry(date);
+      let calories = 0, protein = 0, carbs = 0, fat = 0, exerciseCals = 0;
+      day.meals.forEach((m) =>
+        m.items.forEach((i) => {
+          calories += i.calories;
+          protein += i.protein;
+          carbs += i.carbs;
+          fat += i.fat;
+        })
+      );
+      day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));
+      return { calories, protein, carbs, fat, exerciseCals };
+    },
+    [getDayEntry]
+  );
+
+  return {
+    profile,
+    setProfile,
+    diary,
+    getDayEntry,
+    setDayEntry,
+    addFoodToMeal,
+    addExercise,
+    getDayTotals,
+  };
+}
