@@ -1,0 +1,59 @@
+import { useMemo } from "react";
+import { format, addDays, subDays, isToday, isSameDay } from "date-fns";
+import { cn } from "@/lib/utils";
+
+interface CalendarStripProps {
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
+}
+
+export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps) => {
+  const days = useMemo(() => {
+    const result = [];
+    for (let i = -3; i <= 3; i++) {
+      result.push(addDays(new Date(), i));
+    }
+    return result;
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between gap-1 px-2 py-3">
+      {days.map((day) => {
+        const selected = isSameDay(day, selectedDate);
+        const today = isToday(day);
+        return (
+          <button
+            key={day.toISOString()}
+            onClick={() => onDateSelect(day)}
+            className={cn(
+              "flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition-all min-w-[44px]",
+              selected
+                ? "bg-foreground"
+                : "hover:bg-secondary"
+            )}
+          >
+            <span
+              className={cn(
+                "text-[10px] font-medium uppercase",
+                selected ? "text-primary-foreground" : "text-muted-foreground"
+              )}
+            >
+              {format(day, "EEE")}
+            </span>
+            <span
+              className={cn(
+                "text-base font-semibold",
+                selected ? "text-primary-foreground" : "text-foreground"
+              )}
+            >
+              {format(day, "d")}
+            </span>
+            {today && !selected && (
+              <div className="h-1 w-1 rounded-full bg-accent" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
