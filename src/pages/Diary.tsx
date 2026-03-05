@@ -4,9 +4,8 @@ import { CalendarStrip } from "@/components/CalendarStrip";
 import { CircularProgress } from "@/components/CircularProgress";
 import { MealSection } from "@/components/MealSection";
 import { BottomNav } from "@/components/BottomNav";
-import { Input } from "@/components/ui/input";
+import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, Dumbbell, Plus } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
@@ -14,8 +13,6 @@ const Diary = () => {
   const { profile, getDayEntry, addFoodToMeal, addExercise, getDayTotals } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
-  const [exName, setExName] = useState("");
-  const [exDuration, setExDuration] = useState("");
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
@@ -41,19 +38,8 @@ const Diary = () => {
     return alerts;
   };
 
-  const handleAddExercise = () => {
-    if (!exName || !exDuration) return;
-    const dur = Number(exDuration);
-    const calsBurned = Math.round(dur * 7); // rough estimate
-    const exercise: Exercise = {
-      id: Date.now().toString(),
-      name: exName,
-      duration: dur,
-      caloriesBurned: calsBurned,
-    };
+  const handleAddExercise = (exercise: Exercise) => {
     addExercise(dateKey, exercise);
-    setExName("");
-    setExDuration("");
     setExerciseOpen(false);
   };
 
@@ -174,36 +160,11 @@ const Diary = () => {
         </div>
       </div>
 
-      {/* Exercise dialog */}
-      <Dialog open={exerciseOpen} onOpenChange={setExerciseOpen}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Add Exercise</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input
-              placeholder="Exercise name"
-              value={exName}
-              onChange={(e) => setExName(e.target.value)}
-              className="rounded-xl"
-            />
-            <Input
-              placeholder="Duration (minutes)"
-              type="number"
-              value={exDuration}
-              onChange={(e) => setExDuration(e.target.value)}
-              className="rounded-xl"
-            />
-            <Button
-              onClick={handleAddExercise}
-              className="w-full rounded-xl h-12"
-              disabled={!exName || !exDuration}
-            >
-              Add
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ExerciseEntry
+        open={exerciseOpen}
+        onOpenChange={setExerciseOpen}
+        onAdd={handleAddExercise}
+      />
 
       <BottomNav />
     </div>
