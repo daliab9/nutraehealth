@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AIScanDialog } from "@/components/AIScanDialog";
+import { FoodSearchInput } from "@/components/FoodSearchInput";
 import type { FoodItem } from "@/stores/useUserStore";
 
 interface MealSectionProps {
@@ -15,19 +15,13 @@ interface MealSectionProps {
   pastItems?: FoodItem[];
 }
 
-type AddMode = null | "choose" | "manual" | "scan";
+type AddMode = null | "choose" | "search" | "scan";
 
 export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastItems = [] }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
-  const [name, setName] = useState("");
-  const [calories, setCalories] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
 
-  // Deduplicate past items by name, most recent first
   const uniquePast = pastItems.reduce<FoodItem[]>((acc, item) => {
     if (!acc.find((a) => a.name.toLowerCase() === item.name.toLowerCase())) {
       acc.push(item);
@@ -35,36 +29,13 @@ export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastIt
     return acc;
   }, []).slice(0, 5);
 
-  const handleAdd = () => {
-    if (!name || !calories) return;
-    onAddItem({
-      id: Date.now().toString(),
-      name,
-      calories: Number(calories),
-      protein: Number(protein) || 0,
-      carbs: Number(carbs) || 0,
-      fat: Number(fat) || 0,
-    });
-    resetForm();
-  };
-
   const handleAddPastItem = (item: FoodItem) => {
     onAddItem({ ...item, id: Date.now().toString() });
     setMode(null);
   };
 
-  const resetForm = () => {
-    setName("");
-    setCalories("");
-    setProtein("");
-    setCarbs("");
-    setFat("");
-    setMode(null);
-  };
-
   return (
     <div className="flex flex-col">
-      {/* Header row */}
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <span className="text-base">{emoji}</span>
@@ -83,19 +54,23 @@ export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastIt
         </Button>
       </div>
 
-      {/* Listed items */}
       {items.length > 0 && (
         <div className="space-y-1 pl-7 pb-1">
           {items.map((item) => (
             <div key={item.id} className="flex items-center justify-between py-1">
-              <span className="text-sm text-foreground">{item.name}</span>
+              <div>
+                <span className="text-sm text-foreground">{item.name}</span>
+                {item.quantity && (
+                  <span className="text-xs text-muted-foreground ml-1.5">({item.quantity})</span>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Choose dialog: Scan / Manual / Past items */}
+      {/* Choose dialog */}
       <Dialog open={mode === "choose"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
@@ -112,9 +87,9 @@ export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastIt
             <Button
               variant="outline"
               className="w-full rounded-xl h-12 justify-start gap-3"
-              onClick={() => setMode("manual")}
+              onClick={() => setMode("search")}
             >
-              ✏️ Add manually
+              🔍 Search food
             </Button>
 
             {uniquePast.length > 0 && (
@@ -138,24 +113,16 @@ export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastIt
         </DialogContent>
       </Dialog>
 
-      {/* Manual add dialog */}
-      <Dialog open={mode === "manual"} onOpenChange={(o) => !o && resetForm()}>
+      {/* Search food dialog */}
+      <Dialog open={mode === "search"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
             <DialogTitle>Add to {title}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input placeholder="Food name" value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" />
-            <Input placeholder="Calories (kcal)" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} className="rounded-xl" />
-            <div className="grid grid-cols-3 gap-2">
-              <Input placeholder="Protein (g)" type="number" value={protein} onChange={(e) => setProtein(e.target.value)} className="rounded-xl" />
-              <Input placeholder="Carbs (g)" type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="rounded-xl" />
-              <Input placeholder="Fat (g)" type="number" value={fat} onChange={(e) => setFat(e.target.value)} className="rounded-xl" />
-            </div>
-            <Button onClick={handleAdd} className="w-full rounded-xl h-12" disabled={!name || !calories}>
-              Add
-            </Button>
-          </div>
+          <FoodSearchInput
+            onAddItem={(item) => { onAddItem(item); setMode(null); }}
+            onClose={() => setMode(null)}
+          />
         </DialogContent>
       </Dialog>
 
