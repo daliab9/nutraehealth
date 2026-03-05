@@ -3,6 +3,7 @@ import { Plus, Camera, Barcode, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AIScanDialog } from "@/components/AIScanDialog";
 import type { FoodItem } from "@/stores/useUserStore";
 
 interface MealSectionProps {
@@ -10,10 +11,12 @@ interface MealSectionProps {
   emoji: string;
   items: FoodItem[];
   onAddItem: (item: FoodItem) => void;
+  onAddItems?: (items: FoodItem[]) => void;
 }
 
-export const MealSection = ({ title, emoji, items, onAddItem }: MealSectionProps) => {
+export const MealSection = ({ title, emoji, items, onAddItem, onAddItems }: MealSectionProps) => {
   const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [name, setName] = useState("");
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
@@ -83,7 +86,10 @@ export const MealSection = ({ title, emoji, items, onAddItem }: MealSectionProps
             <Plus className="h-3.5 w-3.5" />
             Add food
           </button>
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <button
+            onClick={() => setScanOpen(true)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <Camera className="h-3.5 w-3.5" />
             Photo
           </button>
@@ -150,6 +156,18 @@ export const MealSection = ({ title, emoji, items, onAddItem }: MealSectionProps
           </div>
         </DialogContent>
       </Dialog>
+      <AIScanDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        mealTitle={title}
+        onAddItems={(scannedItems) => {
+          if (onAddItems) {
+            onAddItems(scannedItems);
+          } else {
+            scannedItems.forEach((item) => onAddItem(item));
+          }
+        }}
+      />
     </div>
   );
 };
