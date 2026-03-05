@@ -6,13 +6,24 @@ import { MealSection } from "@/components/MealSection";
 import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Dumbbell, Plus } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertTriangle, ChevronDown, Dumbbell, Plus, Utensils } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
+const MEAL_TYPES = [
+  { type: "breakfast", title: "Breakfast", emoji: "🌅" },
+  { type: "lunch", title: "Lunch", emoji: "☀️" },
+  { type: "dinner", title: "Dinner", emoji: "🌙" },
+  { type: "snack", title: "Snack", emoji: "🍎" },
+  { type: "supplements", title: "Supplements", emoji: "💊" },
+  { type: "drinks", title: "Drinks", emoji: "🥤" },
+] as const;
+
 const Diary = () => {
-  const { profile, getDayEntry, addFoodToMeal, addExercise, getDayTotals } = useUserStore();
+  const { profile, diary, getDayEntry, addFoodToMeal, addExercise, getDayTotals } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
+  const [foodOpen, setFoodOpen] = useState(true);
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
@@ -22,6 +33,11 @@ const Diary = () => {
     const meal = dayEntry.meals.find((m) => m.type === type);
     return meal?.items || [];
   };
+
+  // Gather all past food items across all days for "recent items"
+  const allPastItems = Object.values(diary).flatMap((day) =>
+    day.meals.flatMap((m) => m.items)
+  );
 
   const healthAlerts = () => {
     const alerts: string[] = [];
@@ -45,6 +61,7 @@ const Diary = () => {
 
   const alerts = healthAlerts();
   const netCalories = totals.calories - totals.exerciseCals;
+  const totalFoodCals = totals.calories;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -58,10 +75,7 @@ const Diary = () => {
 
       {/* Calorie ring + macros */}
       <div className="flex flex-col items-center py-6">
-        <CircularProgress
-          value={Math.max(0, netCalories)}
-          max={profile.dailyCalorieTarget}
-        />
+        <CircularProgress value={Math.max(0, netCalories)} max={profile.dailyCalorieTarget} />
         <div className="flex items-center gap-6 mt-4">
           <div className="text-center">
             <p className="text-lg font-bold text-foreground">{totals.protein}g</p>
@@ -82,10 +96,7 @@ const Diary = () => {
       {alerts.length > 0 && (
         <div className="px-4 mb-4 space-y-2">
           {alerts.map((alert, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded-xl bg-accent/10 px-4 py-3 border border-accent/20"
-            >
+            <div key={i} className="flex items-center gap-2 rounded-xl bg-accent/10 px-4 py-3 border border-accent/20">
               <AlertTriangle className="h-4 w-4 text-accent flex-shrink-0" />
               <span className="text-sm text-foreground">{alert}</span>
             </div>
@@ -93,32 +104,36 @@ const Diary = () => {
         </div>
       )}
 
-      {/* Meal sections */}
+      {/* Food section - collapsible */}
       <div className="px-4 space-y-3">
-        <MealSection
-          title="Breakfast"
-          emoji="🌅"
-          items={getMealItems("breakfast")}
-          onAddItem={(item) => addFoodToMeal(dateKey, "breakfast", item)}
-        />
-        <MealSection
-          title="Lunch"
-          emoji="☀️"
-          items={getMealItems("lunch")}
-          onAddItem={(item) => addFoodToMeal(dateKey, "lunch", item)}
-        />
-        <MealSection
-          title="Dinner"
-          emoji="🌙"
-          items={getMealItems("dinner")}
-          onAddItem={(item) => addFoodToMeal(dateKey, "dinner", item)}
-        />
-        <MealSection
-          title="Snack"
-          emoji="🍎"
-          items={getMealItems("snack")}
-          onAddItem={(item) => addFoodToMeal(dateKey, "snack", item)}
-        />
+        <Collapsible open={foodOpen} onOpenChange={setFoodOpen}>
+          <div className="rounded-2xl bg-card border border-border p-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <Utensils className="h-5 w-5 text-foreground" />
+                <h3 className="font-semibold text-foreground">Food</h3>
+                {totalFoodCals > 0 && (
+                  <span className="text-sm text-muted-foreground">{totalFoodCals} kcal</span>
+                )}
+              </div>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${foodOpen ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-2 divide-y divide-border">
+                {MEAL_TYPES.map(({ type, title, emoji }) => (
+                  <MealSection
+                    key={type}
+                    title={title}
+                    emoji={emoji}
+                    items={getMealItems(type)}
+                    onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
+                    pastItems={allPastItems}
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
         {/* Exercise section */}
         <div className="rounded-2xl bg-card border border-border p-4">
@@ -130,12 +145,7 @@ const Diary = () => {
                 <span className="text-sm text-muted-foreground">-{totals.exerciseCals} kcal</span>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={() => setExerciseOpen(true)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setExerciseOpen(true)}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -149,10 +159,7 @@ const Diary = () => {
               ))}
             </div>
           ) : (
-            <button
-              onClick={() => setExerciseOpen(true)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-            >
+            <button onClick={() => setExerciseOpen(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
               <Plus className="h-3.5 w-3.5" />
               Add exercise
             </button>
@@ -160,12 +167,7 @@ const Diary = () => {
         </div>
       </div>
 
-      <ExerciseEntry
-        open={exerciseOpen}
-        onOpenChange={setExerciseOpen}
-        onAdd={handleAddExercise}
-      />
-
+      <ExerciseEntry open={exerciseOpen} onOpenChange={setExerciseOpen} onAdd={handleAddExercise} />
       <BottomNav />
     </div>
   );

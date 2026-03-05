@@ -18,7 +18,7 @@ export interface Exercise {
 }
 
 export interface MealEntry {
-  type: "breakfast" | "lunch" | "dinner" | "snack";
+  type: "breakfast" | "lunch" | "dinner" | "snack" | "supplements" | "drinks";
   items: FoodItem[];
 }
 
