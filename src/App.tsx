@@ -10,7 +10,7 @@ import type { OnboardingData } from "@/components/Onboarding";
 import { useUserStore } from "@/stores/useUserStore";
 import Diary from "./pages/Diary";
 import Tracker from "./pages/Tracker";
-import Planner from "./pages/Planner";
+import HealthDiary from "./pages/HealthDiary";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { format, addWeeks, addMonths } from "date-fns";
@@ -88,7 +88,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Diary />} />
         <Route path="/tracker" element={<Tracker />} />
-        <Route path="/planner" element={<Planner />} />
+        <Route path="/health-diary" element={<HealthDiary />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

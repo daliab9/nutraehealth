@@ -22,6 +22,13 @@ export interface MealEntry {
   items: FoodItem[];
 }
 
+export interface HealthEntry {
+  poopCount: number;
+  sleepQuality: number; // 1-5
+  stressLevel: number; // 1-5
+  mood: number; // 1-5
+}
+
 export interface DayEntry {
   date: string; // YYYY-MM-DD
   meals: MealEntry[];
@@ -86,9 +93,25 @@ function loadDiary(): Record<string, DayEntry> {
   return {};
 }
 
+function loadHealth(): Record<string, HealthEntry> {
+  try {
+    const stored = localStorage.getItem("nuria_health");
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return {};
+}
+
+const DEFAULT_HEALTH: HealthEntry = {
+  poopCount: 0,
+  sleepQuality: 0,
+  stressLevel: 0,
+  mood: 0,
+};
+
 export function useUserStore() {
   const [profile, setProfileState] = useState<UserProfile>(loadProfile);
   const [diary, setDiaryState] = useState<Record<string, DayEntry>>(loadDiary);
+  const [health, setHealthState] = useState<Record<string, HealthEntry>>(loadHealth);
 
   useEffect(() => {
     localStorage.setItem("nuria_profile", JSON.stringify(profile));
@@ -97,6 +120,10 @@ export function useUserStore() {
   useEffect(() => {
     localStorage.setItem("nuria_diary", JSON.stringify(diary));
   }, [diary]);
+
+  useEffect(() => {
+    localStorage.setItem("nuria_health", JSON.stringify(health));
+  }, [health]);
 
   const setProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfileState((prev) => ({ ...prev, ...updates }));
@@ -161,6 +188,17 @@ export function useUserStore() {
     [getDayEntry]
   );
 
+  const getHealthEntry = useCallback(
+    (date: string): HealthEntry => {
+      return health[date] || { ...DEFAULT_HEALTH };
+    },
+    [health]
+  );
+
+  const setHealthEntry = useCallback((date: string, entry: HealthEntry) => {
+    setHealthState((prev) => ({ ...prev, [date]: entry }));
+  }, []);
+
   return {
     profile,
     setProfile,
@@ -170,5 +208,8 @@ export function useUserStore() {
     addFoodToMeal,
     addExercise,
     getDayTotals,
+    health,
+    getHealthEntry,
+    setHealthEntry,
   };
 }
