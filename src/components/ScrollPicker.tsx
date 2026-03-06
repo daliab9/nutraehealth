@@ -61,6 +61,17 @@ export const ScrollPicker = ({
     }, 80);
   };
 
+  const handleItemClick = (item: string | number, index: number) => {
+    if (!containerRef.current) return;
+    setIsScrolling(true);
+    containerRef.current.scrollTo({
+      top: index * itemHeight,
+      behavior: "smooth",
+    });
+    onChange(item);
+    setTimeout(() => setIsScrolling(false), 300);
+  };
+
   return (
     <div className={cn("relative", className)} style={{ height: containerHeight }}>
       {/* Selection highlight */}
@@ -102,7 +113,7 @@ export const ScrollPicker = ({
             <div
               key={i}
               className={cn(
-                "flex items-center justify-center transition-all duration-150",
+                "flex cursor-pointer items-center justify-center transition-all duration-150 relative z-30",
                 isSelected
                   ? "text-foreground font-semibold text-2xl"
                   : "text-muted-foreground text-lg"
@@ -111,6 +122,7 @@ export const ScrollPicker = ({
                 height: itemHeight,
                 scrollSnapAlign: "start",
               }}
+              onClick={() => handleItemClick(item, i)}
             >
               {formatItem ? formatItem(item) : `${item}${suffix}`}
             </div>
