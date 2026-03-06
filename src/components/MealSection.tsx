@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Plus, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AIScanDialog } from "@/components/AIScanDialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
+import { FoodEditInput } from "@/components/FoodEditInput";
 import type { FoodItem } from "@/stores/useUserStore";
 
 interface MealSectionProps {
@@ -23,7 +23,6 @@ type AddMode = null | "choose" | "search" | "scan";
 export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUpdateItem, onAddItems, pastItems = [] }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
-  const [editForm, setEditForm] = useState({ quantity: "", calories: "", protein: "", carbs: "", fat: "" });
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
 
@@ -37,30 +36,6 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
   const handleAddPastItem = (item: FoodItem) => {
     onAddItem({ ...item, id: Date.now().toString() });
     setMode(null);
-  };
-
-  const openEdit = (item: FoodItem) => {
-    setEditingItem(item);
-    setEditForm({
-      quantity: item.quantity || "",
-      calories: String(item.calories),
-      protein: String(item.protein),
-      carbs: String(item.carbs),
-      fat: String(item.fat),
-    });
-  };
-
-  const saveEdit = () => {
-    if (!editingItem || !onUpdateItem) return;
-    onUpdateItem({
-      ...editingItem,
-      quantity: editForm.quantity,
-      calories: Number(editForm.calories) || 0,
-      protein: Number(editForm.protein) || 0,
-      carbs: Number(editForm.carbs) || 0,
-      fat: Number(editForm.fat) || 0,
-    });
-    setEditingItem(null);
   };
 
   return (
@@ -97,7 +72,7 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
                 <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
                 {onUpdateItem && (
                   <button
-                    onClick={() => openEdit(item)}
+                    onClick={() => setEditingItem(item)}
                     className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <Pencil className="h-3 w-3" />
@@ -123,58 +98,16 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
           <DialogHeader>
             <DialogTitle>Edit {editingItem?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wide">Quantity</label>
-              <Input
-                value={editForm.quantity}
-                onChange={(e) => setEditForm((f) => ({ ...f, quantity: e.target.value }))}
-                placeholder="e.g. 100g, 1 cup"
-                className="rounded-xl mt-1"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide">Calories</label>
-                <Input
-                  type="number"
-                  value={editForm.calories}
-                  onChange={(e) => setEditForm((f) => ({ ...f, calories: e.target.value }))}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide">Protein (g)</label>
-                <Input
-                  type="number"
-                  value={editForm.protein}
-                  onChange={(e) => setEditForm((f) => ({ ...f, protein: e.target.value }))}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide">Carbs (g)</label>
-                <Input
-                  type="number"
-                  value={editForm.carbs}
-                  onChange={(e) => setEditForm((f) => ({ ...f, carbs: e.target.value }))}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide">Fat (g)</label>
-                <Input
-                  type="number"
-                  value={editForm.fat}
-                  onChange={(e) => setEditForm((f) => ({ ...f, fat: e.target.value }))}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-            </div>
-            <Button onClick={saveEdit} className="w-full rounded-xl h-12">
-              Save
-            </Button>
-          </div>
+          {editingItem && (
+            <FoodEditInput
+              item={editingItem}
+              onSave={(updated) => {
+                onUpdateItem?.(updated);
+                setEditingItem(null);
+              }}
+              onCancel={() => setEditingItem(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
