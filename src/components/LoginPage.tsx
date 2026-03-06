@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -10,10 +12,20 @@ interface LoginPageProps {
 export const LoginPage = ({ onLogin, onBack }: LoginPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Local-only app: just mark as logged in
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      toast({ title: error.message, variant: "destructive" });
+      return;
+    }
+
     onLogin();
   };
 
@@ -32,6 +44,7 @@ export const LoginPage = ({ onLogin, onBack }: LoginPageProps) => {
           <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
           <input
             type="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
@@ -42,6 +55,7 @@ export const LoginPage = ({ onLogin, onBack }: LoginPageProps) => {
           <label className="text-sm font-medium text-foreground mb-1 block">Password</label>
           <input
             type="password"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
@@ -49,8 +63,12 @@ export const LoginPage = ({ onLogin, onBack }: LoginPageProps) => {
           />
         </div>
 
-        <Button type="submit" className="w-full h-14 rounded-2xl text-base font-semibold mt-4">
-          Log in
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full h-14 rounded-2xl text-base font-semibold mt-4"
+        >
+          {loading ? "Logging in…" : "Log in"}
         </Button>
       </form>
     </div>

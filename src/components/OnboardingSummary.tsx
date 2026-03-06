@@ -79,7 +79,7 @@ export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart }: O
         className="mt-10 w-full max-w-sm"
       >
         <Button onClick={onStart} className="w-full h-14 rounded-2xl text-base font-semibold">
-          Start tracking
+          Create account &amp; start tracking
         </Button>
       </motion.div>
     </div>
