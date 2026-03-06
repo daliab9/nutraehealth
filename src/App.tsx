@@ -17,14 +17,21 @@ import { format, addWeeks, addMonths } from "date-fns";
 
 const queryClient = new QueryClient();
 
+function getMainGoal(goals: string[]): string {
+  if (goals.includes("lose_weight") || goals.includes("reduce_body_fat")) return "lose";
+  if (goals.includes("gain_muscle")) return "gain";
+  if (goals.includes("maintain_weight")) return "maintain";
+  return "health";
+}
+
 function calculateCalories(data: OnboardingData): number {
-  // Mifflin-St Jeor (assuming average age 30, moderate activity)
   const weight = data.currentWeight;
   const height = data.height;
-  const bmr = 10 * weight + 6.25 * height - 5 * 30 + 5; // male baseline, simplified
-  const tdee = bmr * 1.4; // lightly active
+  const bmr = 10 * weight + 6.25 * height - 5 * 30 + 5;
+  const tdee = bmr * 1.4;
+  const goal = getMainGoal(data.goals);
 
-  switch (data.goal) {
+  switch (goal) {
     case "lose": return Math.round(tdee - 500);
     case "gain": return Math.round(tdee + 300);
     default: return Math.round(tdee);
@@ -32,8 +39,9 @@ function calculateCalories(data: OnboardingData): number {
 }
 
 function calculateGoalDate(data: OnboardingData): string {
+  const goal = getMainGoal(data.goals);
   const diff = Math.abs(data.currentWeight - data.targetWeight);
-  if (diff === 0 || data.goal === "maintain" || data.goal === "health") {
+  if (diff === 0 || goal === "maintain" || goal === "health") {
     return "Ongoing";
   }
   // ~0.5 kg per week
@@ -62,7 +70,7 @@ const AppContent = () => {
             dailyCalorieTarget: calories,
             goalDate,
           });
-          setSummaryData({ calories, goalDate, goal: data.goal });
+          setSummaryData({ calories, goalDate, goal: getMainGoal(data.goals) });
           setShowSummary(true);
         }}
       />
