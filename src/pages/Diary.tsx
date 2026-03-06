@@ -6,7 +6,9 @@ import { MealSection } from "@/components/MealSection";
 import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, ChevronDown, Dumbbell, Pencil, Plus, Utensils, X } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
@@ -20,11 +22,13 @@ const MEAL_TYPES = [
 ] as const;
 
 const Diary = () => {
-  const { profile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, addExercise, removeExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
+  const { profile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [foodOpen, setFoodOpen] = useState(true);
   const [poopEditing, setPoopEditing] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [exEditForm, setExEditForm] = useState({ duration: "", caloriesBurned: "" });
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
@@ -135,6 +139,7 @@ const Diary = () => {
                     items={getMealItems(type)}
                     onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
                     onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
+                    onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
                     pastItems={allPastItems}
                   />
                 ))}
@@ -162,8 +167,17 @@ const Diary = () => {
               {dayEntry.exercises.map((ex) => (
                 <div key={ex.id} className="flex items-center justify-between py-1.5 px-2">
                   <span className="text-sm text-foreground">{ex.name} · {ex.duration}min</span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <span className="text-sm text-muted-foreground">-{ex.caloriesBurned} kcal</span>
+                    <button
+                      onClick={() => {
+                        setEditingExercise(ex);
+                        setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
+                      }}
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
                     <button
                       onClick={() => removeExercise(dateKey, ex.id)}
                       className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -232,6 +246,50 @@ const Diary = () => {
       </div>
 
       <ExerciseEntry open={exerciseOpen} onOpenChange={setExerciseOpen} onAdd={handleAddExercise} />
+
+      {/* Edit exercise dialog */}
+      <Dialog open={!!editingExercise} onOpenChange={(o) => !o && setEditingExercise(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit {editingExercise?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wide">Duration (min)</label>
+              <Input
+                type="number"
+                value={exEditForm.duration}
+                onChange={(e) => setExEditForm((f) => ({ ...f, duration: e.target.value }))}
+                className="rounded-xl mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wide">Calories burned</label>
+              <Input
+                type="number"
+                value={exEditForm.caloriesBurned}
+                onChange={(e) => setExEditForm((f) => ({ ...f, caloriesBurned: e.target.value }))}
+                className="rounded-xl mt-1"
+              />
+            </div>
+            <Button
+              onClick={() => {
+                if (!editingExercise) return;
+                updateExercise(dateKey, {
+                  ...editingExercise,
+                  duration: Number(exEditForm.duration) || 0,
+                  caloriesBurned: Number(exEditForm.caloriesBurned) || 0,
+                });
+                setEditingExercise(null);
+              }}
+              className="w-full rounded-xl h-12"
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );

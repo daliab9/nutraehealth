@@ -215,6 +215,37 @@ export function useUserStore() {
       };
     });
   }, []);
+
+  const updateFoodInMeal = useCallback(
+    (date: string, mealType: MealEntry["type"], updatedItem: FoodItem) => {
+      setDiaryState((prev) => {
+        const day = prev[date];
+        if (!day) return prev;
+        const meals = day.meals.map((m) =>
+          m.type === mealType
+            ? { ...m, items: m.items.map((i) => (i.id === updatedItem.id ? updatedItem : i)) }
+            : m
+        );
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
+  const updateExercise = useCallback((date: string, updatedExercise: Exercise) => {
+    setDiaryState((prev) => {
+      const day = prev[date];
+      if (!day) return prev;
+      return {
+        ...prev,
+        [date]: {
+          ...day,
+          exercises: day.exercises.map((e) => (e.id === updatedExercise.id ? updatedExercise : e)),
+        },
+      };
+    });
+  }, []);
+
   const getDayTotals = useCallback(
     (date: string) => {
       const day = getDayEntry(date);
@@ -252,8 +283,10 @@ export function useUserStore() {
     setDayEntry,
     addFoodToMeal,
     removeFoodFromMeal,
+    updateFoodInMeal,
     addExercise,
     removeExercise,
+    updateExercise,
     getDayTotals,
     health,
     getHealthEntry,
