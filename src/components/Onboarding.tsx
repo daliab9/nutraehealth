@@ -168,10 +168,119 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
 
   const renderStep = () => {
     switch (step) {
+      case 0:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">What are your goals?</h2>
+            <p className="text-sm text-muted-foreground">Select all that apply</p>
+            <div className="mt-6 space-y-3">
+              {GOALS.map((g) => (
+                <button
+                  key={g.value}
+                  onClick={() => toggleGoal(g.value)}
+                  className={`w-full p-4 rounded-2xl border-2 text-left font-medium transition-all ${
+                    data.goals.includes(g.value) ? "border-foreground bg-secondary" : "border-border bg-card"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">What's your gender?</h2>
+            <div className="mt-8 space-y-3">
+              {GENDERS.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setData((d) => ({ ...d, gender: g }))}
+                  className={`w-full p-4 rounded-2xl border-2 text-left font-medium transition-all ${
+                    data.gender === g ? "border-foreground bg-secondary" : "border-border bg-card"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Current weight</h2>
+            <p className="text-sm text-muted-foreground">in kg</p>
+            <div className="mt-8 flex justify-center">
+              <ScrollPicker
+                items={weights}
+                value={data.currentWeight}
+                onChange={(v) => setData((d) => ({ ...d, currentWeight: Number(v) }))}
+                suffix="kg"
+              />
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Height</h2>
+            <p className="text-sm text-muted-foreground">in cm</p>
+            <div className="mt-8 flex justify-center">
+              <ScrollPicker
+                items={heights}
+                value={data.height}
+                onChange={(v) => setData((d) => ({ ...d, height: Number(v) }))}
+                suffix="cm"
+              />
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Target weight</h2>
+            <p className="text-sm text-muted-foreground">in kg</p>
+            <div className="mt-8 flex justify-center">
+              <ScrollPicker
+                items={weights}
+                value={data.targetWeight}
+                onChange={(v) => setData((d) => ({ ...d, targetWeight: Number(v) }))}
+                suffix="kg"
+              />
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Dietary preferences</h2>
+            <div className="mt-8 space-y-3">
+              {DIET_PREFS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => toggleMulti("dietaryPreferences", p)}
+                  className={`w-full p-4 rounded-2xl border-2 text-left font-medium transition-all ${
+                    data.dietaryPreferences.includes(p) ? "border-foreground bg-secondary" : "border-border bg-card"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
       case 6:
         return (
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold">Dietary restrictions</h2>
+            <h2 className="text-2xl font-bold text-foreground">Dietary restrictions</h2>
             <div className="mt-8 space-y-3">
               {DIET_RESTRICTIONS.map((r) => (
                 <div key={r}>
@@ -207,7 +316,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
       case 7:
         return (
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold">Health concerns</h2>
+            <h2 className="text-2xl font-bold text-foreground">Health concerns</h2>
             <div className="mt-8 space-y-3">
               {HEALTH_CONCERNS.map((h) => (
                 <div key={h}>
