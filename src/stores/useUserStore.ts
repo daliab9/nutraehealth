@@ -50,24 +50,31 @@ export interface SavedMeal {
 export interface UserProfile {
   onboardingComplete: boolean;
   goal: string;
+  goals: string[];
+  gender: string;
   currentWeight: number;
   height: number;
   heightUnit: "cm" | "ft";
   targetWeight: number;
   dietaryPreferences: string[];
   dietaryRestrictions: string[];
+  dietaryRestrictionsOther?: string;
   healthConcerns: string[];
+  healthConcernsOther?: string;
   dailyCalorieTarget: number;
   goalDate: string;
   weightHistory: { date: string; weight: number }[];
   savedMeals: SavedMeal[];
   subscription: "free" | "pro";
   aiScansUsed: number;
+  cycleStartDate?: string;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
   onboardingComplete: false,
   goal: "",
+  goals: [],
+  gender: "",
   currentWeight: 70,
   height: 170,
   heightUnit: "cm",
