@@ -197,7 +197,7 @@ const Diary = () => {
                 <Dumbbell className="h-5 w-5 text-foreground" />
                 <h3 className="font-semibold text-foreground">Exercise</h3>
                 {totals.exerciseCals > 0 &&
-              <span className="text-sm text-muted-foreground">-{totals.exerciseCals} kcal</span>
+              <span className="text-sm text-muted-foreground font-semibold">-{totals.exerciseCals} kcal</span>
               }
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setExerciseOpen(true)}>
@@ -207,9 +207,9 @@ const Diary = () => {
             {dayEntry.exercises.length > 0 ?
           <div className="flex flex-wrap gap-2">
                 {dayEntry.exercises.map((ex) =>
-            <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
-                    <span className="text-sm font-medium text-foreground">{ex.name}</span>
-                    <span className="text-xs text-muted-foreground">{ex.duration}min · -{ex.caloriesBurned} kcal</span>
+            <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-[#e4e7c6]">
+                    <span className="text-sm text-foreground font-bold">{ex.name}</span>
+                    <span className="text-muted-foreground text-sm font-sans font-semibold">{ex.duration}min · -{ex.caloriesBurned} kcal</span>
                     <button
                 onClick={() => {
                   setEditingExercise(ex);
