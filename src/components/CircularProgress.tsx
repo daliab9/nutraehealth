@@ -9,7 +9,7 @@ export const CircularProgress = ({
   value,
   max,
   size = 200,
-  strokeWidth = 14,
+  strokeWidth = 14
 }: CircularProgressProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -28,8 +28,8 @@ export const CircularProgress = ({
           fill="none"
           stroke="hsl(var(--secondary))"
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
+          strokeLinecap="round" />
+        
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -40,13 +40,13 @@ export const CircularProgress = ({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          className="transition-all duration-700 ease-out"
-        />
+          className="transition-all duration-700 ease-out" />
+        
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-5xl font-bold text-foreground tracking-tight">{formatted}</span>
-        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1">Cals</span>
+        <span className="font-bold text-foreground tracking-tight text-6xl">{formatted}</span>
+        <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">Cals</span>
       </div>
-    </div>
-  );
+    </div>);
+
 };

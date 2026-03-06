@@ -27,25 +27,25 @@ export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps
             onClick={() => onDateSelect(day)}
             className={cn(
               "flex flex-col items-center gap-1.5 rounded-2xl px-3 py-2.5 transition-all min-w-[46px]",
-              selected
-                ? "bg-foreground"
-                : "hover:bg-secondary"
-            )}
-          >
+              selected ?
+              "bg-foreground" :
+              "hover:bg-secondary"
+            )}>
+            
             <span
-              className={cn(
-                "text-xs font-semibold uppercase tracking-wider",
-                selected ? "text-primary-foreground" : "text-muted-foreground"
-              )}
-            >
+              className={cn("font-semibold uppercase tracking-wider text-sm",
+
+              selected ? "text-primary-foreground" : "text-muted-foreground"
+              )}>
+              
               {format(day, "EEE")}
             </span>
-            {today && !selected && (
-              <div className="h-1 w-1 rounded-full bg-accent" />
-            )}
-          </button>
-        );
+            {today && !selected &&
+            <div className="h-1 w-1 rounded-full bg-accent" />
+            }
+          </button>);
+
       })}
-    </div>
-  );
+    </div>);
+
 };

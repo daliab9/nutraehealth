@@ -12,13 +12,13 @@ import { AlertTriangle, Dumbbell, Pencil, Plus, Utensils, X, Sunrise, Sun, Moon,
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
-  { type: "breakfast", title: "Breakfast", icon: Sunrise },
-  { type: "lunch", title: "Lunch", icon: Sun },
-  { type: "dinner", title: "Dinner", icon: Moon },
-  { type: "snack", title: "Snack", icon: Apple },
-  { type: "supplements", title: "Supplements", icon: Pill },
-  { type: "drinks", title: "Drinks", icon: GlassWater },
-] as const;
+{ type: "breakfast", title: "Breakfast", icon: Sunrise },
+{ type: "lunch", title: "Lunch", icon: Sun },
+{ type: "dinner", title: "Dinner", icon: Moon },
+{ type: "snack", title: "Snack", icon: Apple },
+{ type: "supplements", title: "Supplements", icon: Pill },
+{ type: "drinks", title: "Drinks", icon: GlassWater }] as
+const;
 
 const Diary = () => {
   const { profile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
@@ -46,7 +46,7 @@ const Diary = () => {
   };
 
   const allPastItems = Object.values(diary).flatMap((day) =>
-    day.meals.flatMap((m) => m.items)
+  day.meals.flatMap((m) => m.items)
   );
 
   const healthAlerts = () => {
@@ -102,29 +102,29 @@ const Diary = () => {
         <button
           onClick={() => setActiveSection("meals")}
           className={`flex flex-col items-center gap-2 px-6 py-3 rounded-2xl transition-all ${
-            activeSection === "meals" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"
-          }`}
-        >
+          activeSection === "meals" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"}`
+          }>
+          
           <Utensils className="h-5 w-5" />
-          <span className="text-xs font-semibold">Meals</span>
+          <span className="font-semibold text-base">Meals</span>
         </button>
         <button
           onClick={() => setActiveSection("exercise")}
           className={`flex flex-col items-center gap-2 px-6 py-3 rounded-2xl transition-all ${
-            activeSection === "exercise" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"
-          }`}
-        >
+          activeSection === "exercise" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"}`
+          }>
+          
           <Dumbbell className="h-5 w-5" />
-          <span className="text-xs font-semibold">Exercise</span>
+          <span className="font-semibold text-base">Exercise</span>
         </button>
         <button
           onClick={() => setActiveSection("poop")}
           className={`flex flex-col items-center gap-2 px-6 py-3 rounded-2xl transition-all ${
-            activeSection === "poop" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"
-          }`}
-        >
+          activeSection === "poop" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"}`
+          }>
+          
           <CircleDot className="h-5 w-5" />
-          <span className="text-xs font-semibold">Poop</span>
+          <span className="font-semibold text-base">Poop</span>
         </button>
       </div>
 
@@ -134,155 +134,155 @@ const Diary = () => {
       </div>
 
       {/* Health alerts */}
-      {alerts.length > 0 && (
-        <div className="px-5 mb-4 space-y-2">
-          {alerts.map((alert, i) => (
-            <div key={i} className="flex items-center gap-2 rounded-2xl bg-accent/10 px-4 py-3 border border-accent/20">
+      {alerts.length > 0 &&
+      <div className="px-5 mb-4 space-y-2">
+          {alerts.map((alert, i) =>
+        <div key={i} className="flex items-center gap-2 rounded-2xl bg-accent/10 px-4 py-3 border border-accent/20">
               <AlertTriangle className="h-4 w-4 text-foreground flex-shrink-0" />
               <span className="text-sm text-foreground">{alert}</span>
             </div>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Active section content */}
       <div className="px-5 space-y-3">
-        {activeSection === "meals" && (
-          <>
+        {activeSection === "meals" &&
+        <>
             {/* Macros row */}
             <div className="flex items-center justify-between px-2 mb-2">
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{totals.protein}g</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Protein</p>
+                <p className="text-muted-foreground uppercase tracking-widest text-xs">Protein</p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{totals.carbs}g</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Carbs</p>
+                <p className="text-muted-foreground uppercase tracking-widest text-xs">Carbs</p>
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold text-foreground">{totals.fat}g</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Fat</p>
+                <p className="text-muted-foreground uppercase tracking-widest text-xs">Fat</p>
               </div>
-              {totalFoodCals > 0 && (
-                <div className="text-center">
+              {totalFoodCals > 0 &&
+            <div className="text-center">
                   <p className="text-lg font-bold text-foreground">{totalFoodCals}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Total</p>
+                  <p className="text-muted-foreground uppercase tracking-widest text-xs">Total</p>
                 </div>
-              )}
+            }
             </div>
 
             <div className="rounded-2xl bg-card border border-border p-4">
               <div className="divide-y divide-border">
-                {MEAL_TYPES.map(({ type, title, icon }) => (
-                  <MealSection
-                    key={type}
-                    title={title}
-                    icon={icon}
-                    items={getMealItems(type)}
-                    onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
-                    onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
-                    onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
-                    pastItems={allPastItems}
-                  />
-                ))}
+                {MEAL_TYPES.map(({ type, title, icon }) =>
+              <MealSection
+                key={type}
+                title={title}
+                icon={icon}
+                items={getMealItems(type)}
+                onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
+                onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
+                onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
+                pastItems={allPastItems} />
+
+              )}
               </div>
             </div>
           </>
-        )}
+        }
 
-        {activeSection === "exercise" && (
-          <div className="rounded-2xl bg-card border border-border p-4">
+        {activeSection === "exercise" &&
+        <div className="rounded-2xl bg-card border border-border p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Dumbbell className="h-5 w-5 text-foreground" />
                 <h3 className="font-semibold text-foreground">Exercise</h3>
-                {totals.exerciseCals > 0 && (
-                  <span className="text-sm text-muted-foreground">-{totals.exerciseCals} kcal</span>
-                )}
+                {totals.exerciseCals > 0 &&
+              <span className="text-sm text-muted-foreground">-{totals.exerciseCals} kcal</span>
+              }
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setExerciseOpen(true)}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            {dayEntry.exercises.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {dayEntry.exercises.map((ex) => (
-                  <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
+            {dayEntry.exercises.length > 0 ?
+          <div className="flex flex-wrap gap-2">
+                {dayEntry.exercises.map((ex) =>
+            <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
                     <span className="text-sm font-medium text-foreground">{ex.name}</span>
                     <span className="text-xs text-muted-foreground">{ex.duration}min · -{ex.caloriesBurned} kcal</span>
                     <button
-                      onClick={() => {
-                        setEditingExercise(ex);
-                        setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
-                      }}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                onClick={() => {
+                  setEditingExercise(ex);
+                  setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
+                }}
+                className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                
                       <Pencil className="h-3 w-3" />
                     </button>
                     <button
-                      onClick={() => removeExercise(dateKey, ex.id)}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
-                    >
+                onClick={() => removeExercise(dateKey, ex.id)}
+                className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <button onClick={() => setExerciseOpen(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
+            )}
+              </div> :
+
+          <button onClick={() => setExerciseOpen(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
                 <Plus className="h-3.5 w-3.5" />
                 Add exercise
               </button>
-            )}
+          }
           </div>
-        )}
+        }
 
-        {activeSection === "poop" && (
-          <div className="rounded-2xl bg-card border border-border p-5">
+        {activeSection === "poop" &&
+        <div className="rounded-2xl bg-card border border-border p-5">
             <div className="flex flex-col items-center gap-4">
               <CircleDot className="h-8 w-8 text-foreground" />
               <h3 className="font-semibold text-foreground text-lg">Bowel Movements</h3>
-              {poopSaved ? (
-                <div className="flex items-center gap-3">
+              {poopSaved ?
+            <div className="flex items-center gap-3">
                   <span className="text-4xl font-bold text-foreground">{healthEntry.poopCount}</span>
                     <button
-                      onClick={() => setPoopEditing(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
-                    >
+                onClick={() => setPoopEditing(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity">
+                
                       <Pencil className="h-3 w-3" />
                       Edit
                     </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4">
+                </div> :
+
+            <div className="flex items-center gap-4">
                   <button
-                    onClick={() => { if (healthEntry.poopCount > 0) updatePoop(healthEntry.poopCount - 1); }}
-                    className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform"
-                  >
+                onClick={() => {if (healthEntry.poopCount > 0) updatePoop(healthEntry.poopCount - 1);}}
+                className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform">
+                
                     −
                   </button>
                   <span className="text-4xl font-bold text-foreground w-8 text-center">
                     {healthEntry.poopCount}
                   </span>
                   <button
-                    onClick={() => updatePoop(healthEntry.poopCount + 1)}
-                    className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform"
-                  >
+                onClick={() => updatePoop(healthEntry.poopCount + 1)}
+                className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform">
+                
                     +
                   </button>
-                  {healthEntry.poopCount > 0 && (
-                    <button
-                      onClick={() => setPoopEditing(false)}
-                      className="ml-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold active:scale-95 transition-transform"
-                    >
+                  {healthEntry.poopCount > 0 &&
+              <button
+                onClick={() => setPoopEditing(false)}
+                className="ml-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold active:scale-95 transition-transform">
+                
                       Save
                     </button>
-                  )}
+              }
                 </div>
-              )}
+            }
             </div>
           </div>
-        )}
+        }
       </div>
 
       <ExerciseEntry open={exerciseOpen} onOpenChange={setExerciseOpen} onAdd={handleAddExercise} />
@@ -300,8 +300,8 @@ const Diary = () => {
                 type="number"
                 value={exEditForm.duration}
                 onChange={(e) => setExEditForm((f) => ({ ...f, duration: e.target.value }))}
-                className="rounded-xl mt-1"
-              />
+                className="rounded-xl mt-1" />
+              
             </div>
             <div>
               <label className="text-xs text-muted-foreground uppercase tracking-widest">Calories burned</label>
@@ -309,8 +309,8 @@ const Diary = () => {
                 type="number"
                 value={exEditForm.caloriesBurned}
                 onChange={(e) => setExEditForm((f) => ({ ...f, caloriesBurned: e.target.value }))}
-                className="rounded-xl mt-1"
-              />
+                className="rounded-xl mt-1" />
+              
             </div>
             <Button
               onClick={() => {
@@ -318,12 +318,12 @@ const Diary = () => {
                 updateExercise(dateKey, {
                   ...editingExercise,
                   duration: Number(exEditForm.duration) || 0,
-                  caloriesBurned: Number(exEditForm.caloriesBurned) || 0,
+                  caloriesBurned: Number(exEditForm.caloriesBurned) || 0
                 });
                 setEditingExercise(null);
               }}
-              className="w-full rounded-xl h-12"
-            >
+              className="w-full rounded-xl h-12">
+              
               Save
             </Button>
           </div>
@@ -331,8 +331,8 @@ const Diary = () => {
       </Dialog>
 
       <BottomNav />
-    </div>
-  );
+    </div>);
+
 };
 
 export default Diary;
