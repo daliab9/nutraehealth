@@ -8,6 +8,7 @@ interface ScrollPickerProps {
   itemHeight?: number;
   visibleItems?: number;
   suffix?: string;
+  formatItem?: (item: string | number) => string;
   className?: string;
 }
 
