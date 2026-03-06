@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 
 const POSITIVE_EMOTIONS = [
   "Hopeful", "Grateful", "Excited", "Peaceful", "Content", "Proud",
@@ -26,6 +27,8 @@ const NEGATIVE_REASONS = [
   "Body image", "Academic pressure", "Parenting", "Time pressure", "Other",
 ];
 
+const ALL_PRESET_REASONS = new Set([...POSITIVE_REASONS, ...NEGATIVE_REASONS]);
+
 export interface EmotionalCheckInData {
   positiveEmotions: string[];
   positiveReasons: string[];
@@ -47,20 +50,34 @@ const Chip = ({
   label,
   selected,
   onClick,
+  onRemove,
 }: {
   label: string;
   selected: boolean;
   onClick: () => void;
+  onRemove?: () => void;
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 active:scale-95 ${
+    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 active:scale-95 inline-flex items-center gap-1.5 ${
       selected
         ? "bg-foreground text-background border-foreground"
         : "bg-secondary/50 text-foreground border-border hover:border-foreground/30"
     }`}
   >
     {label}
+    {onRemove && (
+      <span
+        role="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="ml-0.5 rounded-full hover:bg-background/20 p-0.5 transition-colors"
+      >
+        <X className="h-3 w-3" />
+      </span>
+    )}
   </button>
 );
 
@@ -70,11 +87,39 @@ const revealVariants = {
 };
 
 export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
+  const [posInput, setPosInput] = useState("");
+  const [negInput, setNegInput] = useState("");
+
   const update = (partial: Partial<EmotionalCheckInData>) =>
     onChange({ ...data, ...partial });
 
   const hasPositive = data.positiveEmotions.length > 0;
   const hasNegative = data.negativeEmotions.length > 0;
+
+  const customPositiveReasons = data.positiveReasons.filter(
+    (r) => !ALL_PRESET_REASONS.has(r)
+  );
+  const customNegativeReasons = data.negativeReasons.filter(
+    (r) => !ALL_PRESET_REASONS.has(r)
+  );
+
+  const addCustomReason = (
+    field: "positiveReasons" | "negativeReasons",
+    text: string,
+    setInput: (v: string) => void
+  ) => {
+    const trimmed = text.trim();
+    if (!trimmed || data[field].includes(trimmed)) return;
+    update({ [field]: [...data[field], trimmed] });
+    setInput("");
+  };
+
+  const removeCustomReason = (
+    field: "positiveReasons" | "negativeReasons",
+    text: string
+  ) => {
+    update({ [field]: data[field].filter((r) => r !== text) });
+  };
 
   return (
     <div className="space-y-6">
@@ -122,6 +167,15 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                     }
                   />
                 ))}
+                {customPositiveReasons.map((r) => (
+                  <Chip
+                    key={`custom-${r}`}
+                    label={r}
+                    selected={true}
+                    onClick={() => {}}
+                    onRemove={() => removeCustomReason("positiveReasons", r)}
+                  />
+                ))}
               </div>
 
               <AnimatePresence>
@@ -135,9 +189,15 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   >
                     <input
                       type="text"
-                      placeholder="Tell us more…"
-                      value={data.positiveOtherText}
-                      onChange={(e) => update({ positiveOtherText: e.target.value })}
+                      placeholder="Tell us more… (press Enter to add)"
+                      value={posInput}
+                      onChange={(e) => setPosInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCustomReason("positiveReasons", posInput, setPosInput);
+                        }
+                      }}
                       className="mt-3 w-full rounded-xl border border-border bg-secondary/30 p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
                     />
                   </motion.div>
@@ -192,6 +252,15 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                     }
                   />
                 ))}
+                {customNegativeReasons.map((r) => (
+                  <Chip
+                    key={`custom-${r}`}
+                    label={r}
+                    selected={true}
+                    onClick={() => {}}
+                    onRemove={() => removeCustomReason("negativeReasons", r)}
+                  />
+                ))}
               </div>
 
               <AnimatePresence>
@@ -205,9 +274,15 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   >
                     <input
                       type="text"
-                      placeholder="Tell us what's on your mind…"
-                      value={data.negativeOtherText}
-                      onChange={(e) => update({ negativeOtherText: e.target.value })}
+                      placeholder="Tell us what's on your mind… (press Enter to add)"
+                      value={negInput}
+                      onChange={(e) => setNegInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCustomReason("negativeReasons", negInput, setNegInput);
+                        }
+                      }}
                       className="mt-3 w-full rounded-xl border border-border bg-secondary/30 p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
                     />
                   </motion.div>
