@@ -8,6 +8,7 @@ interface ScrollPickerProps {
   itemHeight?: number;
   visibleItems?: number;
   suffix?: string;
+  formatItem?: (item: string | number) => string;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const ScrollPicker = ({
   itemHeight = 48,
   visibleItems = 5,
   suffix = "",
+  formatItem,
   className,
 }: ScrollPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -110,7 +112,7 @@ export const ScrollPicker = ({
                 scrollSnapAlign: "start",
               }}
             >
-              {item}{suffix}
+              {formatItem ? formatItem(item) : `${item}${suffix}`}
             </div>
           );
         })}
