@@ -117,18 +117,19 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
         return data.goals.length > 0;
       case 1:
         return data.gender !== "";
-      case 2:
-      case 3:
-      case 4:
+      case 2: // age
+      case 3: // weight
+      case 4: // height
+      case 5: // target weight
         return true;
-      case 5:
-        return data.dietaryPreferences.length > 0;
       case 6:
+        return data.dietaryPreferences.length > 0;
+      case 7:
         return (
           data.dietaryRestrictions.length > 0 &&
           (!data.dietaryRestrictions.includes("Other") || data.dietaryRestrictionsOther?.trim())
         );
-      case 7:
+      case 8:
         return (
           data.healthConcerns.length > 0 && (!data.healthConcerns.includes("Other") || data.healthConcernsOther?.trim())
         );
