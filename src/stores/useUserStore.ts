@@ -202,7 +202,7 @@ export function useUserStore() {
 
   const getHealthEntry = useCallback(
     (date: string): HealthEntry => {
-      return health[date] || { ...DEFAULT_HEALTH };
+      return { ...DEFAULT_HEALTH, ...(health[date] || {}) };
     },
     [health]
   );
