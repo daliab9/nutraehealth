@@ -8,16 +8,16 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, Utensils, X } from "lucide-react";
+import { AlertTriangle, Dumbbell, Pencil, Plus, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
-  { type: "breakfast", title: "Breakfast", emoji: "🌅" },
-  { type: "lunch", title: "Lunch", emoji: "☀️" },
-  { type: "dinner", title: "Dinner", emoji: "🌙" },
-  { type: "snack", title: "Snack", emoji: "🍎" },
-  { type: "supplements", title: "Supplements", emoji: "💊" },
-  { type: "drinks", title: "Drinks", emoji: "🥤" },
+  { type: "breakfast", title: "Breakfast", icon: Sunrise },
+  { type: "lunch", title: "Lunch", icon: Sun },
+  { type: "dinner", title: "Dinner", icon: Moon },
+  { type: "snack", title: "Snack", icon: Apple },
+  { type: "supplements", title: "Supplements", icon: Pill },
+  { type: "drinks", title: "Drinks", icon: GlassWater },
 ] as const;
 
 const Diary = () => {
@@ -123,7 +123,7 @@ const Diary = () => {
             activeSection === "poop" ? "bg-foreground text-primary-foreground" : "bg-secondary text-foreground"
           }`}
         >
-          <span className="text-lg">💩</span>
+          <CircleDot className="h-5 w-5" />
           <span className="text-xs font-semibold">Poop</span>
         </button>
       </div>
@@ -138,7 +138,7 @@ const Diary = () => {
         <div className="px-5 mb-4 space-y-2">
           {alerts.map((alert, i) => (
             <div key={i} className="flex items-center gap-2 rounded-2xl bg-accent/10 px-4 py-3 border border-accent/20">
-              <AlertTriangle className="h-4 w-4 text-accent flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-foreground flex-shrink-0" />
               <span className="text-sm text-foreground">{alert}</span>
             </div>
           ))}
@@ -173,11 +173,11 @@ const Diary = () => {
 
             <div className="rounded-2xl bg-card border border-border p-4">
               <div className="divide-y divide-border">
-                {MEAL_TYPES.map(({ type, title, emoji }) => (
+                {MEAL_TYPES.map(({ type, title, icon }) => (
                   <MealSection
                     key={type}
                     title={title}
-                    emoji={emoji}
+                    icon={icon}
                     items={getMealItems(type)}
                     onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
                     onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
@@ -205,28 +205,26 @@ const Diary = () => {
               </Button>
             </div>
             {dayEntry.exercises.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {dayEntry.exercises.map((ex) => (
-                  <div key={ex.id} className="flex items-center justify-between py-2 px-2">
-                    <span className="text-sm text-foreground">{ex.name} · {ex.duration}min</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm text-muted-foreground">-{ex.caloriesBurned} kcal</span>
-                      <button
-                        onClick={() => {
-                          setEditingExercise(ex);
-                          setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
-                        }}
-                        className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={() => removeExercise(dateKey, ex.id)}
-                        className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                  <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
+                    <span className="text-sm font-medium text-foreground">{ex.name}</span>
+                    <span className="text-xs text-muted-foreground">{ex.duration}min · -{ex.caloriesBurned} kcal</span>
+                    <button
+                      onClick={() => {
+                        setEditingExercise(ex);
+                        setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
+                      }}
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => removeExercise(dateKey, ex.id)}
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -242,7 +240,7 @@ const Diary = () => {
         {activeSection === "poop" && (
           <div className="rounded-2xl bg-card border border-border p-5">
             <div className="flex flex-col items-center gap-4">
-              <span className="text-4xl">💩</span>
+              <CircleDot className="h-8 w-8 text-foreground" />
               <h3 className="font-semibold text-foreground text-lg">Bowel Movements</h3>
               {poopSaved ? (
                 <div className="flex items-center gap-3">
