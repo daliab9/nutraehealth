@@ -4,25 +4,30 @@ import { Check } from "lucide-react";
 
 interface OnboardingSummaryProps {
   dailyCalories: number;
-  goalDate: string;
-  goal: string;
+  goalDate: Date;
+  goals: string[];
   onStart: () => void;
 }
 
-export const OnboardingSummary = ({
-  dailyCalories,
-  goalDate,
-  goal,
-  onStart,
-}: OnboardingSummaryProps) => {
+export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart }: OnboardingSummaryProps) => {
+  const formattedDate = goalDate.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const primaryGoal = goals[0];
+
   const goalLabel =
-    goal === "lose"
+    primaryGoal === "lose_weight"
       ? "reach your target weight"
-      : goal === "gain"
-      ? "build muscle"
-      : goal === "maintain"
-      ? "maintain your weight"
-      : "improve your health";
+      : primaryGoal === "gain_muscle"
+        ? "build muscle"
+        : primaryGoal === "maintain_weight"
+          ? "maintain your weight"
+          : primaryGoal === "reduce_body_fat"
+            ? "reduce body fat"
+            : "improve your health";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
@@ -67,7 +72,7 @@ export const OnboardingSummary = ({
 
         <div className="rounded-2xl bg-card border border-border p-6 text-center">
           <p className="text-sm text-muted-foreground mb-1">Estimated to {goalLabel}</p>
-          <p className="text-2xl font-bold text-foreground">{goalDate}</p>
+          <p className="text-2xl font-bold text-foreground">{formattedDate}</p>
         </div>
       </motion.div>
 
@@ -77,10 +82,7 @@ export const OnboardingSummary = ({
         transition={{ delay: 0.7 }}
         className="mt-10 w-full max-w-sm"
       >
-        <Button
-          onClick={onStart}
-          className="w-full h-14 rounded-2xl text-base font-semibold"
-        >
+        <Button onClick={onStart} className="w-full h-14 rounded-2xl text-base font-semibold">
           Start tracking
         </Button>
       </motion.div>
