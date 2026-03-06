@@ -41,6 +41,19 @@
     --chart-fat: 0 60% 55%;
     --chart-calories: 0 0% 15%;
 
+    --chart-positive: 72 38% 77%;
+    --chart-positive-dark: 80 34% 33%;
+    --chart-negative: 0 100% 90%;
+    --chart-negative-dark: 0 100% 79%;
+
+    --positive-bg: 72 38% 83%;
+    --positive-selected: 80 34% 33%;
+    --negative-bg: 0 100% 95%;
+    --negative-selected: 0 100% 79%;
+    --negative-bubble: 0 100% 90%;
+
+    --action-button: 36 20% 83%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -84,6 +97,19 @@
     --chart-carbs: 38 70% 55%;
     --chart-fat: 0 55% 55%;
     --chart-calories: 36 15% 80%;
+
+    --chart-positive: 72 38% 77%;
+    --chart-positive-dark: 80 34% 33%;
+    --chart-negative: 0 100% 90%;
+    --chart-negative-dark: 0 100% 79%;
+
+    --positive-bg: 72 38% 83%;
+    --positive-selected: 80 34% 33%;
+    --negative-bg: 0 100% 95%;
+    --negative-selected: 0 100% 79%;
+    --negative-bubble: 0 100% 90%;
+
+    --action-button: 36 20% 83%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
