@@ -3,7 +3,8 @@ import { format } from "date-fns";
 import { CalendarStrip } from "@/components/CalendarStrip";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
-import { Moon, Brain, Smile, Frown, Meh, SmilePlus, Angry } from "lucide-react";
+import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/EmotionalCheckIn";
+import { Moon, Brain } from "lucide-react";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1, icon: "😫" },
@@ -21,14 +22,6 @@ const STRESS_OPTIONS = [
   { label: "Very High", value: 5 },
 ];
 
-const MOOD_OPTIONS = [
-  { label: "Awful", value: 1, emoji: "😢" },
-  { label: "Bad", value: 2, emoji: "😔" },
-  { label: "Okay", value: 3, emoji: "😐" },
-  { label: "Good", value: 4, emoji: "😊" },
-  { label: "Great", value: 5, emoji: "😄" },
-];
-
 const HealthDiary = () => {
   const { getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -37,6 +30,10 @@ const HealthDiary = () => {
 
   const update = (field: string, value: number) => {
     setHealthEntry(dateKey, { ...entry, [field]: value });
+  };
+
+  const handleEmotionalChange = (emotionalData: EmotionalCheckInData) => {
+    setHealthEntry(dateKey, { ...entry, ...emotionalData });
   };
 
   const incrementPoop = () => {
@@ -131,29 +128,18 @@ const HealthDiary = () => {
           </div>
         </div>
 
-        {/* Mood */}
-        <div className="rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Smile className="h-5 w-5 text-foreground" />
-            <h3 className="font-semibold text-foreground">Overall Mood</h3>
-          </div>
-          <div className="flex gap-2">
-            {MOOD_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => update("mood", opt.value)}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all active:scale-95 ${
-                  entry.mood === opt.value
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-foreground"
-                }`}
-              >
-                <span className="text-xl">{opt.emoji}</span>
-                <span className="text-[10px] font-medium">{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Emotional Check-In (replaces old mood picker) */}
+        <EmotionalCheckIn
+          data={{
+            positiveEmotions: entry.positiveEmotions,
+            positiveReasons: entry.positiveReasons,
+            positiveOtherText: entry.positiveOtherText,
+            negativeEmotions: entry.negativeEmotions,
+            negativeReasons: entry.negativeReasons,
+            negativeOtherText: entry.negativeOtherText,
+          }}
+          onChange={handleEmotionalChange}
+        />
       </div>
 
       <BottomNav />

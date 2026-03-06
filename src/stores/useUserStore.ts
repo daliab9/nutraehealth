@@ -27,6 +27,12 @@ export interface HealthEntry {
   sleepQuality: number; // 1-5
   stressLevel: number; // 1-5
   mood: number; // 1-5
+  positiveEmotions: string[];
+  positiveReasons: string[];
+  positiveOtherText: string;
+  negativeEmotions: string[];
+  negativeReasons: string[];
+  negativeOtherText: string;
 }
 
 export interface DayEntry {
@@ -106,6 +112,12 @@ const DEFAULT_HEALTH: HealthEntry = {
   sleepQuality: 0,
   stressLevel: 0,
   mood: 0,
+  positiveEmotions: [],
+  positiveReasons: [],
+  positiveOtherText: "",
+  negativeEmotions: [],
+  negativeReasons: [],
+  negativeOtherText: "",
 };
 
 export function useUserStore() {
