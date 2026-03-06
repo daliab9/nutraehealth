@@ -31,7 +31,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a food nutrition database. When given a food search query, return matching food items with accurate nutritional information per 100g serving. Return results using the suggest_foods function.`,
+            content: `You are a food nutrition database. When given a food search query, return matching food items with accurate nutritional information per 100g serving. For default_portion_amount and default_portion_unit, use the most natural serving unit for that item (e.g. wine=150 ml, supplements like CoQ10=100 mg, milk=250 ml, bread=30 g, an apple=182 g). Return results using the suggest_foods function.`,
           },
           {
             role: "user",
@@ -43,7 +43,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "suggest_foods",
-              description: "Return food suggestions with nutritional data per 100g",
+              description: "Return food suggestions with nutritional data per 100g. Use appropriate default_portion_unit for each food.",
               parameters: {
                 type: "object",
                 properties: {
@@ -57,10 +57,11 @@ serve(async (req) => {
                         protein: { type: "number", description: "Protein in grams per 100g" },
                         carbs: { type: "number", description: "Carbohydrates in grams per 100g" },
                         fat: { type: "number", description: "Fat in grams per 100g" },
-                        default_portion_g: { type: "number", description: "Typical single serving size in grams" },
-                        portion_label: { type: "string", description: "Description of the portion e.g. '1 medium apple', '1 cup', '1 slice'" },
+                        default_portion_amount: { type: "number", description: "Typical single serving amount in the natural unit for this food (e.g. 150 for wine in ml, 100 for a supplement in mg, 250 for milk in ml, 30 for bread in g)" },
+                        default_portion_unit: { type: "string", description: "The natural unit for this food's portion: g, ml, mg, oz, cup, tbsp, tsp, slice, piece, etc." },
+                        portion_label: { type: "string", description: "Human readable description e.g. '1 glass', '1 medium apple', '1 capsule'" },
                       },
-                      required: ["name", "calories", "protein", "carbs", "fat", "default_portion_g", "portion_label"],
+                      required: ["name", "calories", "protein", "carbs", "fat", "default_portion_amount", "default_portion_unit", "portion_label"],
                       additionalProperties: false,
                     },
                   },
