@@ -211,8 +211,18 @@ const AppContent = () => {
     return (
       <LoginPage
         onLogin={() => {
-          supabase.auth.getSession().then(({ data: { session: sess } }) => {
-            if (sess) loadProfileFromDB(sess.user.id);
+          supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
+            if (!sess) return;
+
+            if (pendingOnboardingData) {
+              await saveOnboardingToDB(sess.user.id, pendingOnboardingData);
+              setPendingOnboardingData(null);
+              setSummaryData(null);
+              setScreen("main");
+              return;
+            }
+
+            loadProfileFromDB(sess.user.id);
           });
         }}
         onBack={() => setScreen("landing")}
@@ -229,6 +239,7 @@ const AppContent = () => {
     return (
       <ResetPasswordPage
         onDone={() => {
+          window.history.replaceState({}, "", "/");
           supabase.auth.getSession().then(({ data: { session: sess } }) => {
             if (sess) loadProfileFromDB(sess.user.id);
             else setScreen("login");
@@ -260,6 +271,7 @@ const AppContent = () => {
         goalDate={summaryData.goalDate}
         goals={summaryData.goals}
         onStart={() => setScreen("signup")}
+        onLoginExisting={() => setScreen("login")}
       />
     );
   }
@@ -270,6 +282,8 @@ const AppContent = () => {
         onSignupComplete={async (userId) => {
           if (pendingOnboardingData) {
             await saveOnboardingToDB(userId, pendingOnboardingData);
+            setPendingOnboardingData(null);
+            setSummaryData(null);
           }
           setScreen("main");
         }}
