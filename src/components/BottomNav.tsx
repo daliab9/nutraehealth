@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, BarChart3, Heart, User } from "lucide-react";
+import { Dumbbell, Brain, BarChart3, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/", icon: BookOpen, label: "Diary" },
+  { to: "/", icon: Dumbbell, label: "Physical" },
+  { to: "/health-diary", icon: Brain, label: "Mental" },
   { to: "/tracker", icon: BarChart3, label: "Tracker" },
-  { to: "/health-diary", icon: Heart, label: "Health" },
   { to: "/profile", icon: User, label: "Profile" },
 ];
 

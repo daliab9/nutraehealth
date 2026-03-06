@@ -7,12 +7,14 @@ import {
   YAxis,
   ResponsiveContainer,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 
 const Tracker = () => {
-  const { getDayTotals, diary, profile } = useUserStore();
+  const { getDayTotals, diary, profile, getHealthEntry, health } = useUserStore();
 
   const last7Days = useMemo(() => {
     const days = [];
@@ -31,6 +33,37 @@ const Tracker = () => {
     }
     return days;
   }, [getDayTotals, diary]);
+
+  const mentalData = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const key = format(date, "yyyy-MM-dd");
+      const entry = getHealthEntry(key);
+      days.push({
+        day: format(date, "EEE"),
+        sleep: entry.sleepQuality,
+        stress: entry.stressLevel,
+        positiveCount: entry.positiveEmotions.length,
+        negativeCount: entry.negativeEmotions.length,
+      });
+    }
+    return days;
+  }, [getHealthEntry, health]);
+
+  const emotionFrequency = useMemo(() => {
+    const freq: Record<string, number> = {};
+    Object.values(health).forEach((entry) => {
+      const full = { positiveEmotions: [], negativeEmotions: [], ...entry };
+      [...full.positiveEmotions, ...full.negativeEmotions].forEach((e) => {
+        freq[e] = (freq[e] || 0) + 1;
+      });
+    });
+    return Object.entries(freq)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [health]);
 
   const allFoods = useMemo(() => {
     const foodMap: Record<string, { name: string; count: number; totalCals: number }> = {};
@@ -153,6 +186,90 @@ const Tracker = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+
+        {/* Mental: Sleep & Stress */}
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+          <h3 className="text-sm font-semibold text-foreground mb-1">Sleep & Stress</h3>
+          <p className="text-xs text-muted-foreground mb-4">Last 7 days · scale 1–5</p>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={mentalData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis hide domain={[0, 5]} />
+                <Line type="monotone" dataKey="sleep" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="stress" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-1))" }} />
+              <span className="text-[10px] text-muted-foreground">Sleep</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-2))" }} />
+              <span className="text-[10px] text-muted-foreground">Stress</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Mental: Emotion counts */}
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+          <h3 className="text-sm font-semibold text-foreground mb-1">Emotions</h3>
+          <p className="text-xs text-muted-foreground mb-4">Positive vs negative · last 7 days</p>
+          <div className="h-36">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={mentalData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis hide />
+                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} maxBarSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-3))" }} />
+              <span className="text-[10px] text-muted-foreground">Positive</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-4))" }} />
+              <span className="text-[10px] text-muted-foreground">Negative</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Most frequent emotions */}
+        <div className="rounded-2xl bg-card border border-border p-4 mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Most frequent emotions</h3>
+          {emotionFrequency.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No emotions logged yet</p>
+          ) : (
+            <div className="space-y-2">
+              {emotionFrequency.map((e, i) => (
+                <div key={e.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
+                    <span className="text-sm text-foreground">{e.name}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{e.count}x</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Most eaten foods */}
