@@ -81,6 +81,12 @@ const AppContent = () => {
 
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
+
+      if (window.location.pathname === "/reset-password") {
+        setScreen("reset-password");
+        return;
+      }
+
       if (sess) {
         loadProfileFromDB(sess.user.id);
       } else {
@@ -91,12 +97,43 @@ const AppContent = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const ensureProfileRow = async (userId: string) => {
+    const { data: existing, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      return false;
+    }
+
+    if (!existing) {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({ user_id: userId });
+
+      if (insertError) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const loadProfileFromDB = async (userId: string) => {
+    const profileReady = await ensureProfileRow(userId);
+
+    if (!profileReady) {
+      setScreen("onboarding");
+      return;
+    }
+
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (data && data.onboarding_complete) {
       setProfile({
