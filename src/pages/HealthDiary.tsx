@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarStrip } from "@/components/CalendarStrip";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/EmotionalCheckIn";
-import { Moon, Brain } from "lucide-react";
+import { Moon, Brain, Pencil } from "lucide-react";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1, icon: "😫" },
@@ -28,6 +28,19 @@ const HealthDiary = () => {
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const entry = getHealthEntry(dateKey);
 
+  // Edit modes — reset when date changes
+  const [sleepEditing, setSleepEditing] = useState(true);
+  const [stressEditing, setStressEditing] = useState(true);
+  const [emotionsEditing, setEmotionsEditing] = useState(true);
+
+  useEffect(() => {
+    const e = getHealthEntry(dateKey);
+    // If already has data, start in saved (non-editing) mode
+    setSleepEditing(e.sleepQuality === 0);
+    setStressEditing(e.stressLevel === 0);
+    setEmotionsEditing(e.positiveEmotions.length === 0 && e.negativeEmotions.length === 0);
+  }, [dateKey, getHealthEntry]);
+
   const update = (field: string, value: number) => {
     setHealthEntry(dateKey, { ...entry, [field]: value });
   };
@@ -36,13 +49,10 @@ const HealthDiary = () => {
     setHealthEntry(dateKey, { ...entry, ...emotionalData });
   };
 
-  const incrementPoop = () => {
-    update("poopCount", entry.poopCount + 1);
-  };
+  const sleepLabel = SLEEP_OPTIONS.find((o) => o.value === entry.sleepQuality);
+  const stressLabel = STRESS_OPTIONS.find((o) => o.value === entry.stressLevel);
 
-  const decrementPoop = () => {
-    if (entry.poopCount > 0) update("poopCount", entry.poopCount - 1);
-  };
+  const hasEmotions = entry.positiveEmotions.length > 0 || entry.negativeEmotions.length > 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -54,92 +64,195 @@ const HealthDiary = () => {
       </div>
 
       <div className="px-4 pt-6 space-y-4">
-        {/* Poop tracker */}
-        <div className="rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">💩</span>
-              <h3 className="font-semibold text-foreground">Bowel Movements</h3>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={decrementPoop}
-                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-lg active:scale-95 transition-transform"
-              >
-                −
-              </button>
-              <span className="text-2xl font-bold text-foreground w-6 text-center">
-                {entry.poopCount}
-              </span>
-              <button
-                onClick={incrementPoop}
-                className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-lg active:scale-95 transition-transform"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Sleep quality */}
         <div className="rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Moon className="h-5 w-5 text-foreground" />
-            <h3 className="font-semibold text-foreground">Sleep Quality</h3>
-          </div>
-          <div className="flex gap-2">
-            {SLEEP_OPTIONS.map((opt) => (
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Moon className="h-5 w-5 text-foreground" />
+              <h3 className="font-semibold text-foreground">Sleep Quality</h3>
+            </div>
+            {!sleepEditing && sleepLabel && (
               <button
-                key={opt.value}
-                onClick={() => update("sleepQuality", opt.value)}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all active:scale-95 ${
-                  entry.sleepQuality === opt.value
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-foreground"
-                }`}
+                onClick={() => setSleepEditing(true)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <span className="text-lg">{opt.icon}</span>
-                <span className="text-[10px] font-medium">{opt.label}</span>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
               </button>
-            ))}
+            )}
           </div>
+          {sleepEditing ? (
+            <>
+              <div className="flex gap-2">
+                {SLEEP_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => update("sleepQuality", opt.value)}
+                    className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all active:scale-95 ${
+                      entry.sleepQuality === opt.value
+                        ? "bg-foreground text-background"
+                        : "bg-secondary text-foreground"
+                    }`}
+                  >
+                    <span className="text-lg">{opt.icon}</span>
+                    <span className="text-[10px] font-medium">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              {entry.sleepQuality > 0 && (
+                <button
+                  onClick={() => setSleepEditing(false)}
+                  className="mt-3 w-full py-2 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  Save
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{sleepLabel?.icon}</span>
+              <span className="text-sm font-medium text-foreground">{sleepLabel?.label}</span>
+            </div>
+          )}
         </div>
 
         {/* Stress level */}
         <div className="rounded-2xl bg-card border border-border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Brain className="h-5 w-5 text-foreground" />
-            <h3 className="font-semibold text-foreground">Stress Level</h3>
-          </div>
-          <div className="flex gap-2">
-            {STRESS_OPTIONS.map((opt) => (
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-foreground" />
+              <h3 className="font-semibold text-foreground">Stress Level</h3>
+            </div>
+            {!stressEditing && stressLabel && (
               <button
-                key={opt.value}
-                onClick={() => update("stressLevel", opt.value)}
-                className={`flex-1 py-3 rounded-xl text-center transition-all active:scale-95 ${
-                  entry.stressLevel === opt.value
-                    ? "bg-foreground text-background"
-                    : "bg-secondary text-foreground"
-                }`}
+                onClick={() => setStressEditing(true)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <span className="text-xs font-medium">{opt.label}</span>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
               </button>
-            ))}
+            )}
           </div>
+          {stressEditing ? (
+            <>
+              <div className="flex gap-2">
+                {STRESS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => update("stressLevel", opt.value)}
+                    className={`flex-1 py-3 rounded-xl text-center transition-all active:scale-95 ${
+                      entry.stressLevel === opt.value
+                        ? "bg-foreground text-background"
+                        : "bg-secondary text-foreground"
+                    }`}
+                  >
+                    <span className="text-xs font-medium">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              {entry.stressLevel > 0 && (
+                <button
+                  onClick={() => setStressEditing(false)}
+                  className="mt-3 w-full py-2 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  Save
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">{stressLabel?.label}</span>
+            </div>
+          )}
         </div>
 
-        {/* Emotional Check-In (replaces old mood picker) */}
-        <EmotionalCheckIn
-          data={{
-            positiveEmotions: entry.positiveEmotions,
-            positiveReasons: entry.positiveReasons,
-            positiveOtherText: entry.positiveOtherText,
-            negativeEmotions: entry.negativeEmotions,
-            negativeReasons: entry.negativeReasons,
-            negativeOtherText: entry.negativeOtherText,
-          }}
-          onChange={handleEmotionalChange}
-        />
+        {/* Emotional Check-In */}
+        <div className="relative">
+          {!emotionsEditing && hasEmotions ? (
+            <div className="rounded-2xl bg-card border border-border p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground text-base">Emotional Check-In</h3>
+                <button
+                  onClick={() => setEmotionsEditing(true)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              </div>
+              {entry.positiveEmotions.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground mb-2">Positive</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.positiveEmotions.map((e) => (
+                      <span key={e} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {entry.positiveReasons.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground mb-2">Because of</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.positiveReasons.map((r) => (
+                      <span key={r} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {entry.negativeEmotions.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground mb-2">Difficult</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.negativeEmotions.map((e) => (
+                      <span key={e} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {entry.negativeReasons.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Contributing factors</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {entry.negativeReasons.map((r) => (
+                      <span key={r} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <EmotionalCheckIn
+                data={{
+                  positiveEmotions: entry.positiveEmotions,
+                  positiveReasons: entry.positiveReasons,
+                  positiveOtherText: entry.positiveOtherText,
+                  negativeEmotions: entry.negativeEmotions,
+                  negativeReasons: entry.negativeReasons,
+                  negativeOtherText: entry.negativeOtherText,
+                }}
+                onChange={handleEmotionalChange}
+              />
+              {hasEmotions && (
+                <button
+                  onClick={() => setEmotionsEditing(false)}
+                  className="mt-3 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  Save
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNav />

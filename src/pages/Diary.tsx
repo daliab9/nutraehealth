@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { AlertTriangle, ChevronDown, Dumbbell, Plus, Utensils } from "lucide-react";
+import { AlertTriangle, ChevronDown, Dumbbell, Pencil, Plus, Utensils } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
@@ -20,21 +20,28 @@ const MEAL_TYPES = [
 ] as const;
 
 const Diary = () => {
-  const { profile, diary, getDayEntry, addFoodToMeal, addExercise, getDayTotals } = useUserStore();
+  const { profile, diary, getDayEntry, addFoodToMeal, addExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [foodOpen, setFoodOpen] = useState(true);
+  const [poopEditing, setPoopEditing] = useState(false);
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
   const totals = getDayTotals(dateKey);
+  const healthEntry = getHealthEntry(dateKey);
+
+  const poopSaved = healthEntry.poopCount > 0 && !poopEditing;
+
+  const updatePoop = (value: number) => {
+    setHealthEntry(dateKey, { ...healthEntry, poopCount: value });
+  };
 
   const getMealItems = (type: string) => {
     const meal = dayEntry.meals.find((m) => m.type === type);
     return meal?.items || [];
   };
 
-  // Gather all past food items across all days for "recent items"
   const allPastItems = Object.values(diary).flatMap((day) =>
     day.meals.flatMap((m) => m.items)
   );
@@ -164,6 +171,54 @@ const Diary = () => {
               Add exercise
             </button>
           )}
+        </div>
+
+        {/* Bowel Movements */}
+        <div className="rounded-2xl bg-card border border-border p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💩</span>
+              <h3 className="font-semibold text-foreground">Bowel Movements</h3>
+            </div>
+            {poopSaved ? (
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-foreground">{healthEntry.poopCount}</span>
+                <button
+                  onClick={() => setPoopEditing(true)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors ml-2"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { if (healthEntry.poopCount > 0) updatePoop(healthEntry.poopCount - 1); }}
+                  className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-lg active:scale-95 transition-transform"
+                >
+                  −
+                </button>
+                <span className="text-2xl font-bold text-foreground w-6 text-center">
+                  {healthEntry.poopCount}
+                </span>
+                <button
+                  onClick={() => updatePoop(healthEntry.poopCount + 1)}
+                  className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-lg active:scale-95 transition-transform"
+                >
+                  +
+                </button>
+                {healthEntry.poopCount > 0 && (
+                  <button
+                    onClick={() => setPoopEditing(false)}
+                    className="ml-2 px-3 py-1.5 rounded-full bg-foreground text-background text-xs font-semibold active:scale-95 transition-transform"
+                  >
+                    Save
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
