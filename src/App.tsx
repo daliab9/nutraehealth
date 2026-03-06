@@ -9,6 +9,8 @@ import { OnboardingSummary } from "@/components/OnboardingSummary";
 import { LandingPage } from "@/components/LandingPage";
 import { LoginPage } from "@/components/LoginPage";
 import { SignupPage } from "@/components/SignupPage";
+import { ForgotPasswordPage } from "@/components/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/components/ResetPasswordPage";
 import type { OnboardingData } from "@/components/Onboarding";
 import { useUserStore } from "@/stores/useUserStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +57,7 @@ function calculateGoalDate(data: OnboardingData): string {
   return format(date, "MMMM yyyy");
 }
 
-type AppScreen = "loading" | "landing" | "onboarding" | "login" | "summary" | "signup" | "main";
+type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
 const AppContent = () => {
   const { profile, setProfile } = useUserStore();
@@ -68,16 +70,18 @@ const AppContent = () => {
     goals: string[];
   } | null>(null);
 
-  // Listen for auth state changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
+      // Handle password recovery redirect
+      if (event === "PASSWORD_RECOVERY") {
+        setScreen("reset-password");
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
       if (sess) {
-        // User is logged in — check if onboarding is complete
         loadProfileFromDB(sess.user.id);
       } else {
         setScreen("landing");
@@ -113,7 +117,6 @@ const AppContent = () => {
       });
       setScreen("main");
     } else {
-      // Profile exists but onboarding not done — send to onboarding
       setScreen("onboarding");
     }
   };
@@ -171,14 +174,29 @@ const AppContent = () => {
     return (
       <LoginPage
         onLogin={() => {
-          // Session is set via onAuthStateChange; load profile
           supabase.auth.getSession().then(({ data: { session: sess } }) => {
-            if (sess) {
-              loadProfileFromDB(sess.user.id);
-            }
+            if (sess) loadProfileFromDB(sess.user.id);
           });
         }}
         onBack={() => setScreen("landing")}
+        onForgotPassword={() => setScreen("forgot-password")}
+      />
+    );
+  }
+
+  if (screen === "forgot-password") {
+    return <ForgotPasswordPage onBack={() => setScreen("login")} />;
+  }
+
+  if (screen === "reset-password") {
+    return (
+      <ResetPasswordPage
+        onDone={() => {
+          supabase.auth.getSession().then(({ data: { session: sess } }) => {
+            if (sess) loadProfileFromDB(sess.user.id);
+            else setScreen("login");
+          });
+        }}
       />
     );
   }
