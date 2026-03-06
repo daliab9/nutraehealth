@@ -112,7 +112,7 @@ export const ScrollPicker = ({
                 scrollSnapAlign: "start",
               }}
             >
-              {item}{suffix}
+              {formatItem ? formatItem(item) : `${item}${suffix}`}
             </div>
           );
         })}
