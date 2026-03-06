@@ -35,11 +35,11 @@ const HealthDiary = () => {
 
   useEffect(() => {
     const e = getHealthEntry(dateKey);
-    // If already has data, start in saved (non-editing) mode
+    // Reset edit states only when switching day, not on every field update
     setSleepEditing(e.sleepQuality === 0);
     setStressEditing(e.stressLevel === 0);
     setEmotionsEditing(e.positiveEmotions.length === 0 && e.negativeEmotions.length === 0);
-  }, [dateKey, getHealthEntry]);
+  }, [dateKey]);
 
   const update = (field: string, value: number) => {
     setHealthEntry(dateKey, { ...entry, [field]: value });
