@@ -75,11 +75,9 @@ const Diary = () => {
 
   const greeting = () => {
     const hour = new Date().getHours();
-    const name = profile.name || "";
-    const firstName = name.split(" ")[0];
-    if (hour < 12) return `Good morning${firstName ? ", " + firstName : ""}`;
-    if (hour < 18) return `Good afternoon${firstName ? ", " + firstName : ""}`;
-    return `Good evening${firstName ? ", " + firstName : ""}`;
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
   };
 
   return (
