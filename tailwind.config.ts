@@ -65,7 +65,21 @@ export default {
           carbs: "hsl(var(--chart-carbs))",
           fat: "hsl(var(--chart-fat))",
           calories: "hsl(var(--chart-calories))",
+          positive: "hsl(var(--chart-positive))",
+          "positive-dark": "hsl(var(--chart-positive-dark))",
+          negative: "hsl(var(--chart-negative))",
+          "negative-dark": "hsl(var(--chart-negative-dark))",
         },
+        positive: {
+          DEFAULT: "hsl(var(--positive-bg))",
+          selected: "hsl(var(--positive-selected))",
+        },
+        negative: {
+          DEFAULT: "hsl(var(--negative-bg))",
+          selected: "hsl(var(--negative-selected))",
+          bubble: "hsl(var(--negative-bubble))",
+        },
+        "action-button": "hsl(var(--action-button))",
       },
       borderRadius: {
         lg: "var(--radius)",

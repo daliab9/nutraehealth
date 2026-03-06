@@ -51,18 +51,24 @@ const Chip = ({
   selected,
   onClick,
   onRemove,
+  variant = "positive",
 }: {
   label: string;
   selected: boolean;
   onClick: () => void;
   onRemove?: () => void;
+  variant?: "positive" | "negative";
 }) => (
   <button
     onClick={onClick}
     className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 active:scale-95 inline-flex items-center gap-1.5 ${
       selected
-        ? "bg-foreground text-background border-foreground"
-        : "bg-secondary/50 text-foreground border-border hover:border-foreground/30"
+        ? variant === "positive"
+          ? "bg-positive-selected text-white border-positive-selected"
+          : "bg-negative-selected text-white border-negative-selected"
+        : variant === "positive"
+          ? "bg-positive text-foreground border-positive"
+          : "bg-negative text-foreground border-negative"
     }`}
   >
     {label}
@@ -90,7 +96,6 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
   const [posInput, setPosInput] = useState("");
   const [negInput, setNegInput] = useState("");
 
-  // Once reasons have been revealed during this editing session, keep them visible
   const [posReasonsRevealed, setPosReasonsRevealed] = useState(data.positiveEmotions.length > 0);
   const [negReasonsRevealed, setNegReasonsRevealed] = useState(data.negativeEmotions.length > 0);
 
@@ -146,6 +151,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
             <Chip
               key={e}
               label={e}
+              variant="positive"
               selected={data.positiveEmotions.includes(e)}
               onClick={() =>
                 update({ positiveEmotions: toggleItem(data.positiveEmotions, e) })
@@ -173,6 +179,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   <Chip
                     key={r}
                     label={r}
+                    variant="positive"
                     selected={data.positiveReasons.includes(r)}
                     onClick={() =>
                       update({ positiveReasons: toggleItem(data.positiveReasons, r) })
@@ -183,6 +190,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   <Chip
                     key={`custom-${r}`}
                     label={r}
+                    variant="positive"
                     selected={true}
                     onClick={() => {}}
                     onRemove={() => removeCustomReason("positiveReasons", r)}
@@ -231,6 +239,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
             <Chip
               key={e}
               label={e}
+              variant="negative"
               selected={data.negativeEmotions.includes(e)}
               onClick={() =>
                 update({ negativeEmotions: toggleItem(data.negativeEmotions, e) })
@@ -258,6 +267,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   <Chip
                     key={r}
                     label={r}
+                    variant="negative"
                     selected={data.negativeReasons.includes(r)}
                     onClick={() =>
                       update({ negativeReasons: toggleItem(data.negativeReasons, r) })
@@ -268,6 +278,7 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
                   <Chip
                     key={`custom-${r}`}
                     label={r}
+                    variant="negative"
                     selected={true}
                     onClick={() => {}}
                     onRemove={() => removeCustomReason("negativeReasons", r)}

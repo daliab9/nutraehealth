@@ -308,20 +308,20 @@ const Tracker = () => {
                   interval={range === "month" ? 4 : 0}
                 />
                 <YAxis hide />
-                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
-                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
+                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
+                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="flex items-center gap-4 mt-3">
-            <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-3))" }} />
-              <span className="text-[10px] text-muted-foreground">Positive</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-4))" }} />
-              <span className="text-[10px] text-muted-foreground">Negative</span>
-            </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-positive-dark))" }} />
+                <span className="text-[10px] text-muted-foreground">Positive</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-negative-dark))" }} />
+                <span className="text-[10px] text-muted-foreground">Negative</span>
+              </div>
           </div>
         </div>
 

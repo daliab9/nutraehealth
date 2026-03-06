@@ -93,9 +93,9 @@ const HealthDiary = () => {
             {!sleepEditing && sleepLabel && (
               <button
                 onClick={() => setSleepEditing(true)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-3 w-3" />
                 Edit
               </button>
             )}
@@ -140,9 +140,9 @@ const HealthDiary = () => {
             {!stressEditing && stressLabel && (
               <button
                 onClick={() => setStressEditing(true)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-3 w-3" />
                 Edit
               </button>
             )}
@@ -185,9 +185,9 @@ const HealthDiary = () => {
                 <h3 className="font-semibold text-foreground text-base">Emotional Check-In</h3>
                 <button
                   onClick={() => setEmotionsEditing(true)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <Pencil className="h-3 w-3" />
                   Edit
                 </button>
               </div>
@@ -196,7 +196,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Positive</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.positiveEmotions.map((e) => (
-                      <span key={e} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                      <span key={e} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">
                         {e}
                       </span>
                     ))}
@@ -208,7 +208,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Because of</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.positiveReasons.map((r) => (
-                      <span key={r} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                      <span key={r} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">
                         {r}
                       </span>
                     ))}
@@ -220,7 +220,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Difficult</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.negativeEmotions.map((e) => (
-                      <span key={e} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                      <span key={e} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">
                         {e}
                       </span>
                     ))}
@@ -232,7 +232,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Contributing factors</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.negativeReasons.map((r) => (
-                      <span key={r} className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                      <span key={r} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">
                         {r}
                       </span>
                     ))}

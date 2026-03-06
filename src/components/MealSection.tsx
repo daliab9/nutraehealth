@@ -51,7 +51,7 @@ export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem,
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-full"
+          className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80"
           onClick={() => setMode("choose")}
         >
           <Plus className="h-4 w-4" />
