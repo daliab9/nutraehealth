@@ -52,6 +52,7 @@ export interface UserProfile {
   goal: string;
   goals: string[];
   gender: string;
+  age: number;
   currentWeight: number;
   height: number;
   heightUnit: "cm" | "ft";
