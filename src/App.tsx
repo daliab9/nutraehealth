@@ -162,6 +162,8 @@ const AppContent = () => {
     const calories = calculateCalories(data);
     const goalDate = calculateGoalDate(data);
 
+    await ensureProfileRow(userId);
+
     await supabase
       .from("profiles")
       .update({
