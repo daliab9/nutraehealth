@@ -7,9 +7,10 @@ interface OnboardingSummaryProps {
   goalDate: string;
   goals: string[];
   onStart: () => void;
+  onLoginExisting: () => void;
 }
 
-export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart }: OnboardingSummaryProps) => {
+export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart, onLoginExisting }: OnboardingSummaryProps) => {
   const formattedDate = goalDate;
 
   const primaryGoal = goals[0];
@@ -76,10 +77,13 @@ export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart }: O
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="mt-10 w-full max-w-sm"
+        className="mt-10 w-full max-w-sm space-y-3"
       >
         <Button onClick={onStart} className="w-full h-14 rounded-2xl text-base font-semibold">
           Create account &amp; start tracking
+        </Button>
+        <Button onClick={onLoginExisting} variant="outline" className="w-full h-14 rounded-2xl text-base font-semibold">
+          I already have an account
         </Button>
       </motion.div>
     </div>

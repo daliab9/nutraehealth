@@ -81,6 +81,12 @@ const AppContent = () => {
 
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
+
+      if (window.location.pathname === "/reset-password") {
+        setScreen("reset-password");
+        return;
+      }
+
       if (sess) {
         loadProfileFromDB(sess.user.id);
       } else {
@@ -91,12 +97,43 @@ const AppContent = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const ensureProfileRow = async (userId: string) => {
+    const { data: existing, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      return false;
+    }
+
+    if (!existing) {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({ user_id: userId });
+
+      if (insertError) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const loadProfileFromDB = async (userId: string) => {
+    const profileReady = await ensureProfileRow(userId);
+
+    if (!profileReady) {
+      setScreen("onboarding");
+      return;
+    }
+
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (data && data.onboarding_complete) {
       setProfile({
@@ -124,6 +161,8 @@ const AppContent = () => {
   const saveOnboardingToDB = async (userId: string, data: OnboardingData) => {
     const calories = calculateCalories(data);
     const goalDate = calculateGoalDate(data);
+
+    await ensureProfileRow(userId);
 
     await supabase
       .from("profiles")
@@ -174,8 +213,18 @@ const AppContent = () => {
     return (
       <LoginPage
         onLogin={() => {
-          supabase.auth.getSession().then(({ data: { session: sess } }) => {
-            if (sess) loadProfileFromDB(sess.user.id);
+          supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
+            if (!sess) return;
+
+            if (pendingOnboardingData) {
+              await saveOnboardingToDB(sess.user.id, pendingOnboardingData);
+              setPendingOnboardingData(null);
+              setSummaryData(null);
+              setScreen("main");
+              return;
+            }
+
+            loadProfileFromDB(sess.user.id);
           });
         }}
         onBack={() => setScreen("landing")}
@@ -192,6 +241,7 @@ const AppContent = () => {
     return (
       <ResetPasswordPage
         onDone={() => {
+          window.history.replaceState({}, "", "/");
           supabase.auth.getSession().then(({ data: { session: sess } }) => {
             if (sess) loadProfileFromDB(sess.user.id);
             else setScreen("login");
@@ -223,6 +273,7 @@ const AppContent = () => {
         goalDate={summaryData.goalDate}
         goals={summaryData.goals}
         onStart={() => setScreen("signup")}
+        onLoginExisting={() => setScreen("login")}
       />
     );
   }
@@ -233,6 +284,8 @@ const AppContent = () => {
         onSignupComplete={async (userId) => {
           if (pendingOnboardingData) {
             await saveOnboardingToDB(userId, pendingOnboardingData);
+            setPendingOnboardingData(null);
+            setSummaryData(null);
           }
           setScreen("main");
         }}
