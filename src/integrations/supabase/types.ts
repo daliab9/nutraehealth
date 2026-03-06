@@ -105,37 +105,76 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           created_at: string
+          current_weight: number | null
           daily_calorie_goal: number
           daily_carbs_goal: number
           daily_fat_goal: number
           daily_protein_goal: number
+          dietary_preferences: string[] | null
+          dietary_restrictions: string[] | null
           display_name: string | null
+          gender: string | null
+          goal_date: string | null
+          goals: string[] | null
+          health_concerns: string[] | null
+          height: number | null
+          height_unit: string | null
           id: string
+          onboarding_complete: boolean | null
+          target_weight: number | null
           updated_at: string
           user_id: string
+          weight_unit: string | null
         }
         Insert: {
+          age?: number | null
           created_at?: string
+          current_weight?: number | null
           daily_calorie_goal?: number
           daily_carbs_goal?: number
           daily_fat_goal?: number
           daily_protein_goal?: number
+          dietary_preferences?: string[] | null
+          dietary_restrictions?: string[] | null
           display_name?: string | null
+          gender?: string | null
+          goal_date?: string | null
+          goals?: string[] | null
+          health_concerns?: string[] | null
+          height?: number | null
+          height_unit?: string | null
           id?: string
+          onboarding_complete?: boolean | null
+          target_weight?: number | null
           updated_at?: string
           user_id: string
+          weight_unit?: string | null
         }
         Update: {
+          age?: number | null
           created_at?: string
+          current_weight?: number | null
           daily_calorie_goal?: number
           daily_carbs_goal?: number
           daily_fat_goal?: number
           daily_protein_goal?: number
+          dietary_preferences?: string[] | null
+          dietary_restrictions?: string[] | null
           display_name?: string | null
+          gender?: string | null
+          goal_date?: string | null
+          goals?: string[] | null
+          health_concerns?: string[] | null
+          height?: number | null
+          height_unit?: string | null
           id?: string
+          onboarding_complete?: boolean | null
+          target_weight?: number | null
           updated_at?: string
           user_id?: string
+          weight_unit?: string | null
         }
         Relationships: []
       }
