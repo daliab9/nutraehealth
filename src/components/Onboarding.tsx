@@ -75,8 +75,9 @@ const HEALTH_CONCERNS = [
   "None",
 ];
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
+const ages = Array.from({ length: 83 }, (_, i) => 18 + i);
 const weights = Array.from({ length: 161 }, (_, i) => 30 + i);
 const heights = Array.from({ length: 101 }, (_, i) => 120 + i);
 
@@ -98,6 +99,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const [data, setData] = useState<OnboardingData>({
     goals: [],
     gender: "",
+    age: 25,
     currentWeight: 70,
     height: 170,
     heightUnit: "cm",
