@@ -54,6 +54,7 @@ export interface UserProfile {
   gender: string;
   age: number;
   currentWeight: number;
+  weightUnit: "kg" | "lbs";
   height: number;
   heightUnit: "cm" | "ft";
   targetWeight: number;
