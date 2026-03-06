@@ -11,6 +11,7 @@ interface OnboardingProps {
 export interface OnboardingData {
   goals: string[];
   gender: string;
+  age: number;
   currentWeight: number;
   height: number;
   heightUnit: "cm" | "ft";
