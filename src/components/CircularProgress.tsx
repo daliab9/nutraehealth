@@ -8,13 +8,15 @@ interface CircularProgressProps {
 export const CircularProgress = ({
   value,
   max,
-  size = 180,
-  strokeWidth = 12,
+  size = 200,
+  strokeWidth = 14,
 }: CircularProgressProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(value / max, 1);
   const strokeDashoffset = circumference * (1 - progress);
+
+  const formatted = value.toLocaleString();
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -42,8 +44,8 @@ export const CircularProgress = ({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold text-foreground">{value}</span>
-        <span className="text-xs text-muted-foreground">/ {max} kcal</span>
+        <span className="text-5xl font-bold text-foreground tracking-tight">{formatted}</span>
+        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1">Cals</span>
       </div>
     </div>
   );
