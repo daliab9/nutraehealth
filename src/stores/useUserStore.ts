@@ -52,6 +52,7 @@ export interface UserProfile {
   goal: string;
   goals: string[];
   gender: string;
+  age: number;
   currentWeight: number;
   height: number;
   heightUnit: "cm" | "ft";
@@ -75,6 +76,7 @@ const DEFAULT_PROFILE: UserProfile = {
   goal: "",
   goals: [],
   gender: "",
+  age: 25,
   currentWeight: 70,
   height: 170,
   heightUnit: "cm",

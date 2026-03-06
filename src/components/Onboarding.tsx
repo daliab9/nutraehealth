@@ -11,6 +11,7 @@ interface OnboardingProps {
 export interface OnboardingData {
   goals: string[];
   gender: string;
+  age: number;
   currentWeight: number;
   height: number;
   heightUnit: "cm" | "ft";
@@ -74,8 +75,9 @@ const HEALTH_CONCERNS = [
   "None",
 ];
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
+const ages = Array.from({ length: 83 }, (_, i) => 18 + i);
 const weights = Array.from({ length: 161 }, (_, i) => 30 + i);
 const heights = Array.from({ length: 101 }, (_, i) => 120 + i);
 
@@ -97,6 +99,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const [data, setData] = useState<OnboardingData>({
     goals: [],
     gender: "",
+    age: 25,
     currentWeight: 70,
     height: 170,
     heightUnit: "cm",
@@ -114,18 +117,19 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
         return data.goals.length > 0;
       case 1:
         return data.gender !== "";
-      case 2:
-      case 3:
-      case 4:
+      case 2: // age
+      case 3: // weight
+      case 4: // height
+      case 5: // target weight
         return true;
-      case 5:
-        return data.dietaryPreferences.length > 0;
       case 6:
+        return data.dietaryPreferences.length > 0;
+      case 7:
         return (
           data.dietaryRestrictions.length > 0 &&
           (!data.dietaryRestrictions.includes("Other") || data.dietaryRestrictionsOther?.trim())
         );
-      case 7:
+      case 8:
         return (
           data.healthConcerns.length > 0 && (!data.healthConcerns.includes("Other") || data.healthConcernsOther?.trim())
         );
@@ -212,6 +216,21 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
       case 2:
         return (
           <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">How old are you?</h2>
+            <div className="mt-8 flex justify-center">
+              <ScrollPicker
+                items={ages}
+                value={data.age}
+                onChange={(v) => setData((d) => ({ ...d, age: Number(v) }))}
+                suffix="years"
+              />
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Current weight</h2>
             <p className="text-sm text-muted-foreground">in kg</p>
             <div className="mt-8 flex justify-center">
@@ -225,7 +244,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Height</h2>
@@ -241,7 +260,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Target weight</h2>
@@ -257,7 +276,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary preferences</h2>
@@ -277,7 +296,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary restrictions</h2>
@@ -313,7 +332,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 7:
+      case 8:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Health concerns</h2>
