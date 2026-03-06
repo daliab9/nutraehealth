@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { AlertTriangle, ChevronDown, Dumbbell, Pencil, Plus, Utensils } from "lucide-react";
+import { AlertTriangle, ChevronDown, Dumbbell, Pencil, Plus, Utensils, X } from "lucide-react";
 import { useUserStore, type Exercise } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
@@ -20,7 +20,7 @@ const MEAL_TYPES = [
 ] as const;
 
 const Diary = () => {
-  const { profile, diary, getDayEntry, addFoodToMeal, addExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
+  const { profile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, addExercise, removeExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [foodOpen, setFoodOpen] = useState(true);
@@ -134,6 +134,7 @@ const Diary = () => {
                     emoji={emoji}
                     items={getMealItems(type)}
                     onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
+                    onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
                     pastItems={allPastItems}
                   />
                 ))}
@@ -161,7 +162,15 @@ const Diary = () => {
               {dayEntry.exercises.map((ex) => (
                 <div key={ex.id} className="flex items-center justify-between py-1.5 px-2">
                   <span className="text-sm text-foreground">{ex.name} · {ex.duration}min</span>
-                  <span className="text-sm text-muted-foreground">-{ex.caloriesBurned} kcal</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">-{ex.caloriesBurned} kcal</span>
+                    <button
+                      onClick={() => removeExercise(dateKey, ex.id)}
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
