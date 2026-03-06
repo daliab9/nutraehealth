@@ -14,14 +14,24 @@ import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 
 type Range = "week" | "month";
+type ExerciseMetric = "minutes" | "count";
 
 const Tracker = () => {
   const { getDayTotals, diary, profile, getHealthEntry, health } = useUserStore();
   const [range, setRange] = useState<Range>("week");
+  const [exerciseMetric, setExerciseMetric] = useState<ExerciseMetric>("minutes");
 
   const numDays = range === "week" ? 7 : 30;
   const dateFormat = range === "week" ? "EEE" : "d";
   const rangeLabel = range === "week" ? "Last 7 days" : "Last 30 days";
+
+  const relevantDateKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (let i = numDays - 1; i >= 0; i--) {
+      keys.add(format(subDays(new Date(), i), "yyyy-MM-dd"));
+    }
+    return keys;
+  }, [numDays]);
 
   const physicalData = useMemo(() => {
     const days = [];
@@ -59,26 +69,22 @@ const Tracker = () => {
     return days;
   }, [getHealthEntry, health, numDays, dateFormat]);
 
-  // Filter relevant date keys for lists
-  const relevantDateKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (let i = numDays - 1; i >= 0; i--) {
-      keys.add(format(subDays(new Date(), i), "yyyy-MM-dd"));
-    }
-    return keys;
-  }, [numDays]);
-
   const emotionFrequency = useMemo(() => {
-    const freq: Record<string, number> = {};
+    const freq: Record<string, { count: number; isPositive: boolean }> = {};
     Object.entries(health).forEach(([dateKey, entry]) => {
       if (!relevantDateKeys.has(dateKey)) return;
-      const full = { positiveEmotions: [], negativeEmotions: [], ...entry };
-      [...full.positiveEmotions, ...full.negativeEmotions].forEach((e) => {
-        freq[e] = (freq[e] || 0) + 1;
+      const full = { positiveEmotions: [] as string[], negativeEmotions: [] as string[], ...entry };
+      full.positiveEmotions.forEach((e) => {
+        if (!freq[e]) freq[e] = { count: 0, isPositive: true };
+        freq[e].count += 1;
+      });
+      full.negativeEmotions.forEach((e) => {
+        if (!freq[e]) freq[e] = { count: 0, isPositive: false };
+        freq[e].count += 1;
       });
     });
     return Object.entries(freq)
-      .map(([name, count]) => ({ name, count }))
+      .map(([name, { count, isPositive }]) => ({ name, count, isPositive }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
   }, [health, relevantDateKeys]);
@@ -97,23 +103,25 @@ const Tracker = () => {
         });
       });
     });
-    return Object.values(foodMap).sort((a, b) => b.totalCals - a.totalCals).slice(0, 5);
+    return Object.values(foodMap).sort((a, b) => b.totalCals - a.totalCals).slice(0, 8);
   }, [diary, relevantDateKeys]);
 
-  const allExercises = useMemo(() => {
-    const exMap: Record<string, { name: string; count: number; totalCals: number }> = {};
+  const exerciseByType = useMemo(() => {
+    const exMap: Record<string, { name: string; count: number; totalMinutes: number }> = {};
     Object.entries(diary).forEach(([dateKey, day]) => {
       if (!relevantDateKeys.has(dateKey)) return;
       day.exercises.forEach((ex) => {
         if (!exMap[ex.name]) {
-          exMap[ex.name] = { name: ex.name, count: 0, totalCals: 0 };
+          exMap[ex.name] = { name: ex.name, count: 0, totalMinutes: 0 };
         }
         exMap[ex.name].count += 1;
-        exMap[ex.name].totalCals += ex.caloriesBurned;
+        exMap[ex.name].totalMinutes += ex.duration;
       });
     });
-    return Object.values(exMap).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [diary, relevantDateKeys]);
+    return Object.values(exMap).sort((a, b) =>
+      exerciseMetric === "minutes" ? b.totalMinutes - a.totalMinutes : b.count - a.count
+    );
+  }, [diary, relevantDateKeys, exerciseMetric]);
 
   const poopTotal = useMemo(() => {
     return mentalData.reduce((sum, d) => sum + d.poop, 0);
@@ -142,7 +150,13 @@ const Tracker = () => {
     </div>
   );
 
-  const chartBarSize = range === "week" ? 32 : 8;
+  const chartBarSize = range === "week" ? 40 : 12;
+
+  const maxFoodVal = allFoods.length > 0 ? Math.max(...allFoods.map(f => f.totalCals)) : 1;
+  const maxEmotionVal = emotionFrequency.length > 0 ? Math.max(...emotionFrequency.map(e => e.count)) : 1;
+  const maxExTypeVal = exerciseByType.length > 0
+    ? Math.max(...exerciseByType.map(e => exerciseMetric === "minutes" ? e.totalMinutes : e.count))
+    : 1;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -197,18 +211,43 @@ const Tracker = () => {
           </div>
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-protein))" }} />
+              <div className="h-2.5 w-2.5 rounded-full bg-chart-protein" />
               <span className="text-[10px] text-muted-foreground">Protein</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-carbs))" }} />
+              <div className="h-2.5 w-2.5 rounded-full bg-chart-carbs" />
               <span className="text-[10px] text-muted-foreground">Carbs</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-fat))" }} />
+              <div className="h-2.5 w-2.5 rounded-full bg-chart-fat" />
               <span className="text-[10px] text-muted-foreground">Fat</span>
             </div>
           </div>
+        </div>
+
+        {/* Most eaten foods - horizontal bar chart */}
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Most eaten foods</h3>
+          {allFoods.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No food logged yet</p>
+          ) : (
+            <div className="space-y-2.5">
+              {allFoods.map((f) => (
+                <div key={f.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-foreground truncate max-w-[60%]">{f.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{f.totalCals} kcal · {f.count}x</span>
+                  </div>
+                  <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-foreground transition-all"
+                      style={{ width: `${(f.totalCals / maxFoodVal) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Exercise chart */}
@@ -226,11 +265,59 @@ const Tracker = () => {
                   interval={range === "month" ? 4 : 0}
                 />
                 <YAxis hide />
-                <Bar dataKey="exercise" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
+                <Bar dataKey="exercise" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Exercise by type - horizontal bar chart */}
+        {exerciseByType.length > 0 && (
+          <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground">By exercise type</h3>
+              <div className="flex rounded-lg bg-muted p-0.5">
+                <button
+                  onClick={() => setExerciseMetric("minutes")}
+                  className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
+                    exerciseMetric === "minutes" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  Minutes
+                </button>
+                <button
+                  onClick={() => setExerciseMetric("count")}
+                  className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
+                    exerciseMetric === "count" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  Count
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              {exerciseByType.map((e) => {
+                const val = exerciseMetric === "minutes" ? e.totalMinutes : e.count;
+                return (
+                  <div key={e.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-foreground truncate max-w-[60%]">{e.name}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {exerciseMetric === "minutes" ? `${val} min` : `${val}x`}
+                      </span>
+                    </div>
+                    <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-foreground transition-all"
+                        style={{ width: `${(val / maxExTypeVal) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Bowel movements */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
@@ -253,7 +340,7 @@ const Tracker = () => {
                   interval={range === "month" ? 4 : 0}
                 />
                 <YAxis hide />
-                <Bar dataKey="poop" fill="hsl(var(--chart-5, var(--foreground)))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
+                <Bar dataKey="poop" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -308,77 +395,47 @@ const Tracker = () => {
                   interval={range === "month" ? 4 : 0}
                 />
                 <YAxis hide />
-                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
-                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 16 : 6} />
+                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 20 : 8} />
+                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[4, 4, 0, 0]} maxBarSize={range === "week" ? 20 : 8} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-positive-dark))" }} />
-                <span className="text-[10px] text-muted-foreground">Positive</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-negative-dark))" }} />
-                <span className="text-[10px] text-muted-foreground">Negative</span>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-positive-dark))" }} />
+              <span className="text-[10px] text-muted-foreground">Positive</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "hsl(var(--chart-negative-dark))" }} />
+              <span className="text-[10px] text-muted-foreground">Negative</span>
+            </div>
           </div>
         </div>
 
-        {/* Most frequent emotions */}
+        {/* Most frequent emotions - horizontal bar chart */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Most frequent emotions</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Frequent emotions</h3>
           {emotionFrequency.length === 0 ? (
             <p className="text-sm text-muted-foreground">No emotions logged yet</p>
           ) : (
-            <div className="space-y-2">
-              {emotionFrequency.map((e, i) => (
-                <div key={e.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
-                    <span className="text-sm text-foreground">{e.name}</span>
+            <div className="space-y-2.5">
+              {emotionFrequency.map((e) => (
+                <div key={e.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-foreground">{e.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{e.count} days</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{e.count}x</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Most eaten foods */}
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Most eaten foods</h3>
-          {allFoods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No food logged yet</p>
-          ) : (
-            <div className="space-y-2">
-              {allFoods.map((f, i) => (
-                <div key={f.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
-                    <span className="text-sm text-foreground">{f.name}</span>
+                  <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${(e.count / maxEmotionVal) * 100}%`,
+                        backgroundColor: e.isPositive
+                          ? "hsl(var(--chart-positive-dark))"
+                          : "hsl(var(--chart-negative-dark))",
+                      }}
+                    />
                   </div>
-                  <span className="text-xs text-muted-foreground">{f.totalCals} kcal · {f.count}x</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Most frequent exercises */}
-        <div className="rounded-2xl bg-card border border-border p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Frequent exercises</h3>
-          {allExercises.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No exercises logged yet</p>
-          ) : (
-            <div className="space-y-2">
-              {allExercises.map((e, i) => (
-                <div key={e.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
-                    <span className="text-sm text-foreground">{e.name}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{e.totalCals} kcal · {e.count}x</span>
                 </div>
               ))}
             </div>
