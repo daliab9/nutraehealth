@@ -200,7 +200,7 @@ const Diary = () => {
                   <span className="text-sm text-muted-foreground">-{totals.exerciseCals} kcal</span>
                 )}
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setExerciseOpen(true)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setExerciseOpen(true)}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -245,13 +245,13 @@ const Diary = () => {
               {poopSaved ? (
                 <div className="flex items-center gap-3">
                   <span className="text-4xl font-bold text-foreground">{healthEntry.poopCount}</span>
-                  <button
-                    onClick={() => setPoopEditing(true)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </button>
+                    <button
+                      onClick={() => setPoopEditing(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
