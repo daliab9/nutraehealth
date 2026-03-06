@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AIScanDialog } from "@/components/AIScanDialog";
@@ -11,13 +11,14 @@ interface MealSectionProps {
   emoji: string;
   items: FoodItem[];
   onAddItem: (item: FoodItem) => void;
+  onRemoveItem?: (itemId: string) => void;
   onAddItems?: (items: FoodItem[]) => void;
   pastItems?: FoodItem[];
 }
 
 type AddMode = null | "choose" | "search" | "scan";
 
-export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastItems = [] }: MealSectionProps) => {
+export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onAddItems, pastItems = [] }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
@@ -57,14 +58,24 @@ export const MealSection = ({ title, emoji, items, onAddItem, onAddItems, pastIt
       {items.length > 0 && (
         <div className="space-y-1 pl-7 pb-1">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between py-1">
-              <div>
+            <div key={item.id} className="flex items-center justify-between py-1 group">
+              <div className="flex-1 min-w-0">
                 <span className="text-sm text-foreground">{item.name}</span>
                 {item.quantity && (
                   <span className="text-xs text-muted-foreground ml-1.5">({item.quantity})</span>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                {onRemoveItem && (
+                  <button
+                    onClick={() => onRemoveItem(item.id)}
+                    className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
