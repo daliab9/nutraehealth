@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, Pencil } from "lucide-react";
+import { Plus, X, Pencil, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AIScanDialog } from "@/components/AIScanDialog";
@@ -9,7 +9,7 @@ import type { FoodItem } from "@/stores/useUserStore";
 
 interface MealSectionProps {
   title: string;
-  emoji: string;
+  icon: LucideIcon;
   items: FoodItem[];
   onAddItem: (item: FoodItem) => void;
   onRemoveItem?: (itemId: string) => void;
@@ -20,7 +20,7 @@ interface MealSectionProps {
 
 type AddMode = null | "choose" | "search" | "scan";
 
-export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUpdateItem, onAddItems, pastItems = [] }: MealSectionProps) => {
+export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem, onUpdateItem, onAddItems, pastItems = [] }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
 
@@ -42,7 +42,7 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
     <div className="flex flex-col">
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
-          <span className="text-base">{emoji}</span>
+          <Icon className="h-4 w-4 text-foreground" />
           <span className="text-sm font-medium text-foreground">{title}</span>
           {totalCals > 0 && (
             <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
@@ -59,34 +59,30 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
       </div>
 
       {items.length > 0 && (
-        <div className="space-y-1 pl-7 pb-1">
+        <div className="flex flex-wrap gap-2 pl-6 pb-2">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between py-1 group">
-              <div className="flex-1 min-w-0">
-                <span className="text-sm text-foreground">{item.name}</span>
-                {item.quantity && (
-                  <span className="text-xs text-muted-foreground ml-1.5">({item.quantity})</span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
-                {onUpdateItem && (
-                  <button
-                    onClick={() => setEditingItem(item)}
-                    className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                )}
-                {onRemoveItem && (
-                  <button
-                    onClick={() => onRemoveItem(item.id)}
-                    className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+            <div key={item.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 border border-border">
+              <span className="text-xs font-medium text-foreground">{item.name}</span>
+              {item.quantity && (
+                <span className="text-[10px] text-muted-foreground">({item.quantity})</span>
+              )}
+              <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
+              {onUpdateItem && (
+                <button
+                  onClick={() => setEditingItem(item)}
+                  className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pencil className="h-2.5 w-2.5" />
+                </button>
+              )}
+              {onRemoveItem && (
+                <button
+                  onClick={() => onRemoveItem(item.id)}
+                  className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -123,14 +119,14 @@ export const MealSection = ({ title, emoji, items, onAddItem, onRemoveItem, onUp
               className="w-full rounded-xl h-12 justify-start gap-3"
               onClick={() => setMode("scan")}
             >
-              📷 Scan with AI
+              Scan with AI
             </Button>
             <Button
               variant="outline"
               className="w-full rounded-xl h-12 justify-start gap-3"
               onClick={() => setMode("search")}
             >
-              🔍 Search food
+              Search food
             </Button>
 
             {uniquePast.length > 0 && (

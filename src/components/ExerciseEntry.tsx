@@ -49,7 +49,7 @@ const EXERCISE_DATABASE: Record<string, number> = {
 };
 
 const EXERCISE_NAMES = Object.keys(EXERCISE_DATABASE);
-const DURATION_VALUES = Array.from({ length: 120 }, (_, i) => i + 1);
+const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 5);
 
 interface ExerciseEntryProps {
   open: boolean;

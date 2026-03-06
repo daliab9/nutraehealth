@@ -7,11 +7,11 @@ import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/Emotio
 import { Moon, Brain, Pencil } from "lucide-react";
 
 const SLEEP_OPTIONS = [
-  { label: "Terrible", value: 1, icon: "😫" },
-  { label: "Poor", value: 2, icon: "😴" },
-  { label: "Fair", value: 3, icon: "😐" },
-  { label: "Good", value: 4, icon: "🙂" },
-  { label: "Great", value: 5, icon: "✨" },
+  { label: "Terrible", value: 1 },
+  { label: "Poor", value: 2 },
+  { label: "Fair", value: 3 },
+  { label: "Good", value: 4 },
+  { label: "Great", value: 5 },
 ];
 
 const STRESS_OPTIONS = [
@@ -22,20 +22,39 @@ const STRESS_OPTIONS = [
   { label: "Very High", value: 5 },
 ];
 
+const Chip = ({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 active:scale-95 ${
+      selected
+        ? "bg-foreground text-background border-foreground"
+        : "bg-secondary/50 text-foreground border-border hover:border-foreground/30"
+    }`}
+  >
+    {label}
+  </button>
+);
+
 const HealthDiary = () => {
   const { getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const entry = getHealthEntry(dateKey);
 
-  // Edit modes — reset when date changes
   const [sleepEditing, setSleepEditing] = useState(true);
   const [stressEditing, setStressEditing] = useState(true);
   const [emotionsEditing, setEmotionsEditing] = useState(true);
 
   useEffect(() => {
     const e = getHealthEntry(dateKey);
-    // Reset edit states only when switching day, not on every field update
     setSleepEditing(e.sleepQuality === 0);
     setStressEditing(e.stressLevel === 0);
     setEmotionsEditing(e.positiveEmotions.length === 0 && e.negativeEmotions.length === 0);
@@ -65,7 +84,7 @@ const HealthDiary = () => {
 
       <div className="px-4 pt-6 space-y-4">
         {/* Sleep quality */}
-        <div className="rounded-2xl bg-card border border-border p-4">
+        <div className="rounded-2xl bg-card border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Moon className="h-5 w-5 text-foreground" />
@@ -83,41 +102,36 @@ const HealthDiary = () => {
           </div>
           {sleepEditing ? (
             <>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {SLEEP_OPTIONS.map((opt) => (
-                  <button
+                  <Chip
                     key={opt.value}
+                    label={opt.label}
+                    selected={entry.sleepQuality === opt.value}
                     onClick={() => update("sleepQuality", opt.value)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all active:scale-95 ${
-                      entry.sleepQuality === opt.value
-                        ? "bg-foreground text-background"
-                        : "bg-secondary text-foreground"
-                    }`}
-                  >
-                    <span className="text-lg">{opt.icon}</span>
-                    <span className="text-[10px] font-medium">{opt.label}</span>
-                  </button>
+                  />
                 ))}
               </div>
               {entry.sleepQuality > 0 && (
                 <button
                   onClick={() => setSleepEditing(false)}
-                  className="mt-3 w-full py-2 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                  className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
                 >
                   Save
                 </button>
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{sleepLabel?.icon}</span>
-              <span className="text-sm font-medium text-foreground">{sleepLabel?.label}</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                {sleepLabel?.label}
+              </span>
             </div>
           )}
         </div>
 
         {/* Stress level */}
-        <div className="rounded-2xl bg-card border border-border p-4">
+        <div className="rounded-2xl bg-card border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-foreground" />
@@ -135,33 +149,30 @@ const HealthDiary = () => {
           </div>
           {stressEditing ? (
             <>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {STRESS_OPTIONS.map((opt) => (
-                  <button
+                  <Chip
                     key={opt.value}
+                    label={opt.label}
+                    selected={entry.stressLevel === opt.value}
                     onClick={() => update("stressLevel", opt.value)}
-                    className={`flex-1 py-3 rounded-xl text-center transition-all active:scale-95 ${
-                      entry.stressLevel === opt.value
-                        ? "bg-foreground text-background"
-                        : "bg-secondary text-foreground"
-                    }`}
-                  >
-                    <span className="text-xs font-medium">{opt.label}</span>
-                  </button>
+                  />
                 ))}
               </div>
               {entry.stressLevel > 0 && (
                 <button
                   onClick={() => setStressEditing(false)}
-                  className="mt-3 w-full py-2 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                  className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
                 >
                   Save
                 </button>
               )}
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">{stressLabel?.label}</span>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                {stressLabel?.label}
+              </span>
             </div>
           )}
         </div>
