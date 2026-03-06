@@ -49,6 +49,12 @@ const Profile = () => {
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
 
+  // Edit stats dialogs
+  const [editHeightOpen, setEditHeightOpen] = useState(false);
+  const [editHeight, setEditHeight] = useState(String(profile.height));
+  const [editTargetWeightOpen, setEditTargetWeightOpen] = useState(false);
+  const [editTargetWeight, setEditTargetWeight] = useState(String(profile.targetWeight));
+
   const bmi = profile.height > 0
     ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1)
     : "—";
@@ -93,25 +99,34 @@ const Profile = () => {
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          <button
+            onClick={() => { setNewWeight(String(profile.currentWeight)); setWeightOpen(true); }}
+            className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20"
+          >
             <Scale className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
             <p className="text-2xl font-bold text-foreground">{profile.currentWeight}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Current kg</p>
-          </div>
-          <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          </button>
+          <button
+            onClick={() => { setEditHeight(String(profile.height)); setEditHeightOpen(true); }}
+            className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20"
+          >
             <Ruler className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
             <p className="text-2xl font-bold text-foreground">{profile.height}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Height cm</p>
-          </div>
+          </button>
           <div className="rounded-2xl bg-card border border-border p-4 text-center">
             <p className="text-sm text-muted-foreground mb-1">BMI</p>
             <p className="text-2xl font-bold text-foreground">{bmi}</p>
           </div>
-          <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          <button
+            onClick={() => { setEditTargetWeight(String(profile.targetWeight)); setEditTargetWeightOpen(true); }}
+            className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20"
+          >
             <Target className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
             <p className="text-2xl font-bold text-foreground">{profile.targetWeight}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Goal kg</p>
-          </div>
+          </button>
         </div>
 
         {/* Weight tracking */}
@@ -332,6 +347,62 @@ const Profile = () => {
               className="rounded-xl"
             />
             <Button onClick={handleAddWeight} className="w-full rounded-xl h-12" disabled={!newWeight}>
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Height dialog */}
+      <Dialog open={editHeightOpen} onOpenChange={setEditHeightOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Height</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input
+              placeholder="Height (cm)"
+              type="number"
+              value={editHeight}
+              onChange={(e) => setEditHeight(e.target.value)}
+              className="rounded-xl"
+            />
+            <Button
+              onClick={() => {
+                setProfile({ height: Number(editHeight) });
+                setEditHeightOpen(false);
+              }}
+              className="w-full rounded-xl h-12"
+              disabled={!editHeight}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Target weight dialog */}
+      <Dialog open={editTargetWeightOpen} onOpenChange={setEditTargetWeightOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Target Weight</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input
+              placeholder="Target weight (kg)"
+              type="number"
+              value={editTargetWeight}
+              onChange={(e) => setEditTargetWeight(e.target.value)}
+              className="rounded-xl"
+            />
+            <Button
+              onClick={() => {
+                setProfile({ targetWeight: Number(editTargetWeight) });
+                setEditTargetWeightOpen(false);
+              }}
+              className="w-full rounded-xl h-12"
+              disabled={!editTargetWeight}
+            >
               Save
             </Button>
           </div>
