@@ -36,6 +36,16 @@ export const SignupPage = ({ onSignupComplete, onGoToLogin }: SignupPageProps) =
     setLoading(false);
 
     if (error) {
+      if (error.message.toLowerCase().includes("already registered")) {
+        toast({
+          title: "This email already has an account",
+          description: "Please log in instead.",
+          variant: "destructive",
+        });
+        onGoToLogin();
+        return;
+      }
+
       toast({ title: error.message, variant: "destructive" });
       return;
     }
