@@ -9,8 +9,8 @@ import {
   CartesianGrid,
   PieChart,
   Pie,
-  Cell,
-} from "recharts";
+  Cell } from
+"recharts";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 
@@ -56,7 +56,7 @@ const Tracker = () => {
         protein: totals.protein,
         carbs: totals.carbs,
         fat: totals.fat,
-        exercise: totals.exerciseCals,
+        exercise: totals.exerciseCals
       });
     }
     return days;
@@ -74,14 +74,14 @@ const Tracker = () => {
         stress: entry.stressLevel,
         positiveCount: entry.positiveEmotions.length,
         negativeCount: entry.negativeEmotions.length,
-        poop: entry.poopCount,
+        poop: entry.poopCount
       });
     }
     return days;
   }, [getHealthEntry, health, numDays, range]);
 
   const emotionFrequency = useMemo(() => {
-    const freq: Record<string, { count: number; isPositive: boolean }> = {};
+    const freq: Record<string, {count: number;isPositive: boolean;}> = {};
     Object.entries(health).forEach(([dateKey, entry]) => {
       if (!relevantDateKeys.has(dateKey)) return;
       const full = { positiveEmotions: [] as string[], negativeEmotions: [] as string[], ...entry };
@@ -94,14 +94,14 @@ const Tracker = () => {
         freq[e].count += 1;
       });
     });
-    return Object.entries(freq)
-      .map(([name, { count, isPositive }]) => ({ name, count, isPositive }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
+    return Object.entries(freq).
+    map(([name, { count, isPositive }]) => ({ name, count, isPositive })).
+    sort((a, b) => b.count - a.count).
+    slice(0, 8);
   }, [health, relevantDateKeys]);
 
   const allFoods = useMemo(() => {
-    const foodMap: Record<string, { name: string; count: number; totalCals: number }> = {};
+    const foodMap: Record<string, {name: string;count: number;totalCals: number;}> = {};
     Object.entries(diary).forEach(([dateKey, day]) => {
       if (!relevantDateKeys.has(dateKey)) return;
       day.meals.forEach((meal) => {
@@ -118,7 +118,7 @@ const Tracker = () => {
   }, [diary, relevantDateKeys]);
 
   const exerciseByType = useMemo(() => {
-    const exMap: Record<string, { name: string; count: number; totalMinutes: number }> = {};
+    const exMap: Record<string, {name: string;count: number;totalMinutes: number;}> = {};
     Object.entries(diary).forEach(([dateKey, day]) => {
       if (!relevantDateKeys.has(dateKey)) return;
       day.exercises.forEach((ex) => {
@@ -130,14 +130,14 @@ const Tracker = () => {
       });
     });
     return Object.values(exMap).sort((a, b) =>
-      exerciseMetric === "minutes" ? b.totalMinutes - a.totalMinutes : b.count - a.count
+    exerciseMetric === "minutes" ? b.totalMinutes - a.totalMinutes : b.count - a.count
     );
   }, [diary, relevantDateKeys, exerciseMetric]);
 
   const exercisePieData = useMemo(() => {
     return exerciseByType.map((e) => ({
       name: e.name,
-      value: exerciseMetric === "minutes" ? e.totalMinutes : e.count,
+      value: exerciseMetric === "minutes" ? e.totalMinutes : e.count
     }));
   }, [exerciseByType, exerciseMetric]);
 
@@ -146,13 +146,13 @@ const Tracker = () => {
   }, [exercisePieData]);
 
   const PIE_COLORS = [
-    "hsl(var(--foreground))",
-    "hsl(var(--muted-foreground))",
-    "hsl(var(--chart-protein))",
-    "hsl(var(--chart-carbs))",
-    "hsl(var(--chart-fat))",
-    "hsl(var(--accent))",
-  ];
+  "hsl(var(--foreground))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--chart-protein))",
+  "hsl(var(--chart-carbs))",
+  "hsl(var(--chart-fat))",
+  "hsl(var(--accent))"];
+
 
   // Sleep quality distribution
   const sleepDistribution = useMemo(() => {
@@ -182,34 +182,34 @@ const Tracker = () => {
 
   const poopAvg = numDays > 0 ? (poopTotal / numDays).toFixed(1) : "0";
 
-  const RangeToggle = () => (
-    <div className="flex rounded-xl bg-muted p-0.5 mb-6">
+  const RangeToggle = () =>
+  <div className="flex rounded-xl bg-muted p-0.5 mb-6">
       <button
-        onClick={() => setRange("week")}
-        className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-          range === "week" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-        }`}
-      >
+      onClick={() => setRange("week")}
+      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+      range === "week" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`
+      }>
+      
         Weekly
       </button>
       <button
-        onClick={() => setRange("month")}
-        className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-          range === "month" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-        }`}
-      >
+      onClick={() => setRange("month")}
+      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+      range === "month" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`
+      }>
+      
         Monthly
       </button>
-    </div>
-  );
+    </div>;
+
 
   const chartBarSize = range === "week" ? 40 : 14;
   const tickFontSize = range === "month" ? 10 : 13;
 
-  const maxFoodVal = allFoods.length > 0 ? Math.max(...allFoods.map(f => f.totalCals)) : 1;
-  const maxEmotionVal = emotionFrequency.length > 0 ? Math.max(...emotionFrequency.map(e => e.count)) : 1;
-  const maxSleepVal = Math.max(...sleepDistribution.map(d => d.count), 1);
-  const maxStressVal = Math.max(...stressDistribution.map(d => d.count), 1);
+  const maxFoodVal = allFoods.length > 0 ? Math.max(...allFoods.map((f) => f.totalCals)) : 1;
+  const maxEmotionVal = emotionFrequency.length > 0 ? Math.max(...emotionFrequency.map((e) => e.count)) : 1;
+  const maxSleepVal = Math.max(...sleepDistribution.map((d) => d.count), 1);
+  const maxStressVal = Math.max(...stressDistribution.map((d) => d.count), 1);
 
   // For monthly, only show unique week labels (deduplicate)
   const monthlyTickFormatter = (value: string, index: number) => {
@@ -242,8 +242,8 @@ const Tracker = () => {
                   tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={monthlyInterval}
-                />
+                  interval={monthlyInterval} />
+                
                 <YAxis hide />
                 <Bar dataKey="calories" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
@@ -264,8 +264,8 @@ const Tracker = () => {
                   tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={monthlyInterval}
-                />
+                  interval={monthlyInterval} />
+                
                 <YAxis hide />
                 <Bar dataKey="protein" fill="hsl(var(--chart-protein))" radius={[6, 6, 0, 0]} stackId="macros" maxBarSize={chartBarSize} />
                 <Bar dataKey="carbs" fill="hsl(var(--chart-carbs))" radius={[0, 0, 0, 0]} stackId="macros" maxBarSize={chartBarSize} />
@@ -275,16 +275,16 @@ const Tracker = () => {
           </div>
           <div className="flex items-center gap-5 mt-3">
             <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-chart-protein" />
-              <span className="text-xs text-muted-foreground">Protein</span>
+              <div className="h-3 w-3 rounded-full bg-chart-protein my-0 mx-0 shadow-none" />
+              <span className="text-muted-foreground text-sm">Protein</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-full bg-chart-carbs" />
-              <span className="text-xs text-muted-foreground">Carbs</span>
+              <span className="text-muted-foreground text-sm">Carbs</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-full bg-chart-fat" />
-              <span className="text-xs text-muted-foreground">Fat</span>
+              <span className="text-muted-foreground text-sm">Fat</span>
             </div>
           </div>
         </div>
@@ -292,26 +292,26 @@ const Tracker = () => {
         {/* Most eaten foods */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <h3 className="text-base font-semibold text-foreground mb-3">Most eaten foods</h3>
-          {allFoods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No food logged yet</p>
-          ) : (
-            <div className="space-y-3">
-              {allFoods.map((f) => (
-                <div key={f.name}>
+          {allFoods.length === 0 ?
+          <p className="text-sm text-muted-foreground">No food logged yet</p> :
+
+          <div className="space-y-3">
+              {allFoods.map((f) =>
+            <div key={f.name}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-foreground truncate max-w-[60%]">{f.name}</span>
                     <span className="text-xs text-muted-foreground">{f.totalCals} kcal · {f.count}x</span>
                   </div>
                   <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-foreground transition-all"
-                      style={{ width: `${(f.totalCals / maxFoodVal) * 100}%` }}
-                    />
+                  className="h-full rounded-full bg-foreground transition-all"
+                  style={{ width: `${f.totalCals / maxFoodVal * 100}%` }} />
+                
                   </div>
                 </div>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
 
         {/* Exercise chart */}
@@ -326,8 +326,8 @@ const Tracker = () => {
                   tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={monthlyInterval}
-                />
+                  interval={monthlyInterval} />
+                
                 <YAxis hide />
                 <Bar dataKey="exercise" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
@@ -336,25 +336,25 @@ const Tracker = () => {
         </div>
 
         {/* Exercise by type - donut chart */}
-        {exerciseByType.length > 0 && (
-          <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+        {exerciseByType.length > 0 &&
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-semibold text-foreground">By exercise type</h3>
               <div className="flex rounded-lg bg-muted p-0.5">
                 <button
-                  onClick={() => setExerciseMetric("minutes")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                    exerciseMetric === "minutes" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
+                onClick={() => setExerciseMetric("minutes")}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                exerciseMetric === "minutes" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`
+                }>
+                
                   Minutes
                 </button>
                 <button
-                  onClick={() => setExerciseMetric("count")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                    exerciseMetric === "count" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
+                onClick={() => setExerciseMetric("count")}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                exerciseMetric === "count" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`
+                }>
+                
                   Count
                 </button>
               </div>
@@ -364,18 +364,18 @@ const Tracker = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={exercisePieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                      strokeWidth={0}
-                    >
-                      {exercisePieData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
+                    data={exercisePieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={60}
+                    paddingAngle={2}
+                    dataKey="value"
+                    strokeWidth={0}>
+                    
+                      {exercisePieData.map((_, index) =>
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    )}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
@@ -388,24 +388,24 @@ const Tracker = () => {
               </div>
               <div className="flex-1 space-y-2">
                 {exerciseByType.map((e, index) => {
-                  const val = exerciseMetric === "minutes" ? e.totalMinutes : e.count;
-                  return (
-                    <div key={e.name} className="flex items-center gap-2">
+                const val = exerciseMetric === "minutes" ? e.totalMinutes : e.count;
+                return (
+                  <div key={e.name} className="flex items-center gap-2">
                       <div
-                        className="h-3 w-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                      />
+                      className="h-3 w-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                    
                       <span className="text-sm text-foreground truncate">{e.name}</span>
                       <span className="text-xs text-muted-foreground ml-auto">
                         {exerciseMetric === "minutes" ? `${val} min` : `${val}x`}
                       </span>
-                    </div>
-                  );
-                })}
+                    </div>);
+
+              })}
               </div>
             </div>
           </div>
-        )}
+        }
 
         {/* Bowel movements */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
@@ -425,8 +425,8 @@ const Tracker = () => {
                   tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={monthlyInterval}
-                />
+                  interval={monthlyInterval} />
+                
                 <YAxis hide />
                 <Bar dataKey="poop" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
@@ -447,8 +447,8 @@ const Tracker = () => {
                   tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
-                  interval={monthlyInterval}
-                />
+                  interval={monthlyInterval} />
+                
                 <YAxis hide />
                 <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
                 <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
@@ -470,31 +470,31 @@ const Tracker = () => {
         {/* Frequent emotions */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <h3 className="text-base font-semibold text-foreground mb-3">Frequent emotions</h3>
-          {emotionFrequency.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No emotions logged yet</p>
-          ) : (
-            <div className="space-y-3">
-              {emotionFrequency.map((e) => (
-                <div key={e.name}>
+          {emotionFrequency.length === 0 ?
+          <p className="text-sm text-muted-foreground">No emotions logged yet</p> :
+
+          <div className="space-y-3">
+              {emotionFrequency.map((e) =>
+            <div key={e.name}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-foreground">{e.name}</span>
                     <span className="text-xs text-muted-foreground">{e.count} days</span>
                   </div>
                   <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${(e.count / maxEmotionVal) * 100}%`,
-                        backgroundColor: e.isPositive
-                          ? "hsl(var(--chart-positive-dark))"
-                          : "hsl(var(--chart-negative-dark))",
-                      }}
-                    />
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${e.count / maxEmotionVal * 100}%`,
+                    backgroundColor: e.isPositive ?
+                    "hsl(var(--chart-positive-dark))" :
+                    "hsl(var(--chart-negative-dark))"
+                  }} />
+                
                   </div>
                 </div>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
 
         {/* Sleep Quality Distribution */}
@@ -502,20 +502,20 @@ const Tracker = () => {
           <h3 className="text-base font-semibold text-foreground mb-1">Sleep Quality</h3>
           <p className="text-sm text-muted-foreground mb-3">{rangeLabel}</p>
           <div className="space-y-3">
-            {sleepDistribution.map((d) => (
-              <div key={d.name}>
+            {sleepDistribution.map((d) =>
+            <div key={d.name}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-foreground">{d.name}</span>
                   <span className="text-xs text-muted-foreground">{d.count} days</span>
                 </div>
                 <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-foreground transition-all"
-                    style={{ width: `${maxSleepVal > 0 ? (d.count / maxSleepVal) * 100 : 0}%` }}
-                  />
+                  className="h-full rounded-full bg-foreground transition-all"
+                  style={{ width: `${maxSleepVal > 0 ? d.count / maxSleepVal * 100 : 0}%` }} />
+                
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -524,27 +524,27 @@ const Tracker = () => {
           <h3 className="text-base font-semibold text-foreground mb-1">Stress Level</h3>
           <p className="text-sm text-muted-foreground mb-3">{rangeLabel}</p>
           <div className="space-y-3">
-            {stressDistribution.map((d) => (
-              <div key={d.name}>
+            {stressDistribution.map((d) =>
+            <div key={d.name}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-foreground">{d.name}</span>
                   <span className="text-xs text-muted-foreground">{d.count} days</span>
                 </div>
                 <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-foreground transition-all"
-                    style={{ width: `${maxStressVal > 0 ? (d.count / maxStressVal) * 100 : 0}%` }}
-                  />
+                  className="h-full rounded-full bg-foreground transition-all"
+                  style={{ width: `${maxStressVal > 0 ? d.count / maxStressVal * 100 : 0}%` }} />
+                
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
 
       <BottomNav />
-    </div>
-  );
+    </div>);
+
 };
 
 export default Tracker;
