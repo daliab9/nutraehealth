@@ -146,8 +146,21 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   };
 
   const skip = () => {
-    setDirection(1);
-    setStep((s) => s + 1);
+    if (step < TOTAL_STEPS - 1) {
+      setDirection(1);
+      setStep((s) => s + 1);
+    } else {
+      // Skipping the last step — complete onboarding
+      const normalized = { ...data };
+      if (data.weightUnit === "lbs") {
+        normalized.currentWeight = Math.round(data.currentWeight * 0.453592);
+        normalized.targetWeight = Math.round(data.targetWeight * 0.453592);
+      }
+      if (data.heightUnit === "ft") {
+        normalized.height = Math.round(data.height * 2.54);
+      }
+      onComplete(normalized);
+    }
   };
 
   const toggleMulti = (field: "dietaryPreferences" | "dietaryRestrictions" | "healthConcerns", value: string) => {
