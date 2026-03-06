@@ -216,6 +216,21 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
       case 2:
         return (
           <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">How old are you?</h2>
+            <div className="mt-8 flex justify-center">
+              <ScrollPicker
+                items={ages}
+                value={data.age}
+                onChange={(v) => setData((d) => ({ ...d, age: Number(v) }))}
+                suffix="years"
+              />
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Current weight</h2>
             <p className="text-sm text-muted-foreground">in kg</p>
             <div className="mt-8 flex justify-center">
@@ -229,7 +244,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Height</h2>
@@ -245,7 +260,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Target weight</h2>
@@ -261,7 +276,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary preferences</h2>
@@ -281,7 +296,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary restrictions</h2>
@@ -317,7 +332,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 7:
+      case 8:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Health concerns</h2>
