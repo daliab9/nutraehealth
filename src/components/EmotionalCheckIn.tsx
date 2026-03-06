@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -90,11 +90,23 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
   const [posInput, setPosInput] = useState("");
   const [negInput, setNegInput] = useState("");
 
+  // Once reasons have been revealed during this editing session, keep them visible
+  const [posReasonsRevealed, setPosReasonsRevealed] = useState(data.positiveEmotions.length > 0);
+  const [negReasonsRevealed, setNegReasonsRevealed] = useState(data.negativeEmotions.length > 0);
+
+  useEffect(() => {
+    if (data.positiveEmotions.length > 0) setPosReasonsRevealed(true);
+  }, [data.positiveEmotions.length]);
+
+  useEffect(() => {
+    if (data.negativeEmotions.length > 0) setNegReasonsRevealed(true);
+  }, [data.negativeEmotions.length]);
+
   const update = (partial: Partial<EmotionalCheckInData>) =>
     onChange({ ...data, ...partial });
 
-  const hasPositive = data.positiveEmotions.length > 0;
-  const hasNegative = data.negativeEmotions.length > 0;
+  const showPosReasons = posReasonsRevealed;
+  const showNegReasons = negReasonsRevealed;
 
   const customPositiveReasons = data.positiveReasons.filter(
     (r) => !ALL_PRESET_REASONS.has(r)
@@ -142,8 +154,8 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
           ))}
         </div>
 
-        <AnimatePresence>
-          {hasPositive && (
+        <AnimatePresence initial={false}>
+          {showPosReasons && (
             <motion.div
               key="pos-reasons"
               initial="hidden"
@@ -227,8 +239,8 @@ export const EmotionalCheckIn = ({ data, onChange }: EmotionalCheckInProps) => {
           ))}
         </div>
 
-        <AnimatePresence>
-          {hasNegative && (
+        <AnimatePresence initial={false}>
+          {showNegReasons && (
             <motion.div
               key="neg-reasons"
               initial="hidden"
