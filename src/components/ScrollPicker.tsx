@@ -19,6 +19,7 @@ export const ScrollPicker = ({
   itemHeight = 48,
   visibleItems = 5,
   suffix = "",
+  formatItem,
   className,
 }: ScrollPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
