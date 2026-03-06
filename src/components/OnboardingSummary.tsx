@@ -4,17 +4,13 @@ import { Check } from "lucide-react";
 
 interface OnboardingSummaryProps {
   dailyCalories: number;
-  goalDate: Date;
+  goalDate: string;
   goals: string[];
   onStart: () => void;
 }
 
 export const OnboardingSummary = ({ dailyCalories, goalDate, goals, onStart }: OnboardingSummaryProps) => {
-  const formattedDate = goalDate.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = goalDate;
 
   const primaryGoal = goals[0];
 

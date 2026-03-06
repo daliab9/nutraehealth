@@ -56,7 +56,7 @@ const AppContent = () => {
   const [summaryData, setSummaryData] = useState<{
     calories: number;
     goalDate: string;
-    goal: string;
+    goals: string[];
   } | null>(null);
 
   if (!profile.onboardingComplete && !showSummary) {
@@ -70,7 +70,7 @@ const AppContent = () => {
             dailyCalorieTarget: calories,
             goalDate,
           });
-          setSummaryData({ calories, goalDate, goal: getMainGoal(data.goals) });
+          setSummaryData({ calories, goalDate, goals: data.goals });
           setShowSummary(true);
         }}
       />
@@ -82,7 +82,7 @@ const AppContent = () => {
       <OnboardingSummary
         dailyCalories={summaryData.calories}
         goalDate={summaryData.goalDate}
-        goal={summaryData.goal}
+        goals={summaryData.goals}
         onStart={() => {
           setProfile({ onboardingComplete: true });
           setShowSummary(false);
