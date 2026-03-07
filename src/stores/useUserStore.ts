@@ -26,8 +26,14 @@ export interface MealEntry {
   items: FoodItem[];
 }
 
+export interface PoopEntry {
+  id: string;
+  type: number; // Bristol Stool Scale 1-7
+}
+
 export interface HealthEntry {
   poopCount: number;
+  poopEntries: PoopEntry[];
   sleepQuality: number;
   stressLevel: number;
   mood: number;
@@ -125,6 +131,7 @@ function loadHealth(): Record<string, HealthEntry> {
 
 const DEFAULT_HEALTH: HealthEntry = {
   poopCount: 0,
+  poopEntries: [],
   sleepQuality: 0,
   stressLevel: 0,
   mood: 0,

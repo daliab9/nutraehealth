@@ -8,8 +8,8 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot } from "lucide-react";
-import { useUserStore, type Exercise, type SavedMeal } from "@/stores/useUserStore";
+import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot } from "lucide-react";
+import { useUserStore, type Exercise, type SavedMeal, type PoopEntry } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -28,16 +28,30 @@ const Diary = () => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [exEditForm, setExEditForm] = useState({ duration: "", caloriesBurned: "" });
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
+  const [addingPoopType, setAddingPoopType] = useState(false);
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
   const totals = getDayTotals(dateKey);
   const healthEntry = getHealthEntry(dateKey);
 
-  const poopSaved = healthEntry.poopCount > 0 && !poopEditing;
+  const poopEntries = healthEntry.poopEntries || [];
 
-  const updatePoop = (value: number) => {
-    setHealthEntry(dateKey, { ...healthEntry, poopCount: value });
+  const addPoopEntry = (type: number) => {
+    const newEntry: PoopEntry = { id: crypto.randomUUID(), type };
+    const updated = [...poopEntries, newEntry];
+    setHealthEntry(dateKey, { ...healthEntry, poopCount: updated.length, poopEntries: updated });
+    setAddingPoopType(false);
+  };
+
+  const removePoopEntry = (id: string) => {
+    const updated = poopEntries.filter(e => e.id !== id);
+    setHealthEntry(dateKey, { ...healthEntry, poopCount: updated.length, poopEntries: updated });
+  };
+
+  const updatePoopType = (id: string, type: number) => {
+    const updated = poopEntries.map(e => e.id === id ? { ...e, type } : e);
+    setHealthEntry(dateKey, { ...healthEntry, poopEntries: updated });
   };
 
   const getMealItems = (type: string) => {
@@ -232,49 +246,80 @@ const Diary = () => {
         )}
 
         {activeSection === "poop" && (
-          <div className="rounded-2xl bg-card border border-border p-5">
-            <div className="flex flex-col items-center gap-4">
-              <CircleDot className="h-8 w-8 text-foreground" />
-              <h3 className="font-semibold text-foreground text-lg">Bowel Movements</h3>
-              {poopSaved ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl font-bold text-foreground">{healthEntry.poopCount}</span>
-                  <button
-                    onClick={() => setPoopEditing(true)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    Edit
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => { if (healthEntry.poopCount > 0) updatePoop(healthEntry.poopCount - 1); }}
-                    className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform"
-                  >
-                    −
-                  </button>
-                  <span className="text-4xl font-bold text-foreground w-8 text-center">
-                    {healthEntry.poopCount}
-                  </span>
-                  <button
-                    onClick={() => updatePoop(healthEntry.poopCount + 1)}
-                    className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-foreground font-bold text-xl active:scale-95 transition-transform"
-                  >
-                    +
-                  </button>
-                  {healthEntry.poopCount > 0 && (
-                    <button
-                      onClick={() => setPoopEditing(false)}
-                      className="ml-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold active:scale-95 transition-transform"
-                    >
-                      Save
-                    </button>
-                  )}
-                </div>
-              )}
+          <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CircleDot className="h-5 w-5 text-foreground" />
+                <h3 className="font-semibold text-foreground">Bowel Movements</h3>
+                {poopEntries.length > 0 && (
+                  <span className="text-sm text-muted-foreground font-semibold">({poopEntries.length})</span>
+                )}
+              </div>
+              <button
+                onClick={() => setAddingPoopType(true)}
+                className="h-8 w-8 rounded-full bg-action-button flex items-center justify-center hover:opacity-80 transition-opacity"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
+
+            {/* Existing entries */}
+            {poopEntries.length > 0 && (
+              <div className="space-y-2">
+                {poopEntries.map((entry, idx) => {
+                  const info = BRISTOL_TYPES[entry.type - 1];
+                  return (
+                    <div key={entry.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/50">
+                      <span className="text-2xl">{info?.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Type {entry.type}</p>
+                        <p className="text-xs text-muted-foreground truncate">{info?.label}</p>
+                      </div>
+                      <button
+                        onClick={() => removePoopEntry(entry.id)}
+                        className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {poopEntries.length === 0 && !addingPoopType && (
+              <button onClick={() => setAddingPoopType(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full justify-center">
+                <Plus className="h-3.5 w-3.5" />
+                Log a bowel movement
+              </button>
+            )}
+
+            {/* Type selector */}
+            {addingPoopType && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">Select type (Bristol Scale)</p>
+                  <button onClick={() => setAddingPoopType(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {BRISTOL_TYPES.map((bt) => (
+                    <button
+                      key={bt.type}
+                      onClick={() => addPoopEntry(bt.type)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors text-left active:scale-[0.98]"
+                    >
+                      <span className="text-2xl">{bt.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Type {bt.type}</p>
+                        <p className="text-xs text-muted-foreground">{bt.label}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
