@@ -100,6 +100,12 @@ const Tracker = () => {
       const date = subDays(new Date(), i);
       const key = format(date, "yyyy-MM-dd");
       const entry = getHealthEntry(key);
+      const poopEntries = entry.poopEntries || [];
+      const hard = poopEntries.filter(e => [1, 2].includes(e.type)).length;
+      const normal = poopEntries.filter(e => [3, 4].includes(e.type)).length;
+      const loose = poopEntries.filter(e => [5, 6, 7].includes(e.type)).length;
+      // fallback: if no typed entries but has count, put all in normal
+      const fallbackNormal = poopEntries.length === 0 && entry.poopCount > 0 ? entry.poopCount : 0;
       days.push({
         day: getDateLabel(date),
         sleep: entry.sleepQuality,
@@ -107,6 +113,9 @@ const Tracker = () => {
         positiveCount: entry.positiveEmotions.length,
         negativeCount: entry.negativeEmotions.length,
         poop: entry.poopCount,
+        poopHard: hard,
+        poopNormal: normal + fallbackNormal,
+        poopLoose: loose,
       });
     }
     return days;
@@ -411,14 +420,30 @@ const Tracker = () => {
               <span className="text-xs text-muted-foreground ml-1">avg/day</span>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">{rangeLabel} · total: {poopTotal}</p>
+          <p className="text-sm text-muted-foreground mb-2">{rangeLabel} · total: {poopTotal}</p>
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--destructive))" }} />
+              <span className="text-xs text-muted-foreground">Hard</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--primary))" }} />
+              <span className="text-xs text-muted-foreground">Normal</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--accent))" }} />
+              <span className="text-xs text-muted-foreground">Loose</span>
+            </div>
+          </div>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mentalData}>
                 <XAxis dataKey="day" tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval={monthlyInterval} />
                 <YAxis hide />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="poop" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
+                <Tooltip content={<PoopTooltip />} />
+                <Bar dataKey="poopHard" stackId="poop" fill="hsl(var(--destructive))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--primary))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopLoose" stackId="poop" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
             </ResponsiveContainer>
           </div>
