@@ -29,6 +29,9 @@ const unitToGrams: Record<string, number> = {
 };
 
 const getAmountOptions = (unit: string): number[] => {
+  if (unit === "whole") {
+    return [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20];
+  }
   if (unit === "g" || unit === "ml" || unit === "mg") {
     return [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250, 300, 350, 400, 450, 500, 600, 700, 750, 800, 900, 1000];
   }
