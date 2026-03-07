@@ -41,6 +41,8 @@ export const MealSection = ({
   const [creatingMealName, setCreatingMealName] = useState("");
   const [creatingMealItems, setCreatingMealItems] = useState<FoodItem[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [addToMealItem, setAddToMealItem] = useState<FoodItem | null>(null);
+  const [newMealName, setNewMealName] = useState("");
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
 
