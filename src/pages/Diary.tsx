@@ -313,7 +313,6 @@ const Diary = () => {
                 Log a bowel movement
               </button>
             )}
-            )}
           </div>
         )}
       </div>
