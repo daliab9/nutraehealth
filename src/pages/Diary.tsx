@@ -20,14 +20,10 @@ const MEAL_TYPES = [
   { type: "drinks", title: "Drinks", icon: GlassWater },
 ] as const;
 
-const BRISTOL_TYPES = [
-  { type: 1, emoji: "🥜", label: "Hard lumps, difficult to pass" },
-  { type: 2, emoji: "🪵", label: "Lumpy, sausage-shaped" },
-  { type: 3, emoji: "🌽", label: "Sausage with cracks on surface" },
-  { type: 4, emoji: "🍌", label: "Smooth and soft (ideal)" },
-  { type: 5, emoji: "☁️", label: "Soft blobs with clear edges" },
-  { type: 6, emoji: "🫠", label: "Mushy, fluffy pieces" },
-  { type: 7, emoji: "💧", label: "Entirely liquid" },
+const POOP_GROUPS = [
+  { id: "hard", label: "Hard / Constipated", types: [1, 2] },
+  { id: "normal", label: "Normal / Healthy", types: [3, 4] },
+  { id: "loose", label: "Loose / Diarrhea", types: [5, 6, 7] },
 ];
 
 const Diary = () => {
