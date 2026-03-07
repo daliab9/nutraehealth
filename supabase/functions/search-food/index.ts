@@ -31,7 +31,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a food nutrition database. When given a food search query, return matching food items with accurate nutritional information per 100g serving. For default_portion_amount and default_portion_unit, use the most natural serving unit for that item (e.g. wine=150 ml, supplements like CoQ10=100 mg, milk=250 ml, bread=30 g, an apple=182 g). Return results using the suggest_foods function.`,
+            content: `You are a food nutrition database. When given a food search query, return matching food items with accurate nutritional information per 100g serving. For default_portion_amount and default_portion_unit, use the most natural serving unit for that item (e.g. wine=150 ml, supplements like CoQ10=100 mg, milk=250 ml, bread=30 g, an apple=182 g). For available_units, return ONLY the units that make sense for this specific food (e.g. blueberries=["g","mg","cup"], avocado toast=["slice"], milk=["ml","cup","tbsp"], chicken breast=["g","oz","serving"]). Always include at least the default unit. Return results using the suggest_foods function.`,
           },
           {
             role: "user",
@@ -59,9 +59,10 @@ serve(async (req) => {
                         fat: { type: "number", description: "Fat in grams per 100g" },
                         default_portion_amount: { type: "number", description: "Typical single serving amount in the natural unit for this food (e.g. 150 for wine in ml, 100 for a supplement in mg, 250 for milk in ml, 30 for bread in g)" },
                         default_portion_unit: { type: "string", description: "The natural unit for this food's portion: g, ml, mg, oz, cup, tbsp, tsp, slice, piece, etc." },
+                        available_units: { type: "array", items: { type: "string" }, description: "Only the units that make sense for this food. E.g. blueberries=['g','mg','cup'], avocado toast=['slice'], milk=['ml','cup','tbsp']" },
                         portion_label: { type: "string", description: "Human readable description e.g. '1 glass', '1 medium apple', '1 capsule'" },
                       },
-                      required: ["name", "calories", "protein", "carbs", "fat", "default_portion_amount", "default_portion_unit", "portion_label"],
+                      required: ["name", "calories", "protein", "carbs", "fat", "default_portion_amount", "default_portion_unit", "available_units", "portion_label"],
                       additionalProperties: false,
                     },
                   },
