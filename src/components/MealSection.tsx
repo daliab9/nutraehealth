@@ -223,6 +223,9 @@ export const MealSection = ({
                     <Pencil className="h-2.5 w-2.5" />
                   </button>
                 )}
+                <button onClick={() => setAddToMealItem(item)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                  <FolderPlus className="h-2.5 w-2.5" />
+                </button>
                 {onRemoveItem && (
                   <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
                     <X className="h-3 w-3" />
