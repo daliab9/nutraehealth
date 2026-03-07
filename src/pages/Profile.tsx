@@ -7,8 +7,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useUserStore } from "@/stores/useUserStore";
-import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark } from "lucide-react";
+import { FoodSearchInput } from "@/components/FoodSearchInput";
+import { useUserStore, type FoodItem } from "@/stores/useUserStore";
+import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X } from "lucide-react";
 
 const GOALS_MAP: Record<string, string> = {
   lose_weight: "Lose weight",
@@ -42,6 +43,10 @@ const Profile = () => {
   const [editTargetWeightOpen, setEditTargetWeightOpen] = useState(false);
   const [editTargetWeight, setEditTargetWeight] = useState(String(profile.targetWeight));
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [createMealOpen, setCreateMealOpen] = useState(false);
+  const [createMealName, setCreateMealName] = useState("");
+  const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
+  const [createMealStep, setCreateMealStep] = useState<"name" | "add">("name");
 
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
@@ -164,9 +169,14 @@ const Profile = () => {
 
         {/* Saved Meals */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Bookmark className="h-4 w-4 text-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4 text-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
           {savedMeals.length === 0 ? (
             <p className="text-sm text-muted-foreground">No saved meals yet. Save meals from the diary to quickly add them later.</p>
@@ -349,6 +359,75 @@ const Profile = () => {
             <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
             <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Meal Dialog */}
+      <Dialog open={createMealOpen} onOpenChange={setCreateMealOpen}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{createMealStep === "name" ? "Name your meal" : createMealName}</DialogTitle>
+          </DialogHeader>
+          {createMealStep === "name" ? (
+            <div className="space-y-3 pt-2">
+              <Input
+                placeholder="e.g. Greek Yogurt Bowl"
+                value={createMealName}
+                onChange={(e) => setCreateMealName(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+              <Button
+                onClick={() => { if (createMealName.trim()) setCreateMealStep("add"); }}
+                className="w-full rounded-xl h-12"
+                disabled={!createMealName.trim()}
+              >
+                Next — Add ingredients
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {createMealItems.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {createMealItems.length} items · {createMealItems.reduce((s, i) => s + i.calories, 0)} kcal
+                  </p>
+                  {createMealItems.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                      <span className="text-sm text-foreground">{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <button onClick={() => setCreateMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <FoodSearchInput
+                onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])}
+                onClose={() => {}}
+                keepOpenOnAdd
+              />
+              <Button
+                onClick={() => {
+                  if (createMealItems.length === 0) return;
+                  const newMeal = {
+                    id: Date.now().toString(),
+                    name: createMealName.trim(),
+                    items: createMealItems,
+                  };
+                  setProfile({ savedMeals: [...(profile.savedMeals || []), newMeal] });
+                  setCreateMealOpen(false);
+                }}
+                className="w-full rounded-xl h-12"
+                disabled={createMealItems.length === 0}
+              >
+                Save meal ({createMealItems.length} items)
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
