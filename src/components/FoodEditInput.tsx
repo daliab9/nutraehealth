@@ -6,7 +6,7 @@ import type { FoodItem } from "@/stores/useUserStore";
 const DEFAULT_UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "serving", "piece", "slice"];
 
 const unitToGrams: Record<string, number> = {
-  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30,
+  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30, whole: 100,
 };
 
 interface FoodEditInputProps {
@@ -16,6 +16,9 @@ interface FoodEditInputProps {
 }
 
 function parseQuantity(quantity: string): { amount: number; unit: string } {
+  // Handle "2 whole" format
+  const wholeMatch = quantity.match(/^(\d+(?:\.\d+)?)\s*whole$/i);
+  if (wholeMatch) return { amount: Number(wholeMatch[1]), unit: "whole" };
   const match = quantity.match(/^(\d+(?:\.\d+)?)\s*(.+)$/);
   if (match) return { amount: Number(match[1]), unit: match[2].trim() };
   const numMatch = quantity.match(/^(\d+(?:\.\d+)?)/);
@@ -57,6 +60,9 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
   }, [portionUnit, portionAmount]);
 
   const getGramsForAmount = (amount: number, unit: string) => {
+    if (unit === "whole" && item.wholeItemGrams) {
+      return amount * item.wholeItemGrams;
+    }
     const factor = unitToGrams[unit] || 1;
     return amount * factor;
   };

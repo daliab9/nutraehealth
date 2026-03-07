@@ -19,10 +19,13 @@ interface FoodSuggestion {
   portion_label: string;
 }
 
+// Store per-food gram weight for "whole" unit
+const wholeGramsMap = new Map<string, number>();
+
 const UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "serving", "piece", "slice"];
 
 const unitToGrams: Record<string, number> = {
-  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30,
+  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30, whole: 100,
 };
 
 const getAmountOptions = (unit: string): number[] => {
@@ -91,6 +94,10 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
     setSelected(food);
     const amount = food.default_portion_amount || food.default_portion_g || 100;
     const unit = food.default_portion_unit || "g";
+    // Store the whole-item gram weight for this food
+    if (food.default_portion_g) {
+      wholeGramsMap.set(food.name, food.default_portion_g);
+    }
     setPortionAmount(amount);
     setPortionUnit(unit);
     setQuery(food.name);
@@ -98,6 +105,10 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
   };
 
   const getGramsEquivalent = () => {
+    if (portionUnit === "whole" && selected) {
+      const wholeG = wholeGramsMap.get(selected.name) || selected.default_portion_g || 100;
+      return portionAmount * wholeG;
+    }
     const factor = unitToGrams[portionUnit] || 1;
     return portionAmount * factor;
   };
@@ -106,6 +117,7 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
 
   const handleConfirm = () => {
     if (!selected) return;
+    const wholeGrams = wholeGramsMap.get(selected.name) || selected.default_portion_g || 100;
     onAddItem({
       id: Date.now().toString(),
       name: selected.name,
@@ -113,8 +125,9 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
       protein: scale(selected.protein),
       carbs: scale(selected.carbs),
       fat: scale(selected.fat),
-      quantity: `${portionAmount}${portionUnit}`,
+      quantity: `${portionAmount}${portionUnit === "whole" ? " whole" : portionUnit}`,
       availableUnits: selected.available_units || [portionUnit],
+      wholeItemGrams: wholeGrams,
     });
     if (keepOpenOnAdd) {
       setSelected(null);

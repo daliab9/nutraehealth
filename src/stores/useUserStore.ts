@@ -11,6 +11,7 @@ export interface FoodItem {
   groupId?: string;
   groupName?: string;
   availableUnits?: string[];
+  wholeItemGrams?: number;
 }
 
 export interface Exercise {
