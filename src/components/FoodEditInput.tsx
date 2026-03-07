@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import type { FoodItem } from "@/stores/useUserStore";
 
-const UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "serving", "piece", "slice"];
+const DEFAULT_UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "serving", "piece", "slice"];
 
 const unitToGrams: Record<string, number> = {
   g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30,
@@ -34,6 +34,10 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
   const parsed = parseQuantity(item.quantity || "100g");
   const [portionAmount, setPortionAmount] = useState(parsed.amount);
   const [portionUnit, setPortionUnit] = useState(parsed.unit);
+  const availableUnits = useMemo(() => {
+    if (item.availableUnits && item.availableUnits.length > 0) return item.availableUnits;
+    return DEFAULT_UNITS;
+  }, [item.availableUnits]);
 
   const [baseNutrition] = useState({
     calories: item.calories,
@@ -96,7 +100,7 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
         </div>
         <div className="flex-1 max-w-[100px]">
           <ScrollPicker
-            items={UNITS}
+            items={availableUnits}
             value={portionUnit}
             onChange={(v) => setPortionUnit(String(v))}
             itemHeight={40}
