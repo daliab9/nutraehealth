@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { Minus, Plus } from "lucide-react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollPicker } from "@/components/ScrollPicker";
 import type { FoodItem } from "@/stores/useUserStore";
 
-const UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "slice", "piece"];
+const UNITS = ["g", "ml", "mg", "oz", "cup", "tbsp", "tsp", "serving", "piece", "slice"];
 
 const unitToGrams: Record<string, number> = {
-  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, slice: 30, piece: 100,
+  g: 1, ml: 1, mg: 0.001, oz: 28.35, cup: 240, tbsp: 15, tsp: 5, serving: 100, piece: 100, slice: 30,
 };
 
 interface FoodEditInputProps {
@@ -23,16 +23,18 @@ function parseQuantity(quantity: string): { amount: number; unit: string } {
   return { amount: 100, unit: "g" };
 }
 
+const getAmountOptions = (unit: string): number[] => {
+  if (unit === "g" || unit === "ml" || unit === "mg") {
+    return [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100, 125, 150, 175, 200, 250, 300, 350, 400, 450, 500, 600, 700, 750, 800, 900, 1000];
+  }
+  return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 15, 20];
+};
+
 export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) => {
   const parsed = parseQuantity(item.quantity || "100g");
   const [portionAmount, setPortionAmount] = useState(parsed.amount);
   const [portionUnit, setPortionUnit] = useState(parsed.unit);
-  const [editingAmount, setEditingAmount] = useState(false);
-  const [editingUnit, setEditingUnit] = useState(false);
-  const [amountInput, setAmountInput] = useState("");
-  const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // Store base nutrition per current portion for scaling
   const [baseNutrition] = useState({
     calories: item.calories,
     protein: item.protein,
@@ -42,12 +44,13 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
     unit: parsed.unit,
   });
 
-  useEffect(() => {
-    if (editingAmount) {
-      amountInputRef.current?.focus();
-      amountInputRef.current?.select();
+  const amountOptions = useMemo(() => {
+    const base = getAmountOptions(portionUnit);
+    if (!base.includes(portionAmount)) {
+      return [...base, portionAmount].sort((a, b) => a - b);
     }
-  }, [editingAmount]);
+    return base;
+  }, [portionUnit, portionAmount]);
 
   const getGramsForAmount = (amount: number, unit: string) => {
     const factor = unitToGrams[unit] || 1;
@@ -62,23 +65,6 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
   const scaledProtein = Math.round(baseNutrition.protein * ratio);
   const scaledCarbs = Math.round(baseNutrition.carbs * ratio);
   const scaledFat = Math.round(baseNutrition.fat * ratio);
-
-  const getStep = () => {
-    if (portionUnit === "mg") return 50;
-    if (portionUnit === "ml" || portionUnit === "g") return 10;
-    return 1;
-  };
-
-  const handleAmountClick = () => {
-    setAmountInput(String(portionAmount));
-    setEditingAmount(true);
-  };
-
-  const commitAmount = () => {
-    const val = Number(amountInput);
-    if (val > 0) setPortionAmount(val);
-    setEditingAmount(false);
-  };
 
   const handleSave = () => {
     onSave({
@@ -97,65 +83,26 @@ export const FoodEditInput = ({ item, onSave, onCancel }: FoodEditInputProps) =>
         <h3 className="text-base font-semibold text-foreground">{item.name}</h3>
       </div>
 
-      {/* Portion adjuster */}
-      <div className="flex items-center justify-center gap-4 py-2">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 rounded-full"
-          onClick={() => setPortionAmount((p) => Math.max(1, p - getStep()))}
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <div className="relative flex items-baseline gap-1 min-w-[100px] justify-center">
-          {editingAmount ? (
-            <input
-              ref={amountInputRef}
-              type="number"
-              value={amountInput}
-              onChange={(e) => setAmountInput(e.target.value)}
-              onBlur={commitAmount}
-              onKeyDown={(e) => { if (e.key === "Enter") commitAmount(); }}
-              className="w-20 text-2xl font-bold text-foreground text-center bg-transparent border-b-2 border-foreground outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-          ) : (
-            <button
-              onClick={handleAmountClick}
-              className="text-2xl font-bold text-foreground hover:opacity-70 transition-opacity"
-            >
-              {portionAmount}
-            </button>
-          )}
-          {editingUnit && (
-            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl shadow-lg z-10 py-1 max-h-48 overflow-y-auto">
-              {UNITS.map((u) => (
-                <button
-                  key={u}
-                  onClick={() => { setPortionUnit(u); setEditingUnit(false); }}
-                  className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                    u === portionUnit ? "bg-secondary text-foreground font-semibold" : "text-muted-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  {u}
-                </button>
-              ))}
-            </div>
-          )}
-          <button
-            onClick={() => setEditingUnit(!editingUnit)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-          >
-            {portionUnit}
-          </button>
+      {/* Portion scroll pickers */}
+      <div className="flex items-center justify-center gap-2 py-2">
+        <div className="flex-1 max-w-[140px]">
+          <ScrollPicker
+            items={amountOptions}
+            value={portionAmount}
+            onChange={(v) => setPortionAmount(Number(v))}
+            itemHeight={40}
+            visibleItems={3}
+          />
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 rounded-full"
-          onClick={() => setPortionAmount((p) => p + getStep())}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex-1 max-w-[100px]">
+          <ScrollPicker
+            items={UNITS}
+            value={portionUnit}
+            onChange={(v) => setPortionUnit(String(v))}
+            itemHeight={40}
+            visibleItems={3}
+          />
+        </div>
       </div>
 
       {/* Nutrition breakdown */}

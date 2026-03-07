@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Plus, X, Pencil, type LucideIcon } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Bookmark, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AIScanDialog } from "@/components/AIScanDialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
-import type { FoodItem } from "@/stores/useUserStore";
+import type { FoodItem, SavedMeal } from "@/stores/useUserStore";
+import { toast } from "sonner";
 
 interface MealSectionProps {
   title: string;
@@ -16,77 +18,219 @@ interface MealSectionProps {
   onUpdateItem?: (item: FoodItem) => void;
   onAddItems?: (items: FoodItem[]) => void;
   pastItems?: FoodItem[];
+  savedMeals?: SavedMeal[];
+  onSaveMeal?: (meal: SavedMeal) => void;
 }
 
-type AddMode = null | "choose" | "search" | "scan";
+type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
 
-export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem, onUpdateItem, onAddItems, pastItems = [] }: MealSectionProps) => {
+export const MealSection = ({
+  title,
+  icon: Icon,
+  items,
+  onAddItem,
+  onRemoveItem,
+  onUpdateItem,
+  onAddItems,
+  pastItems = [],
+  savedMeals = [],
+  onSaveMeal,
+}: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [creatingMealName, setCreatingMealName] = useState("");
+  const [creatingMealItems, setCreatingMealItems] = useState<FoodItem[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
 
-  const uniquePast = pastItems.reduce<FoodItem[]>((acc, item) => {
-    if (!acc.find((a) => a.name.toLowerCase() === item.name.toLowerCase())) {
-      acc.push(item);
-    }
-    return acc;
-  }, []).slice(0, 5);
+  const { grouped, ungrouped } = useMemo(() => {
+    const map = new Map<string, { name: string; items: FoodItem[] }>();
+    const ung: FoodItem[] = [];
+    items.forEach((item) => {
+      if (item.groupId) {
+        if (!map.has(item.groupId)) map.set(item.groupId, { name: item.groupName || "Meal", items: [] });
+        map.get(item.groupId)!.items.push(item);
+      } else {
+        ung.push(item);
+      }
+    });
+    return { grouped: Array.from(map.entries()), ungrouped: ung };
+  }, [items]);
+
+  const uniquePast = pastItems
+    .reduce<FoodItem[]>((acc, item) => {
+      if (!acc.find((a) => a.name.toLowerCase() === item.name.toLowerCase())) acc.push(item);
+      return acc;
+    }, [])
+    .slice(0, 5);
 
   const handleAddPastItem = (item: FoodItem) => {
     onAddItem({ ...item, id: Date.now().toString() });
     setMode(null);
   };
 
+  const handleAddSavedMeal = (meal: SavedMeal) => {
+    const groupId = Date.now().toString();
+    const mealItems = meal.items.map((item) => ({
+      ...item,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      groupId,
+      groupName: meal.name,
+    }));
+    if (onAddItems) onAddItems(mealItems);
+    else mealItems.forEach((i) => onAddItem(i));
+    setMode(null);
+  };
+
+  const handleStartCreateMeal = () => {
+    setCreatingMealName("");
+    setCreatingMealItems([]);
+    setMode("create-meal-name");
+  };
+
+  const handleFinishCreatingMeal = () => {
+    if (creatingMealItems.length === 0) {
+      setMode(null);
+      return;
+    }
+    const groupId = Date.now().toString();
+    const mealItems = creatingMealItems.map((item) => ({
+      ...item,
+      groupId,
+      groupName: creatingMealName,
+    }));
+    if (onAddItems) onAddItems(mealItems);
+    else mealItems.forEach((i) => onAddItem(i));
+    setMode(null);
+  };
+
+  const handleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
+    if (!onSaveMeal) return;
+    onSaveMeal({
+      id: Date.now().toString(),
+      name,
+      items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
+    });
+    toast.success(`"${name}" saved to your meals`);
+  };
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
+
+  const creatingMealCals = creatingMealItems.reduce((s, i) => s + i.calories, 0);
+
   return (
     <div className="flex flex-col">
+      {/* Header */}
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-foreground" />
           <span className="text-sm text-foreground font-bold">{title}</span>
-          {totalCals > 0 &&
-          <span className="text-xs text-muted-foreground font-extrabold">{totalCals} kcal</span>
-          }
+          {totalCals > 0 && <span className="text-xs text-muted-foreground font-extrabold">{totalCals} kcal</span>}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80"
-          onClick={() => setMode("choose")}>
-          
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setMode("choose")}>
           <Plus className="h-4 w-4" />
         </Button>
       </div>
 
-      {items.length > 0 &&
-      <div className="flex flex-wrap gap-2 pl-6 pb-2">
-          {items.map((item) =>
-        <div key={item.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-[#e4e7c6]">
-              <span className="font-medium text-foreground text-sm">{item.name}</span>
-              {item.quantity &&
-          <span className="text-[10px] text-muted-foreground">({item.quantity})</span>
-          }
-              <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
-              {onUpdateItem &&
-          <button
-            onClick={() => setEditingItem(item)}
-            className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            
-                  <Pencil className="h-2.5 w-2.5" />
+      {/* Display items */}
+      {(grouped.length > 0 || ungrouped.length > 0) && (
+        <div className="pl-6 pb-2 space-y-2">
+          {/* Grouped meals */}
+          {grouped.map(([groupId, group]) => {
+            const isExpanded = expandedGroups.has(groupId);
+            const groupCals = group.items.reduce((s, i) => s + i.calories, 0);
+            return (
+              <div key={groupId} className="rounded-xl border border-border bg-[#e4e7c6] overflow-hidden">
+                <button onClick={() => toggleGroup(groupId)} className="w-full flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
+                    <span className="font-semibold text-foreground text-sm">{group.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
+                    {onSaveMeal && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveGroup(groupId, group.name, group.items);
+                        }}
+                        className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                      >
+                        <Bookmark className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {onRemoveItem && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          group.items.forEach((i) => onRemoveItem(i.id));
+                        }}
+                        className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </button>
-          }
-              {onRemoveItem &&
-          <button
-            onClick={() => onRemoveItem(item.id)}
-            className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-            
-                  <X className="h-3 w-3" />
-                </button>
-          }
-            </div>
-        )}
+                {isExpanded && (
+                  <div className="px-3 pb-2 space-y-1 border-t border-border/50">
+                    {group.items.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between py-1.5 pl-5 text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-foreground">{item.name}</span>
+                          {item.quantity && <span className="text-[10px] text-muted-foreground">({item.quantity})</span>}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
+                          {onUpdateItem && (
+                            <button onClick={() => setEditingItem(item)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground">
+                              <Pencil className="h-2.5 w-2.5" />
+                            </button>
+                          )}
+                          {onRemoveItem && (
+                            <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-destructive">
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Ungrouped items */}
+          <div className="flex flex-wrap gap-2">
+            {ungrouped.map((item) => (
+              <div key={item.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-[#e4e7c6]">
+                <span className="font-medium text-foreground text-sm">{item.name}</span>
+                {item.quantity && <span className="text-[10px] text-muted-foreground">({item.quantity})</span>}
+                <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
+                {onUpdateItem && (
+                  <button onClick={() => setEditingItem(item)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                    <Pencil className="h-2.5 w-2.5" />
+                  </button>
+                )}
+                {onRemoveItem && (
+                  <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      }
+      )}
 
       {/* Edit food item dialog */}
       <Dialog open={!!editingItem} onOpenChange={(o) => !o && setEditingItem(null)}>
@@ -94,16 +238,16 @@ export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem,
           <DialogHeader>
             <DialogTitle>Edit {editingItem?.name}</DialogTitle>
           </DialogHeader>
-          {editingItem &&
-          <FoodEditInput
-            item={editingItem}
-            onSave={(updated) => {
-              onUpdateItem?.(updated);
-              setEditingItem(null);
-            }}
-            onCancel={() => setEditingItem(null)} />
-
-          }
+          {editingItem && (
+            <FoodEditInput
+              item={editingItem}
+              onSave={(updated) => {
+                onUpdateItem?.(updated);
+                setEditingItem(null);
+              }}
+              onCancel={() => setEditingItem(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -114,38 +258,119 @@ export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem,
             <DialogTitle>Add to {title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            <Button
-              variant="outline"
-              className="w-full rounded-xl h-12 justify-start gap-3"
-              onClick={() => setMode("scan")}>
-              
+            <Button variant="outline" className="w-full rounded-xl h-12 justify-start gap-3" onClick={() => setMode("scan")}>
               Scan with AI
             </Button>
-            <Button
-              variant="outline"
-              className="w-full rounded-xl h-12 justify-start gap-3"
-              onClick={() => setMode("search")}>
-              
+            <Button variant="outline" className="w-full rounded-xl h-12 justify-start gap-3" onClick={() => setMode("search")}>
               Search food
             </Button>
+            <Button variant="outline" className="w-full rounded-xl h-12 justify-start gap-3" onClick={handleStartCreateMeal}>
+              Create a meal
+            </Button>
 
-            {uniquePast.length > 0 &&
-            <div className="pt-2">
+            {savedMeals.length > 0 && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Saved meals</p>
+                <div className="space-y-1">
+                  {savedMeals.map((meal) => (
+                    <button
+                      key={meal.id}
+                      onClick={() => handleAddSavedMeal(meal)}
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <span className="text-sm text-foreground font-medium">{meal.name}</span>
+                      <span className="text-xs text-muted-foreground">{meal.items.length} items</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {uniquePast.length > 0 && (
+              <div className="pt-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Recent items</p>
                 <div className="space-y-1">
-                  {uniquePast.map((item, i) =>
-                <button
-                  key={i}
-                  onClick={() => handleAddPastItem(item)}
-                  className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
-                  
+                  {uniquePast.map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleAddPastItem(item)}
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                    >
                       <span className="text-sm text-foreground">{item.name}</span>
                       <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
                     </button>
-                )}
+                  ))}
                 </div>
               </div>
-            }
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create meal name dialog */}
+      <Dialog open={mode === "create-meal-name"} onOpenChange={(o) => !o && setMode(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Name your meal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input
+              placeholder="e.g. Greek Yogurt Bowl"
+              value={creatingMealName}
+              onChange={(e) => setCreatingMealName(e.target.value)}
+              className="rounded-xl"
+              autoFocus
+            />
+            <Button
+              onClick={() => {
+                if (creatingMealName.trim()) setMode("create-meal-add");
+              }}
+              className="w-full rounded-xl h-12"
+              disabled={!creatingMealName.trim()}
+            >
+              Next — Add ingredients
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create meal - add items dialog */}
+      <Dialog open={mode === "create-meal-add"} onOpenChange={(o) => !o && setMode(null)}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{creatingMealName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {creatingMealItems.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  {creatingMealItems.length} items · {creatingMealCals} kcal
+                </p>
+                {creatingMealItems.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                    <span className="text-sm text-foreground">{item.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                      <button onClick={() => setCreatingMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <FoodSearchInput
+              onAddItem={(item) => {
+                setCreatingMealItems((prev) => [...prev, item]);
+              }}
+              onClose={() => {}}
+              keepOpenOnAdd
+            />
+
+            <Button onClick={handleFinishCreatingMeal} className="w-full rounded-xl h-12" disabled={creatingMealItems.length === 0}>
+              Done — Add {creatingMealItems.length} items
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -156,10 +381,7 @@ export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem,
           <DialogHeader>
             <DialogTitle>Add to {title}</DialogTitle>
           </DialogHeader>
-          <FoodSearchInput
-            onAddItem={(item) => {onAddItem(item);setMode(null);}}
-            onClose={() => setMode(null)} />
-          
+          <FoodSearchInput onAddItem={(item) => { onAddItem(item); setMode(null); }} onClose={() => setMode(null)} />
         </DialogContent>
       </Dialog>
 
@@ -169,14 +391,11 @@ export const MealSection = ({ title, icon: Icon, items, onAddItem, onRemoveItem,
         onOpenChange={(o) => !o && setMode(null)}
         mealTitle={title}
         onAddItems={(scannedItems) => {
-          if (onAddItems) {
-            onAddItems(scannedItems);
-          } else {
-            scannedItems.forEach((item) => onAddItem(item));
-          }
+          if (onAddItems) onAddItems(scannedItems);
+          else scannedItems.forEach((item) => onAddItem(item));
           setMode(null);
-        }} />
-      
-    </div>);
-
+        }}
+      />
+    </div>
+  );
 };

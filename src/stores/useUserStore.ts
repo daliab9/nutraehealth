@@ -8,6 +8,8 @@ export interface FoodItem {
   carbs: number;
   fat: number;
   quantity?: string;
+  groupId?: string;
+  groupName?: string;
 }
 
 export interface Exercise {
@@ -24,15 +26,16 @@ export interface MealEntry {
 
 export interface HealthEntry {
   poopCount: number;
-  sleepQuality: number; // 1-5
-  stressLevel: number; // 1-5
-  mood: number; // 1-5
+  sleepQuality: number;
+  stressLevel: number;
+  mood: number;
   positiveEmotions: string[];
   positiveReasons: string[];
   positiveOtherText: string;
   negativeEmotions: string[];
   negativeReasons: string[];
   negativeOtherText: string;
+  diaryText: string;
 }
 
 export interface DayEntry {
@@ -129,6 +132,7 @@ const DEFAULT_HEALTH: HealthEntry = {
   negativeEmotions: [],
   negativeReasons: [],
   negativeOtherText: "",
+  diaryText: "",
 };
 
 export function useUserStore() {
