@@ -20,11 +20,20 @@ const MEAL_TYPES = [
   { type: "drinks", title: "Drinks", icon: GlassWater },
 ] as const;
 
+const BRISTOL_TYPES = [
+  { type: 1, emoji: "🥜", label: "Hard lumps, difficult to pass" },
+  { type: 2, emoji: "🪵", label: "Lumpy, sausage-shaped" },
+  { type: 3, emoji: "🌽", label: "Sausage with cracks on surface" },
+  { type: 4, emoji: "🍌", label: "Smooth and soft (ideal)" },
+  { type: 5, emoji: "☁️", label: "Soft blobs with clear edges" },
+  { type: 6, emoji: "🫠", label: "Mushy, fluffy pieces" },
+  { type: 7, emoji: "💧", label: "Entirely liquid" },
+];
+
 const Diary = () => {
   const { profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
-  const [poopEditing, setPoopEditing] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [exEditForm, setExEditForm] = useState({ duration: "", caloriesBurned: "" });
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
