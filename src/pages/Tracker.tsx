@@ -54,7 +54,24 @@ const MacroTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const Tracker = () => {
+const PoopTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const names: Record<string, string> = { poopHard: "Hard", poopNormal: "Normal", poopLoose: "Loose" };
+  const colors: Record<string, string> = { poopHard: "hsl(var(--destructive))", poopNormal: "hsl(var(--primary))", poopLoose: "hsl(var(--accent))" };
+  const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
+  return (
+    <div className="bg-card border border-border rounded-xl p-3 shadow-lg">
+      <p className="text-xs text-muted-foreground mb-1">{label} · {total} total</p>
+      {payload.filter((p: any) => p.value > 0).map((p: any) => (
+        <p key={p.dataKey} className="text-sm text-foreground">
+          <span style={{ color: colors[p.dataKey] }} className="font-semibold">{names[p.dataKey]}</span>: {p.value}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+
   const { getDayTotals, diary, profile, getHealthEntry, health } = useUserStore();
   const [range, setRange] = useState<Range>("week");
   const [exerciseMetric, setExerciseMetric] = useState<ExerciseMetric>("minutes");
