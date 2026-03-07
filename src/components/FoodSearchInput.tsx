@@ -15,6 +15,7 @@ interface FoodSuggestion {
   default_portion_amount: number;
   default_portion_unit: string;
   default_portion_g?: number;
+  available_units?: string[];
   portion_label: string;
 }
 

@@ -10,6 +10,7 @@ export interface FoodItem {
   quantity?: string;
   groupId?: string;
   groupName?: string;
+  availableUnits?: string[];
 }
 
 export interface Exercise {
