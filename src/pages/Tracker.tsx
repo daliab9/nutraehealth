@@ -71,7 +71,7 @@ const PoopTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-
+const Tracker = () => {
   const { getDayTotals, diary, profile, getHealthEntry, health } = useUserStore();
   const [range, setRange] = useState<Range>("week");
   const [exerciseMetric, setExerciseMetric] = useState<ExerciseMetric>("minutes");
