@@ -48,6 +48,13 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const availableUnits = useMemo(() => {
+    if (selected?.available_units && selected.available_units.length > 0) {
+      return selected.available_units;
+    }
+    return UNITS;
+  }, [selected]);
+
   const amountOptions = useMemo(() => {
     const base = getAmountOptions(portionUnit);
     if (!base.includes(portionAmount)) {
@@ -107,6 +114,7 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
       carbs: scale(selected.carbs),
       fat: scale(selected.fat),
       quantity: `${portionAmount}${portionUnit}`,
+      availableUnits: selected.available_units || [portionUnit],
     });
     if (keepOpenOnAdd) {
       setSelected(null);
@@ -174,7 +182,7 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
             </div>
             <div className="flex-1 max-w-[100px]">
               <ScrollPicker
-                items={UNITS}
+                items={availableUnits}
                 value={portionUnit}
                 onChange={(v) => setPortionUnit(String(v))}
                 itemHeight={40}
