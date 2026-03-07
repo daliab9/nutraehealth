@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { CalendarStrip } from "@/components/CalendarStrip";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/EmotionalCheckIn";
-import { Moon, Brain, Pencil } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
+import { toast } from "sonner";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1 },
@@ -52,12 +54,18 @@ const HealthDiary = () => {
   const [sleepEditing, setSleepEditing] = useState(true);
   const [stressEditing, setStressEditing] = useState(true);
   const [emotionsEditing, setEmotionsEditing] = useState(true);
+  const [diaryEditing, setDiaryEditing] = useState(true);
+  const [diaryText, setDiaryText] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     const e = getHealthEntry(dateKey);
     setSleepEditing(e.sleepQuality === 0);
     setStressEditing(e.stressLevel === 0);
     setEmotionsEditing(e.positiveEmotions.length === 0 && e.negativeEmotions.length === 0);
+    setDiaryText(e.diaryText || "");
+    setDiaryEditing(!e.diaryText);
   }, [dateKey]);
 
   const update = (field: string, value: number) => {
@@ -68,9 +76,42 @@ const HealthDiary = () => {
     setHealthEntry(dateKey, { ...entry, ...emotionalData });
   };
 
+  const saveDiary = () => {
+    setHealthEntry(dateKey, { ...entry, diaryText: diaryText.trim() });
+    if (diaryText.trim()) setDiaryEditing(false);
+  };
+
+  const toggleVoiceRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast.error("Voice input not supported in this browser");
+      return;
+    }
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setDiaryText((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+    recognition.onend = () => setIsRecording(false);
+    recognition.onerror = () => {
+      setIsRecording(false);
+      toast.error("Voice recognition failed. Try again.");
+    };
+    recognition.start();
+    setIsRecording(true);
+    recognitionRef.current = recognition;
+  };
+
   const sleepLabel = SLEEP_OPTIONS.find((o) => o.value === entry.sleepQuality);
   const stressLabel = STRESS_OPTIONS.find((o) => o.value === entry.stressLevel);
-
   const hasEmotions = entry.positiveEmotions.length > 0 || entry.negativeEmotions.length > 0;
 
   return (
@@ -83,6 +124,57 @@ const HealthDiary = () => {
       </div>
 
       <div className="px-4 pt-6 space-y-4">
+        {/* Diary Entry */}
+        <div className="rounded-2xl bg-card border border-border p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-foreground" />
+              <h3 className="font-semibold text-foreground">Diary Entry</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleVoiceRecording}
+                className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                  isRecording
+                    ? "bg-destructive text-destructive-foreground animate-pulse"
+                    : "bg-action-button text-foreground hover:opacity-80"
+                }`}
+              >
+                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+              {!diaryEditing && entry.diaryText && (
+                <button
+                  onClick={() => setDiaryEditing(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </button>
+              )}
+            </div>
+          </div>
+          {diaryEditing ? (
+            <div className="space-y-3">
+              <Textarea
+                value={diaryText}
+                onChange={(e) => setDiaryText(e.target.value)}
+                placeholder="How was your day? What's on your mind?"
+                className="rounded-xl min-h-[100px] resize-none border-border"
+              />
+              {diaryText.trim() && (
+                <button
+                  onClick={saveDiary}
+                  className="w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
+                >
+                  Save
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-foreground whitespace-pre-wrap">{entry.diaryText}</p>
+          )}
+        </div>
+
         {/* Sleep quality */}
         <div className="rounded-2xl bg-card border border-border p-5">
           <div className="flex items-center justify-between mb-3">
@@ -104,28 +196,18 @@ const HealthDiary = () => {
             <>
               <div className="flex flex-wrap gap-2">
                 {SLEEP_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt.value}
-                    label={opt.label}
-                    selected={entry.sleepQuality === opt.value}
-                    onClick={() => update("sleepQuality", opt.value)}
-                  />
+                  <Chip key={opt.value} label={opt.label} selected={entry.sleepQuality === opt.value} onClick={() => update("sleepQuality", opt.value)} />
                 ))}
               </div>
               {entry.sleepQuality > 0 && (
-                <button
-                  onClick={() => setSleepEditing(false)}
-                  className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
-                >
+                <button onClick={() => setSleepEditing(false)} className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform">
                   Save
                 </button>
               )}
             </>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
-                {sleepLabel?.label}
-              </span>
+              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">{sleepLabel?.label}</span>
             </div>
           )}
         </div>
@@ -151,28 +233,18 @@ const HealthDiary = () => {
             <>
               <div className="flex flex-wrap gap-2">
                 {STRESS_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt.value}
-                    label={opt.label}
-                    selected={entry.stressLevel === opt.value}
-                    onClick={() => update("stressLevel", opt.value)}
-                  />
+                  <Chip key={opt.value} label={opt.label} selected={entry.stressLevel === opt.value} onClick={() => update("stressLevel", opt.value)} />
                 ))}
               </div>
               {entry.stressLevel > 0 && (
-                <button
-                  onClick={() => setStressEditing(false)}
-                  className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform"
-                >
+                <button onClick={() => setStressEditing(false)} className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform">
                   Save
                 </button>
               )}
             </>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
-                {stressLabel?.label}
-              </span>
+              <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">{stressLabel?.label}</span>
             </div>
           )}
         </div>
@@ -196,9 +268,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Positive</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.positiveEmotions.map((e) => (
-                      <span key={e} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">
-                        {e}
-                      </span>
+                      <span key={e} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">{e}</span>
                     ))}
                   </div>
                 </div>
@@ -208,9 +278,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Because of</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.positiveReasons.map((r) => (
-                      <span key={r} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">
-                        {r}
-                      </span>
+                      <span key={r} className="px-3 py-1 rounded-full bg-positive border border-positive text-xs font-medium text-foreground">{r}</span>
                     ))}
                   </div>
                 </div>
@@ -220,9 +288,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Difficult</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.negativeEmotions.map((e) => (
-                      <span key={e} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">
-                        {e}
-                      </span>
+                      <span key={e} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">{e}</span>
                     ))}
                   </div>
                 </div>
@@ -232,9 +298,7 @@ const HealthDiary = () => {
                   <p className="text-xs text-muted-foreground mb-2">Contributing factors</p>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.negativeReasons.map((r) => (
-                      <span key={r} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">
-                        {r}
-                      </span>
+                      <span key={r} className="px-3 py-1 rounded-full bg-negative-bubble border border-negative-bubble text-xs font-medium text-foreground">{r}</span>
                     ))}
                   </div>
                 </div>
