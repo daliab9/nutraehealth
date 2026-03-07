@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Bookmark, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Bookmark, FolderPlus, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -41,6 +41,8 @@ export const MealSection = ({
   const [creatingMealName, setCreatingMealName] = useState("");
   const [creatingMealItems, setCreatingMealItems] = useState<FoodItem[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [addToMealItem, setAddToMealItem] = useState<FoodItem | null>(null);
+  const [newMealName, setNewMealName] = useState("");
 
   const totalCals = items.reduce((sum, i) => sum + i.calories, 0);
 
@@ -221,6 +223,9 @@ export const MealSection = ({
                     <Pencil className="h-2.5 w-2.5" />
                   </button>
                 )}
+                <button onClick={() => setAddToMealItem(item)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                  <FolderPlus className="h-2.5 w-2.5" />
+                </button>
                 {onRemoveItem && (
                   <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
                     <X className="h-3 w-3" />
@@ -396,6 +401,64 @@ export const MealSection = ({
           setMode(null);
         }}
       />
+      {/* Add to meal dialog */}
+      <Dialog open={!!addToMealItem} onOpenChange={(o) => !o && setAddToMealItem(null)}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add "{addToMealItem?.name}" to a meal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            {grouped.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Existing meals</p>
+                {grouped.map(([groupId, group]) => (
+                  <button
+                    key={groupId}
+                    onClick={() => {
+                      if (addToMealItem && onUpdateItem) {
+                        onUpdateItem({ ...addToMealItem, groupId, groupName: group.name });
+                        setAddToMealItem(null);
+                        toast.success(`Added to "${group.name}"`);
+                      }
+                    }}
+                    className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <span className="text-sm text-foreground font-medium">{group.name}</span>
+                    <span className="text-xs text-muted-foreground">{group.items.length} items</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Create new meal</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Meal name"
+                  value={newMealName}
+                  onChange={(e) => setNewMealName(e.target.value)}
+                  className="rounded-xl flex-1"
+                />
+                <Button
+                  onClick={() => {
+                    if (addToMealItem && newMealName.trim() && onUpdateItem) {
+                      const groupId = Date.now().toString();
+                      onUpdateItem({ ...addToMealItem, groupId, groupName: newMealName.trim() });
+                      setAddToMealItem(null);
+                      setNewMealName("");
+                      toast.success(`Created meal "${newMealName.trim()}"`);
+                    }
+                  }}
+                  disabled={!newMealName.trim()}
+                  className="rounded-xl"
+                >
+                  Create
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
