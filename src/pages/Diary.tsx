@@ -45,9 +45,11 @@ const Diary = () => {
     return meal?.items || [];
   };
 
-  const allPastItems = Object.values(diary).flatMap((day) =>
-    day.meals.flatMap((m) => m.items)
-  );
+  const getPastItemsForMealType = (mealType: string) => {
+    return Object.values(diary).flatMap((day) =>
+      day.meals.filter((m) => m.type === mealType).flatMap((m) => m.items)
+    );
+  };
 
   const healthAlerts = () => {
     const alerts: string[] = [];
@@ -172,7 +174,7 @@ const Diary = () => {
                     onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
                     onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
                     onAddItems={(items) => items.forEach(item => addFoodToMeal(dateKey, type as any, item))}
-                    pastItems={allPastItems}
+                    pastItems={getPastItemsForMealType(type)}
                     savedMeals={profile.savedMeals || []}
                     onSaveMeal={handleSaveMeal}
                   />

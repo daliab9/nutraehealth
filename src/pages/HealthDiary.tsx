@@ -93,12 +93,22 @@ const HealthDiary = () => {
       return;
     }
     const recognition = new SR();
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setDiaryText((prev) => (prev ? prev + " " + transcript : transcript));
+      let finalTranscript = "";
+      let interimTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        setDiaryText((prev) => (prev ? prev + " " + finalTranscript : finalTranscript));
+      }
     };
     recognition.onend = () => setIsRecording(false);
     recognition.onerror = () => {

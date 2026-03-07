@@ -7,8 +7,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useUserStore } from "@/stores/useUserStore";
-import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark } from "lucide-react";
+import { FoodSearchInput } from "@/components/FoodSearchInput";
+import { useUserStore, type FoodItem } from "@/stores/useUserStore";
+import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X } from "lucide-react";
 
 const GOALS_MAP: Record<string, string> = {
   lose_weight: "Lose weight",
@@ -42,6 +43,10 @@ const Profile = () => {
   const [editTargetWeightOpen, setEditTargetWeightOpen] = useState(false);
   const [editTargetWeight, setEditTargetWeight] = useState(String(profile.targetWeight));
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [createMealOpen, setCreateMealOpen] = useState(false);
+  const [createMealName, setCreateMealName] = useState("");
+  const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
+  const [createMealStep, setCreateMealStep] = useState<"name" | "add">("name");
 
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
@@ -164,9 +169,14 @@ const Profile = () => {
 
         {/* Saved Meals */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Bookmark className="h-4 w-4 text-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4 text-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
           {savedMeals.length === 0 ? (
             <p className="text-sm text-muted-foreground">No saved meals yet. Save meals from the diary to quickly add them later.</p>
