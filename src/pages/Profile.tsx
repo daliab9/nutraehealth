@@ -362,6 +362,75 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Create Meal Dialog */}
+      <Dialog open={createMealOpen} onOpenChange={setCreateMealOpen}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{createMealStep === "name" ? "Name your meal" : createMealName}</DialogTitle>
+          </DialogHeader>
+          {createMealStep === "name" ? (
+            <div className="space-y-3 pt-2">
+              <Input
+                placeholder="e.g. Greek Yogurt Bowl"
+                value={createMealName}
+                onChange={(e) => setCreateMealName(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+              <Button
+                onClick={() => { if (createMealName.trim()) setCreateMealStep("add"); }}
+                className="w-full rounded-xl h-12"
+                disabled={!createMealName.trim()}
+              >
+                Next — Add ingredients
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {createMealItems.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {createMealItems.length} items · {createMealItems.reduce((s, i) => s + i.calories, 0)} kcal
+                  </p>
+                  {createMealItems.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                      <span className="text-sm text-foreground">{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <button onClick={() => setCreateMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <FoodSearchInput
+                onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])}
+                onClose={() => {}}
+                keepOpenOnAdd
+              />
+              <Button
+                onClick={() => {
+                  if (createMealItems.length === 0) return;
+                  const newMeal = {
+                    id: Date.now().toString(),
+                    name: createMealName.trim(),
+                    items: createMealItems,
+                  };
+                  setProfile({ savedMeals: [...(profile.savedMeals || []), newMeal] });
+                  setCreateMealOpen(false);
+                }}
+                className="w-full rounded-xl h-12"
+                disabled={createMealItems.length === 0}
+              >
+                Save meal ({createMealItems.length} items)
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
