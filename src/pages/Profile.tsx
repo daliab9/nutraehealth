@@ -35,8 +35,10 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, goals: string[]): number {
-  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + 5;
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[]): number {
+  // Mifflin-St Jeor: gender-aware BMR
+  const genderOffset = gender === "female" ? -161 : 5;
+  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + genderOffset;
   const tdee = bmr * 1.4;
   const goal = getMainGoal(goals);
   switch (goal) {
