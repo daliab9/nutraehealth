@@ -35,7 +35,8 @@ export const MealSection = ({
   onAddItems,
   pastItems = [],
   savedMeals = [],
-  onSaveMeal
+  onSaveMeal,
+  onUnsaveMeal
 }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
