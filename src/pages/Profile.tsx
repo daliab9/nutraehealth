@@ -585,10 +585,22 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Health Info Dialog */}
+      {/* My Information Dialog */}
       <Dialog open={healthInfoOpen} onOpenChange={setHealthInfoOpen}>
-        <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>My Health Information</DialogTitle></DialogHeader>
+        <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>My Information</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Gender</p>
+              <div className="flex flex-wrap gap-2">
+                {["Male", "Female", "Other", "Prefer not to say"].map((g) => (
+                  <button key={g} onClick={() => setEditGender(g)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${editGender === g ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{g}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Age</p>
+              <ScrollPicker items={Array.from({ length: 82 }, (_, i) => i + 14)} value={editAge} onChange={(v) => setEditAge(Number(v))} />
+            </div>
             <div>
               <p className="text-sm font-medium text-foreground mb-2">Dietary Preferences</p>
               <div className="flex flex-wrap gap-2">
@@ -613,7 +625,11 @@ const Profile = () => {
                 ))}
               </div>
             </div>
-            <Button onClick={() => { setProfile({ dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns }); setHealthInfoOpen(false); }} className="w-full rounded-xl h-12">Save</Button>
+            <Button onClick={() => {
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || []);
+              setProfile({ gender: editGender, age: editAge, dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns, dailyCalorieTarget: newCalories });
+              setHealthInfoOpen(false);
+            }} className="w-full rounded-xl h-12">Save</Button>
           </div>
         </DialogContent>
       </Dialog>
