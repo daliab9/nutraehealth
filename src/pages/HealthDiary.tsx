@@ -361,6 +361,17 @@ const HealthDiary = () => {
         </div>
       </div>
 
+      {/* Cycle Date Dialog */}
+      <Dialog open={cycleOpen} onOpenChange={setCycleOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
+            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
