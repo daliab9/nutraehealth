@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getCycleInfo, MEAL_GUIDANCE, EXERCISE_GUIDANCE, MENTAL_GUIDANCE, type CyclePhase } from "@/utils/cyclePhase";
+import { getCycleInfo, MENTAL_GUIDANCE } from "@/utils/cyclePhase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Info } from "lucide-react";
@@ -11,20 +11,6 @@ interface CycleMentalBannerProps {
   onEditCycleDate?: () => void;
 }
 
-const Section = ({ title, tips }: { title: string; tips: string[] }) => (
-  <div>
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{title}</p>
-    <ul className="space-y-1.5">
-      {tips.map((tip) => (
-        <li key={tip} className="flex items-start gap-2 text-sm text-foreground">
-          <span className="text-muted-foreground mt-0.5">·</span>
-          {tip}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
 export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, onEditCycleDate }: CycleMentalBannerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -33,6 +19,8 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
   if (cycleStartDate) {
     const info = getCycleInfo(cycleStartDate);
     if (!info) return null;
+
+    const guidance = MENTAL_GUIDANCE[info.phase];
 
     return (
       <>
@@ -70,10 +58,30 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
                 {info.phase} Phase · Day {info.cycleDay}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-5 pt-2">
-              <Section title="Meals" tips={MEAL_GUIDANCE[info.phase]} />
-              <Section title="Exercise" tips={EXERCISE_GUIDANCE[info.phase]} />
-              <Section title="Mood" tips={MENTAL_GUIDANCE[info.phase]} />
+            <div className="space-y-4 pt-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Mood</p>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">What's happening</p>
+                <p className="text-sm text-foreground">{guidance.whatsHappening}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">What this means</p>
+                <p className="text-sm text-foreground">{guidance.whatThisMeans}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">What to focus on</p>
+                <ul className="space-y-1.5">
+                  {guidance.tips.map((tip) => (
+                    <li key={tip} className="flex items-start gap-2 text-sm text-foreground">
+                      <span className="text-muted-foreground mt-0.5">·</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -81,7 +89,6 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
     );
   }
 
-  // Female without cycle date → show awareness card
   return (
     <div className="rounded-2xl bg-secondary/40 border border-border p-5 mb-4">
       <h3 className="text-sm font-semibold text-foreground mb-2">Cycle Awareness</h3>
