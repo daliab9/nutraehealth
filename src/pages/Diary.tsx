@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
 import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
+import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -236,6 +237,13 @@ const Diary = () => {
           <span className="font-semibold text-base">Poop</span>
         </button>
       </div>
+
+      {/* Cycle phase card - only for females with cycle date */}
+      {profile.gender === "Female" && profile.cycleStartDate && (
+        <div className="px-5">
+          <CyclePhaseCard cycleStartDate={profile.cycleStartDate} />
+        </div>
+      )}
 
       {/* Health alerts */}
       {alerts.length > 0 && (
