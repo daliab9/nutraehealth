@@ -12,7 +12,10 @@ import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
-import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X, Dumbbell, RotateCcw } from "lucide-react";
+import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw } from "lucide-react";
+import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
+import { ExerciseEntry } from "@/components/ExerciseEntry";
+import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
 
 const GOALS_MAP: Record<string, string> = {
@@ -106,6 +109,7 @@ const Profile = () => {
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [addExerciseOpen, setAddExerciseOpen] = useState(false);
   const [createMealOpen, setCreateMealOpen] = useState(false);
   const [createMealName, setCreateMealName] = useState("");
   const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
@@ -327,20 +331,58 @@ const Profile = () => {
           <div className="rounded-2xl bg-card border border-border p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-pink-500" />
+                <span className="text-base">♀</span>
                 <h3 className="text-sm font-semibold text-foreground">Cycle Tracker</h3>
               </div>
-              <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd")); setCycleOpen(true); }}>
-                {profile.cycleStartDate ? "Update" : "Set start date"}
-              </Button>
+              <div className="flex items-center gap-2">
+                {profile.cycleStartDate && (
+                  <button
+                    onClick={() => { setProfile({ cycleStartDate: undefined }); }}
+                    className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                )}
+                <button
+                  onClick={() => { setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd")); setCycleOpen(true); }}
+                  className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-foreground" />
+                </button>
+              </div>
             </div>
             {profile.cycleStartDate ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Started {format(new Date(profile.cycleStartDate), "MMM d, yyyy")}</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Started {format(new Date(profile.cycleStartDate), "MMM d, yyyy")}</span>
+                  </div>
+                  {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
                 </div>
-                {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
+                {(() => {
+                  const phases = getPhaseDates(profile.cycleStartDate);
+                  if (!phases) return null;
+                  return (
+                    <div className="space-y-1.5">
+                      {phases.map((p) => (
+                        <div
+                          key={p.phase}
+                          className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
+                            p.isCurrent
+                              ? "bg-[hsl(var(--accent))] border-[hsl(var(--accent))]"
+                              : "border-border"
+                          }`}
+                        >
+                          <span className={`text-sm font-medium ${p.isCurrent ? "text-accent-foreground" : "text-foreground"}`}>{p.label}</span>
+                          <span className={`text-xs ${p.isCurrent ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
+                            {p.startDate} – {p.endDate}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Log the first day of your cycle to start tracking</p>
@@ -352,7 +394,7 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bookmark className="h-4 w-4 text-foreground" />
+              <Heart className="h-4 w-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
@@ -404,9 +446,12 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Dumbbell className="h-4 w-4 text-foreground" />
+              <Heart className="h-4 w-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">Saved Exercises</h3>
             </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setAddExerciseOpen(true)}>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
           {savedExercises.length === 0 ? (
             <p className="text-sm text-muted-foreground">No saved exercises yet.</p>
@@ -435,9 +480,12 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">My Goals</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditGoals(profile.goals || []); setGoalsOpen(true); }}>
-              <Pencil className="h-3 w-3 mr-1" /> Edit
-            </Button>
+            <button
+              onClick={() => { setEditGoals(profile.goals || []); setGoalsOpen(true); }}
+              className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
           </div>
           {(profile.goals || []).length > 0 ? (
             <div className="flex flex-wrap gap-2">
@@ -455,9 +503,12 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">My Information</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
-              <Pencil className="h-3 w-3 mr-1" /> Edit
-            </Button>
+            <button
+              onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}
+              className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -859,6 +910,24 @@ const Profile = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Exercise Dialog (for saved exercises) */}
+      <ExerciseEntry
+        open={addExerciseOpen}
+        onOpenChange={setAddExerciseOpen}
+        onAdd={(exercise: Exercise) => {
+          const newSaved: SavedExercise = {
+            id: Date.now().toString(),
+            name: exercise.name,
+            duration: exercise.duration,
+            caloriesBurned: exercise.caloriesBurned,
+            secondaryMetric: exercise.secondaryMetric,
+            secondaryUnit: exercise.secondaryUnit,
+          };
+          setProfile({ savedExercises: [...(profile.savedExercises || []), newSaved] });
+          setAddExerciseOpen(false);
+        }}
+      />
 
       <BottomNav />
     </div>

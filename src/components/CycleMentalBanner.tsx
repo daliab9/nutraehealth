@@ -1,13 +1,15 @@
 import { getCycleInfo, MENTAL_GUIDANCE, type CyclePhase } from "@/utils/cyclePhase";
 import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 interface CycleMentalBannerProps {
   cycleStartDate?: string;
   isFemale: boolean;
   onAddCycleDate: () => void;
+  onEditCycleDate?: () => void;
 }
 
-export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate }: CycleMentalBannerProps) => {
+export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, onEditCycleDate }: CycleMentalBannerProps) => {
   if (!isFemale) return null;
 
   // Female with cycle date → show phase banner + guidance
@@ -19,10 +21,18 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate }: 
 
     return (
       <div className="space-y-3 mb-4">
-        <div className="rounded-2xl bg-secondary/40 border border-border px-4 py-3">
+        <div className="rounded-2xl bg-secondary/40 border border-border px-4 py-3 flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">
             Cycle Phase: {info.phase} (Day {info.cycleDay})
           </p>
+          {onEditCycleDate && (
+            <button
+              onClick={onEditCycleDate}
+              className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
+          )}
         </div>
         <div className="rounded-2xl bg-secondary/40 border border-border p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Things to note</p>

@@ -7,6 +7,9 @@ import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/Emotio
 import { CycleMentalBanner } from "@/components/CycleMentalBanner";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,10 +51,12 @@ const Chip = ({
 );
 
 const HealthDiary = () => {
-  const { profile, getHealthEntry, setHealthEntry } = useUserStore();
+  const { profile, setProfile, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const entry = getHealthEntry(dateKey);
+  const [cycleOpen, setCycleOpen] = useState(false);
+  const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
 
   const [sleepEditing, setSleepEditing] = useState(true);
   const [stressEditing, setStressEditing] = useState(true);
@@ -141,8 +146,12 @@ const HealthDiary = () => {
           isFemale={profile.gender === "Female"}
           cycleStartDate={profile.cycleStartDate}
           onAddCycleDate={() => {
-            // Navigate to profile page where cycle tracker lives
-            window.location.href = "/profile";
+            setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd"));
+            setCycleOpen(true);
+          }}
+          onEditCycleDate={() => {
+            setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd"));
+            setCycleOpen(true);
           }}
         />
 
@@ -351,6 +360,17 @@ const HealthDiary = () => {
           )}
         </div>
       </div>
+
+      {/* Cycle Date Dialog */}
+      <Dialog open={cycleOpen} onOpenChange={setCycleOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
+            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
