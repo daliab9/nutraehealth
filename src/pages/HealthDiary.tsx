@@ -136,6 +136,16 @@ const HealthDiary = () => {
       </div>
 
       <div className="px-4 pt-6 space-y-4">
+        {/* Cycle mental health banner */}
+        <CycleMentalBanner
+          isFemale={profile.gender === "Female"}
+          cycleStartDate={profile.cycleStartDate}
+          onAddCycleDate={() => {
+            // Navigate to profile page where cycle tracker lives
+            window.location.href = "/profile";
+          }}
+        />
+
         {/* Diary Entry */}
         <div className="rounded-2xl bg-card border border-border p-5">
           <div className="flex items-center justify-between mb-3">

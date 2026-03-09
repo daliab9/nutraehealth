@@ -238,6 +238,13 @@ const Diary = () => {
         </button>
       </div>
 
+      {/* Cycle phase card - only for females with cycle date */}
+      {profile.gender === "Female" && profile.cycleStartDate && (
+        <div className="px-5">
+          <CyclePhaseCard cycleStartDate={profile.cycleStartDate} />
+        </div>
+      )}
+
       {/* Health alerts */}
       {alerts.length > 0 && (
         <div className="px-5 mb-4 space-y-2">
