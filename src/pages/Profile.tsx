@@ -288,7 +288,7 @@ const Profile = () => {
         <div className="relative rounded-2xl bg-card border border-border p-4 text-center mb-6">
           <EditButton onClick={openCaloriesEdit} />
           <p className="text-2xl font-bold text-foreground">{profile.dailyCalorieTarget}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target daily calories</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target net daily calories</p>
         </div>
 
         {/* Weight tracking */}
