@@ -340,13 +340,9 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
             <div className="text-center py-2">
               <p className="text-2xl font-bold text-foreground">
-                {activeMetric === "duration" ? estimatedCals : metricValue}
+                {activeMetric === "duration" ? estimatedCals : estimateCalsFromMetric()}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {activeMetric === "duration"
-                  ? "estimated calories burned"
-                  : `${getMetricSuffix().trim()}`}
-              </p>
+              <p className="text-xs text-muted-foreground">estimated calories burned</p>
             </div>
 
             <Button onClick={handleAdd} className="w-full rounded-xl h-12">
