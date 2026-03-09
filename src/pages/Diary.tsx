@@ -431,10 +431,9 @@ const Diary = () => {
         )}
       </div>
 
-      {/* Cycle phase insights - at the bottom, only for females with cycle date */}
       {profile.gender === "Female" && profile.cycleStartDate && (
         <div className="px-5 mt-4">
-          <CyclePhaseCard cycleStartDate={profile.cycleStartDate} />
+          <CyclePhaseCard cycleStartDate={profile.cycleStartDate} context={activeSection === "exercise" ? "exercise" : "meals"} />
         </div>
       )}
 
