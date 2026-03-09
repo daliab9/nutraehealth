@@ -276,6 +276,84 @@ export function useUserStore() {
     });
   }, []);
 
+  const moveFoodBetweenMeals = useCallback(
+    (date: string, fromMealType: MealEntry["type"], toMealType: MealEntry["type"], itemId: string) => {
+      setDiaryState((prev) => {
+        const day = prev[date];
+        if (!day) return prev;
+
+        const sourceMeal = day.meals.find((m) => m.type === fromMealType);
+        const item = sourceMeal?.items.find((i) => i.id === itemId);
+        if (!item) return prev;
+
+        const movedItem = { ...item, groupId: undefined, groupName: undefined };
+
+        let meals = day.meals.map((m) => {
+          if (m.type === fromMealType) {
+            return { ...m, items: m.items.filter((i) => i.id !== itemId) };
+          }
+          return m;
+        });
+
+        const targetMeal = meals.find((m) => m.type === toMealType);
+        if (targetMeal) {
+          meals = meals.map((m) =>
+            m.type === toMealType ? { ...m, items: [...m.items, movedItem] } : m
+          );
+        } else {
+          meals.push({ type: toMealType, items: [movedItem] });
+        }
+
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
+  const mergeItemsIntoGroup = useCallback(
+    (
+      date: string,
+      sourceItem: { mealType: MealEntry["type"]; itemId: string },
+      targetItem: { mealType: MealEntry["type"]; itemId: string },
+      groupName: string
+    ) => {
+      setDiaryState((prev) => {
+        const day = prev[date];
+        if (!day) return prev;
+
+        const groupId = Date.now().toString();
+
+        const srcMeal = day.meals.find((m) => m.type === sourceItem.mealType);
+        const srcIt = srcMeal?.items.find((i) => i.id === sourceItem.itemId);
+        if (!srcIt) return prev;
+
+        // Remove source item
+        let meals = day.meals.map((m) =>
+          m.type === sourceItem.mealType
+            ? { ...m, items: m.items.filter((i) => i.id !== sourceItem.itemId) }
+            : m
+        );
+
+        // Update target item with group info and add source item
+        const tgtIdx = meals.findIndex((m) => m.type === targetItem.mealType);
+        if (tgtIdx >= 0) {
+          meals[tgtIdx] = {
+            ...meals[tgtIdx],
+            items: [
+              ...meals[tgtIdx].items.map((i) =>
+                i.id === targetItem.itemId ? { ...i, groupId, groupName } : i
+              ),
+              { ...srcIt, groupId, groupName },
+            ],
+          };
+        }
+
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
   const getDayTotals = useCallback(
     (date: string) => {
       const day = getDayEntry(date);
