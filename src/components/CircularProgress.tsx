@@ -62,7 +62,7 @@ export const CircularProgress = ({
         ) : (
           <>
             <span className="font-bold text-foreground tracking-tight text-6xl">{formatted}</span>
-            <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">Cals</span>
+            <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">Net Cals</span>
           </>
         )}
       </div>

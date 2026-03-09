@@ -35,8 +35,10 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, goals: string[]): number {
-  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + 5;
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[]): number {
+  // Mifflin-St Jeor: gender-aware BMR
+  const genderOffset = gender === "female" ? -161 : 5;
+  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + genderOffset;
   const tdee = bmr * 1.4;
   const goal = getMainGoal(goals);
   switch (goal) {
@@ -203,7 +205,7 @@ const Profile = () => {
   const saveWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
-    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
     setProfile({
       currentWeight: kgVal,
       weightUnit,
@@ -218,14 +220,14 @@ const Profile = () => {
 
   const saveGoalWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollGoalWeight) : scrollGoalWeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || []);
     setProfile({ targetWeight: kgVal, dailyCalorieTarget: newCalories });
     setEditField(null);
   };
 
   const saveHeight = () => {
     const cmVal = heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || []);
     setProfile({ height: cmVal, heightUnit, dailyCalorieTarget: newCalories });
     setEditField(null);
   };
@@ -236,7 +238,7 @@ const Profile = () => {
   };
 
   const autoCalcAndSet = () => {
-    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
     const snapped = Math.round(cal / 10) * 10;
     setScrollCalories(Math.max(1000, Math.min(4000, snapped)));
   };
@@ -286,7 +288,7 @@ const Profile = () => {
         <div className="relative rounded-2xl bg-card border border-border p-4 text-center mb-6">
           <EditButton onClick={openCaloriesEdit} />
           <p className="text-2xl font-bold text-foreground">{profile.dailyCalorieTarget}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target daily calories</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target net daily calories</p>
         </div>
 
         {/* Weight tracking */}
@@ -545,7 +547,7 @@ const Profile = () => {
       {/* Edit Calories Dialog */}
       <Dialog open={editField === "calories"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
         <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle>Target Daily Calories</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Target Net Daily Calories</DialogTitle></DialogHeader>
           <ScrollPicker
             items={CAL_VALUES}
             value={scrollCalories}
@@ -815,7 +817,7 @@ const Profile = () => {
                 const updates: any = { weightHistory: history };
                 if (mostRecent.date === dateStr) {
                   updates.currentWeight = kgVal;
-                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
                 }
 
                 setProfile(updates);
