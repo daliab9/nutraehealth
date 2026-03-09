@@ -218,63 +218,70 @@ const Diary = () => {
               </Button>
             </div>
             {dayEntry.exercises.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-1.5">
                 {dayEntry.exercises.map((ex) => (
-                  <div key={ex.id} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-[#e4e7c6]">
-                    <span className="text-sm text-foreground font-bold">{ex.name}</span>
-                    <span className="text-muted-foreground text-sm font-sans font-semibold">{ex.duration}min · -{ex.caloriesBurned} kcal</span>
-                    <button
-                      onClick={() => {
-                        setEditingExercise(ex);
-                        setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
-                      }}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => removeExercise(dateKey, ex.id)}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                  <div key={ex.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
+                    <div className="flex flex-col min-w-0 flex-1 mr-2">
+                      <span className="text-sm text-foreground font-bold truncate">{ex.name}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {ex.duration}min · -{ex.caloriesBurned} kcal
+                        {ex.secondaryMetric && ex.secondaryUnit && ` · ${ex.secondaryMetric} ${ex.secondaryUnit}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditingExercise(ex);
+                          setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
+                        }}
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => removeExercise(dateKey, ex.id)}
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <button onClick={() => setExerciseOpen(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                <Plus className="h-3.5 w-3.5" />
-                Add exercise
-              </button>
+              <p className="text-sm text-muted-foreground text-center py-2">No exercises logged yet</p>
             )}
           </div>
         )}
 
         {activeSection === "poop" && (
-          <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl bg-card border border-border p-4">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CircleDot className="h-5 w-5 text-foreground" />
                 <h3 className="font-semibold text-foreground">Bowel Movements</h3>
+                {poopEntries.length > 0 && (
+                  <span className="text-sm text-muted-foreground font-semibold">{poopEntries.length}</span>
+                )}
               </div>
-              <span className="text-2xl font-bold text-foreground">{poopEntries.length}</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => setAddingPoopType(true)}>
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Existing entries */}
             {poopEntries.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1.5 mb-3">
                 {poopEntries.map((entry) => {
                   const group = POOP_GROUPS.find(g => g.types.includes(entry.type));
                   return (
-                    <div key={entry.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/50">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{group?.label}</p>
-                      </div>
+                    <div key={entry.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
+                      <span className="text-sm font-medium text-foreground">{group?.label}</span>
                       <button
                         onClick={() => removePoopEntry(entry.id)}
-                        className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   );
@@ -282,9 +289,9 @@ const Diary = () => {
               </div>
             )}
 
-            {/* Add button / type selector */}
-            {addingPoopType ? (
-              <div className="space-y-3">
+            {/* Type selector */}
+            {addingPoopType && (
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-foreground">What type?</p>
                   <button onClick={() => setAddingPoopType(false)} className="text-muted-foreground hover:text-foreground">
@@ -303,11 +310,10 @@ const Diary = () => {
                   ))}
                 </div>
               </div>
-            ) : (
-              <button onClick={() => setAddingPoopType(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 w-full justify-center">
-                <Plus className="h-3.5 w-3.5" />
-                Log a bowel movement
-              </button>
+            )}
+
+            {poopEntries.length === 0 && !addingPoopType && (
+              <p className="text-sm text-muted-foreground text-center py-2">No bowel movements logged yet</p>
             )}
           </div>
         )}
