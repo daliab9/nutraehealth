@@ -95,6 +95,27 @@ const Profile = () => {
     });
   };
 
+  const openEditMeal = (meal: SavedMeal) => {
+    setEditingSavedMeal(meal);
+    setEditMealName(meal.name);
+    setEditMealItems([...meal.items]);
+    setEditMealAddingItem(false);
+    setEditingMealItem(null);
+  };
+
+  const saveEditedMeal = () => {
+    if (!editingSavedMeal || editMealItems.length === 0) return;
+    const updated = (profile.savedMeals || []).map((m) =>
+      m.id === editingSavedMeal.id ? { ...m, name: editMealName.trim() || m.name, items: editMealItems } : m
+    );
+    setProfile({ savedMeals: updated });
+    setEditingSavedMeal(null);
+  };
+
+  const removeEditMealItem = (index: number) => {
+    setEditMealItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const deleteSavedExercise = (exerciseId: string) => {
     setProfile({
       savedExercises: (profile.savedExercises || []).filter((e) => e.id !== exerciseId),
