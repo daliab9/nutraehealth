@@ -817,7 +817,7 @@ const Profile = () => {
                 const updates: any = { weightHistory: history };
                 if (mostRecent.date === dateStr) {
                   updates.currentWeight = kgVal;
-                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
                 }
 
                 setProfile(updates);
