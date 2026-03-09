@@ -209,6 +209,12 @@ const Profile = () => {
     setEditField("calories");
   };
 
+  const persistToDB = useCallback(async (updates: Record<string, unknown>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase.from("profiles").update(updates).eq("user_id", session.user.id);
+  }, []);
+
   const saveWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
@@ -222,6 +228,7 @@ const Profile = () => {
         { date: today, weight: kgVal },
       ].sort((a, b) => a.date.localeCompare(b.date)),
     });
+    persistToDB({ current_weight: kgVal, weight_unit: weightUnit, daily_calorie_goal: newCalories });
     setEditField(null);
   };
 
@@ -229,6 +236,7 @@ const Profile = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollGoalWeight) : scrollGoalWeight;
     const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || []);
     setProfile({ targetWeight: kgVal, dailyCalorieTarget: newCalories });
+    persistToDB({ target_weight: kgVal, daily_calorie_goal: newCalories });
     setEditField(null);
   };
 
@@ -236,11 +244,13 @@ const Profile = () => {
     const cmVal = heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight;
     const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || []);
     setProfile({ height: cmVal, heightUnit, dailyCalorieTarget: newCalories });
+    persistToDB({ height: cmVal, height_unit: heightUnit, daily_calorie_goal: newCalories });
     setEditField(null);
   };
 
   const saveCalories = () => {
     setProfile({ dailyCalorieTarget: scrollCalories });
+    persistToDB({ daily_calorie_goal: scrollCalories });
     setEditField(null);
   };
 
