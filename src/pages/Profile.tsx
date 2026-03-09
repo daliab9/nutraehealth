@@ -201,8 +201,8 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
-                        <button onClick={(e) => { e.stopPropagation(); deleteSavedMeal(meal.id); }} className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
+                        <button onClick={(e) => { e.stopPropagation(); deleteSavedMeal(meal.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </button>
@@ -219,6 +219,37 @@ const Profile = () => {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Saved Exercises */}
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Saved Exercises</h3>
+            </div>
+          </div>
+          {savedExercises.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No saved exercises yet. Save exercises from the diary using the heart icon.</p>
+          ) : (
+            <div className="space-y-2">
+              {savedExercises.map((ex) => (
+                <div key={ex.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-border">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">{ex.name}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {ex.secondaryMetric && ex.secondaryUnit
+                        ? `${ex.secondaryMetric} ${ex.secondaryUnit} · ${ex.caloriesBurned} kcal`
+                        : `${ex.duration}min · ${ex.caloriesBurned} kcal`}
+                    </span>
+                  </div>
+                  <button onClick={() => deleteSavedExercise(ex.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

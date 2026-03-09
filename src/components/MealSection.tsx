@@ -224,29 +224,28 @@ export const MealSection = ({
             {ungrouped.map((item) =>
           <div key={item.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
                 <div className="flex flex-col min-w-0 flex-1 mr-2">
-                  <span className="font-medium text-foreground text-sm truncate">{item.name}</span>
+                  <span className="font-medium text-foreground text-sm break-words">{item.name}</span>
                   {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
                   {onUpdateItem &&
-              <button onClick={() => setEditingItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                      <Pencil className="h-2.5 w-2.5" />
+              <button onClick={() => setEditingItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                      <Pencil className="h-4 w-4" />
                     </button>
               }
-                  <button onClick={() => setAddToMealItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                    <FolderPlus className="h-2.5 w-2.5" />
+                  <button onClick={() => setAddToMealItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                    <Bookmark className="h-4 w-4" />
                   </button>
                   {onRemoveItem &&
-              <button onClick={() => onRemoveItem(item.id)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-                      <X className="h-3 w-3" />
+              <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
+                      <X className="h-4 w-4" />
                     </button>
               }
                 </div>
               </div>
           )}
           </div>
-        </div>
       }
 
       {/* Edit food item dialog */}
