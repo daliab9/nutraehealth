@@ -252,7 +252,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: Exerc
       <DialogContent className="rounded-2xl max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {step === "search" ? "Add Exercise" : selectedExercise}
+            {step === "search" ? "Add Exercise" : (editExercise ? `Edit ${selectedExercise}` : selectedExercise)}
           </DialogTitle>
         </DialogHeader>
 
