@@ -31,7 +31,6 @@ const Diary = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
-  const [exEditForm, setExEditForm] = useState({ duration: "", caloriesBurned: "" });
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
   const [addingPoopType, setAddingPoopType] = useState(false);
 
