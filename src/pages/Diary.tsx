@@ -224,8 +224,9 @@ const Diary = () => {
                     <div className="flex flex-col min-w-0 flex-1 mr-2">
                       <span className="text-sm text-foreground font-bold truncate">{ex.name}</span>
                       <span className="text-[10px] text-muted-foreground">
-                        {ex.duration}min · -{ex.caloriesBurned} kcal
-                        {ex.secondaryMetric && ex.secondaryUnit && ` · ${ex.secondaryMetric} ${ex.secondaryUnit}`}
+                        {ex.secondaryMetric && ex.secondaryUnit
+                          ? `${ex.secondaryMetric} ${ex.secondaryUnit} · -${ex.caloriesBurned} kcal`
+                          : `${ex.duration}min · -${ex.caloriesBurned} kcal`}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
