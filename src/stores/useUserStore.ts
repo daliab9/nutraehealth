@@ -113,6 +113,7 @@ const DEFAULT_PROFILE: UserProfile = {
   goalDate: "",
   weightHistory: [],
   savedMeals: [],
+  savedExercises: [],
   subscription: "free",
   aiScansUsed: 0,
 };
