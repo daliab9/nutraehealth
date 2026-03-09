@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 interface ScrollPickerProps {
@@ -23,27 +23,30 @@ export const ScrollPicker = ({
   className,
 }: ScrollPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const isUserScrolling = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const initializedRef = useRef(false);
 
   const containerHeight = itemHeight * visibleItems;
   const paddingItems = Math.floor(visibleItems / 2);
 
   const currentIndex = items.indexOf(value);
 
+  // Scroll to current value on mount and when value changes externally
   useEffect(() => {
-    if (containerRef.current && !isScrolling) {
-      const targetScroll = currentIndex * itemHeight;
-      containerRef.current.scrollTop = targetScroll;
-    }
-  }, [currentIndex, itemHeight, isScrolling]);
-
-  const handleScroll = () => {
     if (!containerRef.current) return;
-    setIsScrolling(true);
+    if (isUserScrolling.current) return;
+    const targetScroll = currentIndex * itemHeight;
+    containerRef.current.scrollTop = targetScroll;
+    initializedRef.current = true;
+  }, [currentIndex, itemHeight]);
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    isUserScrolling.current = true;
+
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
       if (!containerRef.current) return;
       const scrollTop = containerRef.current.scrollTop;
       const index = Math.round(scrollTop / itemHeight);
@@ -57,19 +60,23 @@ export const ScrollPicker = ({
       if (items[clampedIndex] !== value) {
         onChange(items[clampedIndex]);
       }
-      setIsScrolling(false);
-    }, 80);
-  };
+      setTimeout(() => {
+        isUserScrolling.current = false;
+      }, 100);
+    }, 100);
+  }, [items, value, itemHeight, onChange]);
 
   const handleItemClick = (item: string | number, index: number) => {
     if (!containerRef.current) return;
-    setIsScrolling(true);
+    isUserScrolling.current = true;
     containerRef.current.scrollTo({
       top: index * itemHeight,
       behavior: "smooth",
     });
     onChange(item);
-    setTimeout(() => setIsScrolling(false), 300);
+    setTimeout(() => {
+      isUserScrolling.current = false;
+    }, 350);
   };
 
   return (
@@ -101,7 +108,7 @@ export const ScrollPicker = ({
 
       <div
         ref={containerRef}
-        className="hide-scrollbar h-full overflow-y-auto"
+        className="hide-scrollbar h-full overflow-y-auto overscroll-contain"
         onScroll={handleScroll}
         style={{ scrollSnapType: "y mandatory" }}
       >
@@ -111,12 +118,12 @@ export const ScrollPicker = ({
           const isSelected = item === value;
           return (
             <div
-              key={i}
+              key={`${item}-${i}`}
               className={cn(
                 "flex cursor-pointer items-center justify-center transition-all duration-150 relative z-30",
                 isSelected
-                  ? "text-foreground font-semibold text-2xl"
-                  : "text-muted-foreground text-lg"
+                  ? "text-foreground font-semibold text-xl"
+                  : "text-muted-foreground text-base"
               )}
               style={{
                 height: itemHeight,
