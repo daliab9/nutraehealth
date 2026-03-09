@@ -499,6 +499,74 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Saved Meal Dialog */}
+      <Dialog open={!!editingSavedMeal} onOpenChange={(o) => { if (!o) { setEditingSavedMeal(null); setEditingMealItem(null); } }}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Meal</DialogTitle>
+          </DialogHeader>
+          {editingMealItem ? (
+            <FoodEditInput
+              item={editingMealItem}
+              onSave={(updated) => {
+                setEditMealItems((prev) => prev.map((it) => it.id === updated.id ? updated : it));
+                setEditingMealItem(null);
+              }}
+              onCancel={() => setEditingMealItem(null)}
+            />
+          ) : (
+            <div className="space-y-3">
+              <Input
+                value={editMealName}
+                onChange={(e) => setEditMealName(e.target.value)}
+                className="rounded-xl font-medium"
+                placeholder="Meal name"
+              />
+              {editMealItems.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {editMealItems.length} items · {editMealItems.reduce((s, i) => s + i.calories, 0)} kcal
+                  </p>
+                  {editMealItems.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                      <div className="flex flex-col min-w-0 flex-1 mr-2">
+                        <span className="text-sm text-foreground break-words">{item.name}</span>
+                        {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <button onClick={() => setEditingMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => removeEditMealItem(i)} className="text-muted-foreground hover:text-destructive">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {editMealAddingItem ? (
+                <FoodSearchInput
+                  onAddItem={(item) => {
+                    setEditMealItems((prev) => [...prev, item]);
+                    setEditMealAddingItem(false);
+                  }}
+                  onClose={() => setEditMealAddingItem(false)}
+                />
+              ) : (
+                <Button variant="outline" className="w-full rounded-xl h-10" onClick={() => setEditMealAddingItem(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Add ingredient
+                </Button>
+              )}
+              <Button onClick={saveEditedMeal} className="w-full rounded-xl h-12" disabled={editMealItems.length === 0 || !editMealName.trim()}>
+                Save changes
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
