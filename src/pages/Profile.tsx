@@ -48,6 +48,11 @@ const Profile = () => {
   const [createMealName, setCreateMealName] = useState("");
   const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
   const [createMealStep, setCreateMealStep] = useState<"name" | "add">("name");
+  const [editingSavedMeal, setEditingSavedMeal] = useState<SavedMeal | null>(null);
+  const [editMealItems, setEditMealItems] = useState<FoodItem[]>([]);
+  const [editMealName, setEditMealName] = useState("");
+  const [editMealAddingItem, setEditMealAddingItem] = useState(false);
+  const [editingMealItem, setEditingMealItem] = useState<FoodItem | null>(null);
 
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
