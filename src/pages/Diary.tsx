@@ -230,10 +230,7 @@ const Diary = () => {
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
-                        onClick={() => {
-                          setEditingExercise(ex);
-                          setExEditForm({ duration: String(ex.duration), caloriesBurned: String(ex.caloriesBurned) });
-                        }}
+                        onClick={() => setEditingExercise(ex)}
                         className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Pencil className="h-3 w-3" />
