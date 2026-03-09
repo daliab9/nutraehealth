@@ -51,9 +51,12 @@ const Chip = ({
 );
 
 const HealthDiary = () => {
-  const { profile, getHealthEntry, setHealthEntry } = useUserStore();
+  const { profile, setProfile, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, "yyyy-MM-dd");
+  const entry = getHealthEntry(dateKey);
+  const [cycleOpen, setCycleOpen] = useState(false);
+  const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
   const entry = getHealthEntry(dateKey);
 
   const [sleepEditing, setSleepEditing] = useState(true);
