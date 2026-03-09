@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { CalendarStrip } from "@/components/CalendarStrip";
 import { CircularProgress } from "@/components/CircularProgress";
 import { MealSection } from "@/components/MealSection";
@@ -8,8 +9,9 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
-import { useUserStore, type Exercise, type SavedMeal, type SavedExercise, type PoopEntry } from "@/stores/useUserStore";
+import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
+import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
+import { toast } from "sonner";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -27,12 +29,31 @@ const POOP_GROUPS = [
 ];
 
 const Diary = () => {
-  const { profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal, updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals, getHealthEntry, setHealthEntry } = useUserStore();
+  const {
+    profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal,
+    updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
+    getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
+  } = useUserStore();
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
   const [addingPoopType, setAddingPoopType] = useState(false);
+
+  // Drag and drop state
+  const [activeDragItem, setActiveDragItem] = useState<FoodItem | null>(null);
+  const [mergeData, setMergeData] = useState<{
+    sourceItem: FoodItem;
+    sourceMealType: string;
+    targetItem: FoodItem;
+    targetMealType: string;
+  } | null>(null);
+  const [mergeMealName, setMergeMealName] = useState("");
+
+  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 8 } });
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const dayEntry = getDayEntry(dateKey);
@@ -51,11 +72,6 @@ const Diary = () => {
   const removePoopEntry = (id: string) => {
     const updated = poopEntries.filter(e => e.id !== id);
     setHealthEntry(dateKey, { ...healthEntry, poopCount: updated.length, poopEntries: updated });
-  };
-
-  const updatePoopType = (id: string, type: number) => {
-    const updated = poopEntries.map(e => e.id === id ? { ...e, type } : e);
-    setHealthEntry(dateKey, { ...healthEntry, poopEntries: updated });
   };
 
   const getMealItems = (type: string) => {
@@ -90,14 +106,20 @@ const Diary = () => {
   };
 
   const handleSaveMeal = (meal: SavedMeal) => {
-    setProfile({
-      savedMeals: [...(profile.savedMeals || []), meal],
-    });
+    setProfile({ savedMeals: [...(profile.savedMeals || []), meal] });
   };
 
   const handleUnsaveMeal = (mealName: string) => {
+    setProfile({ savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()) });
+  };
+
+  const handleAddToSavedMeal = (mealId: string, item: FoodItem) => {
     setProfile({
-      savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()),
+      savedMeals: (profile.savedMeals || []).map((m) =>
+        m.id === mealId
+          ? { ...m, items: [...m.items, { ...item, id: Date.now().toString(), groupId: undefined, groupName: undefined }] }
+          : m
+      ),
     });
   };
 
@@ -121,6 +143,51 @@ const Diary = () => {
         }],
       });
     }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current;
+    if (data?.item) setActiveDragItem(data.item as FoodItem);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragItem(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const sourceData = active.data.current as { type: string; mealType: string; itemId: string; item: FoodItem };
+    const overData = over.data.current as { type: string; mealType: string; itemId?: string; item?: FoodItem };
+
+    if (!sourceData || !overData) return;
+
+    if (overData.type === "meal-section" && sourceData.mealType !== overData.mealType) {
+      // Move item to a different meal section
+      moveFoodBetweenMeals(dateKey, sourceData.mealType as MealEntry["type"], overData.mealType as MealEntry["type"], sourceData.itemId);
+      toast.success(`Moved to ${MEAL_TYPES.find(m => m.type === overData.mealType)?.title || overData.mealType}`);
+    } else if (overData.type === "food-item" && sourceData.itemId !== overData.itemId) {
+      // Dropped on another food item → show merge dialog
+      setMergeData({
+        sourceItem: sourceData.item,
+        sourceMealType: sourceData.mealType,
+        targetItem: overData.item!,
+        targetMealType: overData.mealType,
+      });
+      setMergeMealName("");
+    }
+  };
+
+  const handleConfirmMerge = () => {
+    if (!mergeData || !mergeMealName.trim()) return;
+    mergeItemsIntoGroup(
+      dateKey,
+      { mealType: mergeData.sourceMealType as MealEntry["type"], itemId: mergeData.sourceItem.id },
+      { mealType: mergeData.targetMealType as MealEntry["type"], itemId: mergeData.targetItem.id },
+      mergeMealName.trim()
+    );
+    toast.success(`Created meal "${mergeMealName.trim()}"`);
+    setMergeData(null);
+    setMergeMealName("");
   };
 
   const alerts = healthAlerts();
@@ -208,26 +275,38 @@ const Diary = () => {
               )}
             </div>
 
-            <div className="rounded-2xl bg-card border border-border p-4">
-              <div className="divide-y divide-border">
-                {MEAL_TYPES.map(({ type, title, icon }) => (
-                  <MealSection
-                    key={type}
-                    title={title}
-                    icon={icon}
-                    items={getMealItems(type)}
-                    onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
-                    onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
-                    onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
-                    onAddItems={(items) => items.forEach(item => addFoodToMeal(dateKey, type as any, item))}
-                    pastItems={getPastItemsForMealType(type)}
-                    savedMeals={profile.savedMeals || []}
-                    onSaveMeal={handleSaveMeal}
-                    onUnsaveMeal={handleUnsaveMeal}
-                  />
-                ))}
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <div className="rounded-2xl bg-card border border-border p-4">
+                <div className="divide-y divide-border">
+                  {MEAL_TYPES.map(({ type, title, icon }) => (
+                    <MealSection
+                      key={type}
+                      title={title}
+                      icon={icon}
+                      mealType={type}
+                      items={getMealItems(type)}
+                      onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
+                      onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
+                      onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
+                      onAddItems={(items) => items.forEach(item => addFoodToMeal(dateKey, type as any, item))}
+                      pastItems={getPastItemsForMealType(type)}
+                      savedMeals={profile.savedMeals || []}
+                      onSaveMeal={handleSaveMeal}
+                      onUnsaveMeal={handleUnsaveMeal}
+                      onAddToSavedMeal={handleAddToSavedMeal}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+              <DragOverlay>
+                {activeDragItem && (
+                  <div className="px-4 py-2.5 rounded-xl bg-card border border-border shadow-xl flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">{activeDragItem.name}</span>
+                    <span className="text-xs text-muted-foreground">{activeDragItem.calories} kcal</span>
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
           </>
         )}
 
@@ -301,7 +380,6 @@ const Diary = () => {
               </Button>
             </div>
 
-            {/* Existing entries */}
             {poopEntries.length > 0 && (
               <div className="space-y-1.5 mb-3">
                 {poopEntries.map((entry) => {
@@ -321,7 +399,6 @@ const Diary = () => {
               </div>
             )}
 
-            {/* Type selector */}
             {addingPoopType && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -350,6 +427,30 @@ const Diary = () => {
           </div>
         )}
       </div>
+
+      {/* Merge dialog */}
+      <Dialog open={!!mergeData} onOpenChange={(o) => { if (!o) { setMergeData(null); setMergeMealName(""); } }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create a meal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Combine <span className="font-medium text-foreground">{mergeData?.sourceItem.name}</span> and <span className="font-medium text-foreground">{mergeData?.targetItem.name}</span> into a meal group.
+            </p>
+            <Input
+              placeholder="Meal name"
+              value={mergeMealName}
+              onChange={(e) => setMergeMealName(e.target.value)}
+              className="rounded-xl"
+              autoFocus
+            />
+            <Button onClick={handleConfirmMerge} className="w-full rounded-xl h-12" disabled={!mergeMealName.trim()}>
+              Create meal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ExerciseEntry
         open={exerciseOpen || !!editingExercise}
