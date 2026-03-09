@@ -228,6 +228,9 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
+                        <button onClick={(e) => { e.stopPropagation(); openEditMeal(meal); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                          <Pencil className="h-4 w-4" />
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); deleteSavedMeal(meal.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
                           <Trash2 className="h-4 w-4" />
                         </button>
