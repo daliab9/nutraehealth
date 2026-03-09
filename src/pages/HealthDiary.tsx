@@ -7,6 +7,9 @@ import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/Emotio
 import { CycleMentalBanner } from "@/components/CycleMentalBanner";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 
