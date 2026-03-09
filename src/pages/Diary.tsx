@@ -431,6 +431,13 @@ const Diary = () => {
         )}
       </div>
 
+      {/* Cycle phase insights - at the bottom, only for females with cycle date */}
+      {profile.gender === "Female" && profile.cycleStartDate && (
+        <div className="px-5 mt-4">
+          <CyclePhaseCard cycleStartDate={profile.cycleStartDate} />
+        </div>
+      )}
+
       {/* Merge dialog */}
       <Dialog open={!!mergeData} onOpenChange={(o) => { if (!o) { setMergeData(null); setMergeMealName(""); } }}>
         <DialogContent className="rounded-2xl max-w-sm">
