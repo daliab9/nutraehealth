@@ -4,6 +4,8 @@ import { CalendarStrip } from "@/components/CalendarStrip";
 import { BottomNav } from "@/components/BottomNav";
 import { useUserStore } from "@/stores/useUserStore";
 import { EmotionalCheckIn, type EmotionalCheckInData } from "@/components/EmotionalCheckIn";
+import { CycleMentalBanner } from "@/components/CycleMentalBanner";
+import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
