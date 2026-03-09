@@ -6,13 +6,6 @@ interface CyclePhaseCardProps {
   cycleStartDate: string;
 }
 
-const PHASE_ICONS: Record<CyclePhase, string> = {
-  Menstrual: "🌙",
-  Follicular: "🌱",
-  Ovulatory: "☀️",
-  Luteal: "🍂",
-};
-
 export const CyclePhaseCard = ({ cycleStartDate }: CyclePhaseCardProps) => {
   const info = getCycleInfo(cycleStartDate);
   const [tab, setTab] = useState<"meals" | "exercise">("meals");
