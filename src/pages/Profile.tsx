@@ -109,6 +109,7 @@ const Profile = () => {
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [addExerciseOpen, setAddExerciseOpen] = useState(false);
   const [createMealOpen, setCreateMealOpen] = useState(false);
   const [createMealName, setCreateMealName] = useState("");
   const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
