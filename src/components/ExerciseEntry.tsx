@@ -96,13 +96,13 @@ interface ExerciseEntryProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (exercise: Exercise) => void;
+  editExercise?: Exercise | null;
 }
 
-export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps) => {
+export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: ExerciseEntryProps) => {
   const [step, setStep] = useState<"search" | "duration">("search");
   const [query, setQuery] = useState("");
   const [selectedExercise, setSelectedExercise] = useState("");
-  // Toggle: "duration" or one of the metric keys
   const [activeMetric, setActiveMetric] = useState<string>("duration");
   const [durationValue, setDurationValue] = useState<number>(30);
   const [metricValue, setMetricValue] = useState<number>(5);
@@ -127,7 +127,35 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
   }, [query]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (editExercise) {
+      // Editing: go straight to duration step with existing values
+      setSelectedExercise(editExercise.name);
+      setStep("duration");
+      setQuery("");
+      if (editExercise.secondaryMetric && editExercise.secondaryUnit) {
+        // Find which metric key matches
+        const exMetrics = EXERCISE_METRICS[editExercise.name] || [];
+        const matchedMetric = exMetrics.find((m) => {
+          if (m.hasUnitPicker && m.units?.includes(editExercise.secondaryUnit!)) return true;
+          if (m.unit === editExercise.secondaryUnit) return true;
+          return false;
+        });
+        if (matchedMetric) {
+          setActiveMetric(matchedMetric.key);
+          setMetricValue(editExercise.secondaryMetric);
+          if (matchedMetric.hasUnitPicker) {
+            setDistanceUnit(editExercise.secondaryUnit!);
+          }
+        } else {
+          setActiveMetric("duration");
+          setDurationValue(editExercise.duration || 30);
+        }
+      } else {
+        setActiveMetric("duration");
+        setDurationValue(editExercise.duration || 30);
+      }
+    } else {
       setStep("search");
       setQuery("");
       setSelectedExercise("");
@@ -136,7 +164,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
       setMetricValue(5);
       setDistanceUnit("km");
     }
-  }, [open]);
+  }, [open, editExercise]);
 
   useEffect(() => {
     if (open && step === "search") {
@@ -224,7 +252,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
       <DialogContent className="rounded-2xl max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {step === "search" ? "Add Exercise" : selectedExercise}
+            {step === "search" ? "Add Exercise" : (editExercise ? `Edit ${selectedExercise}` : selectedExercise)}
           </DialogTitle>
         </DialogHeader>
 
@@ -346,7 +374,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
             </div>
 
             <Button onClick={handleAdd} className="w-full rounded-xl h-12">
-              Add Exercise
+              {editExercise ? "Save" : "Add Exercise"}
             </Button>
           </div>
         )}
