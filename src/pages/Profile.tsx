@@ -98,6 +98,8 @@ const Profile = () => {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [editGoals, setEditGoals] = useState<string[]>(profile.goals || []);
   const [healthInfoOpen, setHealthInfoOpen] = useState(false);
+  const [editGender, setEditGender] = useState(profile.gender || "");
+  const [editAge, setEditAge] = useState(profile.age || 25);
   const [editDietPrefs, setEditDietPrefs] = useState<string[]>(profile.dietaryPreferences || []);
   const [editDietRestrictions, setEditDietRestrictions] = useState<string[]>(profile.dietaryRestrictions || []);
   const [editHealthConcerns, setEditHealthConcerns] = useState<string[]>(profile.healthConcerns || []);
