@@ -394,7 +394,7 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bookmark className="h-4 w-4 text-foreground" />
+              <Heart className="h-4 w-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
