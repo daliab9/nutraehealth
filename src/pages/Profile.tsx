@@ -89,7 +89,14 @@ const Profile = () => {
     });
   };
 
+  const deleteSavedExercise = (exerciseId: string) => {
+    setProfile({
+      savedExercises: (profile.savedExercises || []).filter((e) => e.id !== exerciseId),
+    });
+  };
+
   const savedMeals = profile.savedMeals || [];
+  const savedExercises = profile.savedExercises || [];
 
   return (
     <div className="min-h-screen bg-background pb-24">
