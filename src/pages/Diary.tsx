@@ -223,6 +223,7 @@ const Diary = () => {
                     pastItems={getPastItemsForMealType(type)}
                     savedMeals={profile.savedMeals || []}
                     onSaveMeal={handleSaveMeal}
+                    onUnsaveMeal={handleUnsaveMeal}
                   />
                 ))}
               </div>
