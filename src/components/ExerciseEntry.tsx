@@ -173,19 +173,32 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
     }
   };
 
+  // Estimate calories from a non-duration metric
+  const estimateCalsFromMetric = (): number => {
+    if (!activeMetricConfig) return 0;
+    const unit = activeMetricConfig.hasUnitPicker ? distanceUnit : (activeMetricConfig.unit || "");
+    // Rough avg minutes per unit to convert to calorie estimate
+    const minutesPerUnit: Record<string, number> = {
+      km: 6, miles: 10, m: 0.005, steps: 0.012,
+      laps: 1.5, floors: 0.5, jumps: 0.05, runs: 8, waves: 3,
+    };
+    const estMinutes = (minutesPerUnit[unit] || 1) * metricValue;
+    return Math.round(calPerMin * estMinutes);
+  };
+
   const handleAdd = () => {
+    const isMetric = activeMetric !== "duration";
+    const cals = isMetric ? estimateCalsFromMetric() : estimatedCals;
+
     const exercise: Exercise = {
       id: Date.now().toString(),
       name: selectedExercise || query,
-      duration: activeMetric === "duration" ? durationValue : 0,
-      caloriesBurned: activeMetric === "duration" ? estimatedCals : 0,
+      duration: isMetric ? 0 : durationValue,
+      caloriesBurned: cals,
     };
-    if (activeMetric !== "duration" && activeMetricConfig) {
+    if (isMetric && activeMetricConfig) {
       exercise.secondaryMetric = metricValue;
       exercise.secondaryUnit = activeMetricConfig.hasUnitPicker ? distanceUnit : (activeMetricConfig.unit || activeMetric);
-      // For non-duration metrics, still estimate cals if we have duration=0
-      exercise.caloriesBurned = estimatedCals > 0 ? estimatedCals : Math.round(calPerMin * 15);
-      exercise.duration = durationValue || 0;
     }
     onAdd(exercise);
     onOpenChange(false);
