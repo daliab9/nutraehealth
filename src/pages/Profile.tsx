@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
