@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Bookmark, FolderPlus, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Bookmark, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
