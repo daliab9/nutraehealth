@@ -9,7 +9,7 @@ interface CycleMentalBannerProps {
   onEditCycleDate?: () => void;
 }
 
-export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate }: CycleMentalBannerProps) => {
+export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, onEditCycleDate }: CycleMentalBannerProps) => {
   if (!isFemale) return null;
 
   // Female with cycle date → show phase banner + guidance
