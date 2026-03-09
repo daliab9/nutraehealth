@@ -109,14 +109,22 @@ export const MealSection = ({
     setMode(null);
   };
 
-  const handleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
-    if (!onSaveMeal) return;
-    onSaveMeal({
-      id: Date.now().toString(),
-      name,
-      items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest)
-    });
-    toast.success(`"${name}" saved to your meals`);
+  const isMealSaved = (name: string) => {
+    return savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const handleToggleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
+    if (isMealSaved(name)) {
+      onUnsaveMeal?.(name);
+      toast.success(`"${name}" removed from saved meals`);
+    } else {
+      onSaveMeal?.({
+        id: Date.now().toString(),
+        name,
+        items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest)
+      });
+      toast.success(`"${name}" saved to your meals`);
+    }
   };
 
   const toggleGroup = (groupId: string) => {
