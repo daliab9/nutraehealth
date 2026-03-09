@@ -43,7 +43,6 @@ const DISTANCE_VALUES: Record<string, number[]> = {
 const EXERCISE_METRICS: Record<string, MetricOption[]> = {
   "Running": [
     { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
-    { key: "steps", label: "Steps", unit: "steps", values: { default: [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 10000, 12000, 15000, 20000] } },
   ],
   "Walking": [
     { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
