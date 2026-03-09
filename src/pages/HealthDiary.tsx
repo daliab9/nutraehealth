@@ -146,8 +146,12 @@ const HealthDiary = () => {
           isFemale={profile.gender === "Female"}
           cycleStartDate={profile.cycleStartDate}
           onAddCycleDate={() => {
-            // Navigate to profile page where cycle tracker lives
-            window.location.href = "/profile";
+            setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd"));
+            setCycleOpen(true);
+          }}
+          onEditCycleDate={() => {
+            setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd"));
+            setCycleOpen(true);
           }}
         />
 
