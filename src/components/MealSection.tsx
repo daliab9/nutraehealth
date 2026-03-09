@@ -20,6 +20,7 @@ interface MealSectionProps {
   pastItems?: FoodItem[];
   savedMeals?: SavedMeal[];
   onSaveMeal?: (meal: SavedMeal) => void;
+  onUnsaveMeal?: (mealName: string) => void;
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
