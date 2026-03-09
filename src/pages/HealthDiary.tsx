@@ -57,7 +57,6 @@ const HealthDiary = () => {
   const entry = getHealthEntry(dateKey);
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
-  const entry = getHealthEntry(dateKey);
 
   const [sleepEditing, setSleepEditing] = useState(true);
   const [stressEditing, setStressEditing] = useState(true);
