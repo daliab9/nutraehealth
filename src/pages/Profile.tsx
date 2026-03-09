@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { useUserStore, type FoodItem } from "@/stores/useUserStore";
-import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X } from "lucide-react";
+import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X, Dumbbell } from "lucide-react";
 
 const GOALS_MAP: Record<string, string> = {
   lose_weight: "Lose weight",
