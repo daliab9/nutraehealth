@@ -48,6 +48,31 @@ const EXERCISE_DATABASE: Record<string, number> = {
   "Aerobics": 7.5,
 };
 
+// Secondary metrics for exercises that have them
+interface SecondaryMetricConfig {
+  unit: string;
+  label: string;
+  values: number[];
+}
+
+const SECONDARY_METRICS: Record<string, SecondaryMetricConfig> = {
+  "Running": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30, 35, 40, 42] },
+  "Walking": { unit: "steps", label: "Steps", values: [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 20000] },
+  "Cycling": { unit: "km", label: "Distance", values: [1, 2, 3, 5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100] },
+  "Swimming": { unit: "laps", label: "Laps", values: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 50, 60, 80, 100] },
+  "Hiking": { unit: "km", label: "Distance", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 18, 20, 25, 30] },
+  "Rowing": { unit: "m", label: "Meters", values: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000] },
+  "Elliptical": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10] },
+  "Stair Climbing": { unit: "floors", label: "Floors", values: [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 100] },
+  "Jump Rope": { unit: "jumps", label: "Jumps", values: [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000, 1500, 2000] },
+  "Skiing": { unit: "runs", label: "Runs", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] },
+  "Snowboarding": { unit: "runs", label: "Runs", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] },
+  "Skateboarding": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10] },
+  "Ice Skating": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10] },
+  "Spinning": { unit: "km", label: "Distance", values: [2, 4, 6, 8, 10, 12, 15, 18, 20, 25, 30] },
+  "Surfing": { unit: "waves", label: "Waves", values: [2, 4, 6, 8, 10, 12, 15, 20, 25, 30] },
+};
+
 const EXERCISE_NAMES = Object.keys(EXERCISE_DATABASE);
 const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 5);
 
@@ -62,6 +87,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
   const [query, setQuery] = useState("");
   const [selectedExercise, setSelectedExercise] = useState("");
   const [duration, setDuration] = useState<string | number>(30);
+  const [secondaryValue, setSecondaryValue] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
@@ -72,6 +98,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
   const calPerMin = EXERCISE_DATABASE[selectedExercise] || 6.0;
   const estimatedCals = Math.round(calPerMin * Number(duration));
+  const secondaryMetric = SECONDARY_METRICS[selectedExercise] || null;
 
   useEffect(() => {
     if (open) {
@@ -79,6 +106,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
       setQuery("");
       setSelectedExercise("");
       setDuration(30);
+      setSecondaryValue(null);
     }
   }, [open]);
 
@@ -90,22 +118,35 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
   const selectExercise = (name: string) => {
     setSelectedExercise(name);
+    const metric = SECONDARY_METRICS[name];
+    if (metric) {
+      // Pick a reasonable default
+      const midIndex = Math.floor(metric.values.length / 3);
+      setSecondaryValue(metric.values[midIndex]);
+    } else {
+      setSecondaryValue(null);
+    }
     setStep("duration");
   };
 
   const handleAdd = () => {
-    onAdd({
+    const exercise: Exercise = {
       id: Date.now().toString(),
       name: selectedExercise || query,
       duration: Number(duration),
       caloriesBurned: estimatedCals,
-    });
+    };
+    if (secondaryMetric && secondaryValue !== null) {
+      exercise.secondaryMetric = secondaryValue;
+      exercise.secondaryUnit = secondaryMetric.unit;
+    }
+    onAdd(exercise);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl">
+      <DialogContent className="rounded-2xl max-w-sm">
         <DialogHeader>
           <DialogTitle>
             {step === "search" ? "Add Exercise" : selectedExercise}
@@ -148,16 +189,36 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
         {step === "duration" && (
           <div className="space-y-4 pt-2">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">Duration (minutes)</p>
-              <ScrollPicker
-                items={DURATION_VALUES}
-                value={duration}
-                onChange={(v) => setDuration(v)}
-                suffix=" min"
-                visibleItems={5}
-              />
+            <div className="flex items-start justify-center gap-3">
+              {/* Duration picker */}
+              <div className="flex-1 text-center">
+                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">Duration</p>
+                <ScrollPicker
+                  items={DURATION_VALUES}
+                  value={duration}
+                  onChange={(v) => setDuration(v)}
+                  suffix=" min"
+                  visibleItems={3}
+                  itemHeight={40}
+                />
+              </div>
+
+              {/* Secondary metric picker */}
+              {secondaryMetric && secondaryValue !== null && (
+                <div className="flex-1 text-center">
+                  <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">{secondaryMetric.label}</p>
+                  <ScrollPicker
+                    items={secondaryMetric.values}
+                    value={secondaryValue}
+                    onChange={(v) => setSecondaryValue(Number(v))}
+                    suffix={` ${secondaryMetric.unit}`}
+                    visibleItems={3}
+                    itemHeight={40}
+                  />
+                </div>
+              )}
             </div>
+
             <div className="text-center py-2">
               <p className="text-2xl font-bold text-foreground">{estimatedCals}</p>
               <p className="text-xs text-muted-foreground">estimated calories burned</p>

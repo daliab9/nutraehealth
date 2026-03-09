@@ -186,11 +186,11 @@ export const MealSection = ({
                   <div className="px-3 pb-2 space-y-1 border-t border-border/50">
                     {group.items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between py-1.5 pl-5 text-sm">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-foreground">{item.name}</span>
-                          {item.quantity && <span className="text-[10px] text-muted-foreground">({item.quantity})</span>}
+                        <div className="flex flex-col min-w-0 flex-1 mr-2">
+                          <span className="text-foreground truncate">{item.name}</span>
+                          {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
                           {onUpdateItem && (
                             <button onClick={() => setEditingItem(item)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground">
@@ -212,25 +212,29 @@ export const MealSection = ({
           })}
 
           {/* Ungrouped items */}
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-1.5">
             {ungrouped.map((item) => (
-              <div key={item.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-[#e4e7c6]">
-                <span className="font-medium text-foreground text-sm">{item.name}</span>
-                {item.quantity && <span className="text-[10px] text-muted-foreground">({item.quantity})</span>}
-                <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
-                {onUpdateItem && (
-                  <button onClick={() => setEditingItem(item)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                    <Pencil className="h-2.5 w-2.5" />
+              <div key={item.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
+                <div className="flex flex-col min-w-0 flex-1 mr-2">
+                  <span className="font-medium text-foreground text-sm truncate">{item.name}</span>
+                  {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
+                  {onUpdateItem && (
+                    <button onClick={() => setEditingItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                  <button onClick={() => setAddToMealItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                    <FolderPlus className="h-2.5 w-2.5" />
                   </button>
-                )}
-                <button onClick={() => setAddToMealItem(item)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                  <FolderPlus className="h-2.5 w-2.5" />
-                </button>
-                {onRemoveItem && (
-                  <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
+                  {onRemoveItem && (
+                    <button onClick={() => onRemoveItem(item.id)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -418,7 +422,6 @@ export const MealSection = ({
                       if (addToMealItem && onUpdateItem) {
                         onUpdateItem({ ...addToMealItem, groupId, groupName: group.name });
                         setAddToMealItem(null);
-                        toast.success(`Added to "${group.name}"`);
                       }
                     }}
                     className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
@@ -429,8 +432,7 @@ export const MealSection = ({
                 ))}
               </div>
             )}
-
-            <div className="border-t border-border pt-3">
+            <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Create new meal</p>
               <div className="flex gap-2">
                 <Input
@@ -442,17 +444,16 @@ export const MealSection = ({
                 <Button
                   onClick={() => {
                     if (addToMealItem && newMealName.trim() && onUpdateItem) {
-                      const groupId = Date.now().toString();
-                      onUpdateItem({ ...addToMealItem, groupId, groupName: newMealName.trim() });
+                      const gid = Date.now().toString();
+                      onUpdateItem({ ...addToMealItem, groupId: gid, groupName: newMealName.trim() });
                       setAddToMealItem(null);
                       setNewMealName("");
-                      toast.success(`Created meal "${newMealName.trim()}"`);
                     }
                   }}
-                  disabled={!newMealName.trim()}
                   className="rounded-xl"
+                  disabled={!newMealName.trim()}
                 >
-                  Create
+                  Add
                 </Button>
               </div>
             </div>

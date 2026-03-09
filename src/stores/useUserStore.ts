@@ -19,6 +19,8 @@ export interface Exercise {
   name: string;
   duration: number; // minutes
   caloriesBurned: number;
+  secondaryMetric?: number; // km, steps, laps, etc.
+  secondaryUnit?: string; // "km", "steps", "laps", etc.
 }
 
 export interface MealEntry {
