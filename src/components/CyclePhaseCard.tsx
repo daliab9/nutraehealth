@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getCycleInfo, MEAL_GUIDANCE, EXERCISE_GUIDANCE, MENTAL_GUIDANCE, type CyclePhase } from "@/utils/cyclePhase";
+import { getCycleInfo, MEAL_GUIDANCE, EXERCISE_GUIDANCE, MENTAL_GUIDANCE, type CyclePhase, type PhaseGuidanceDetail } from "@/utils/cyclePhase";
 import { Info } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -8,11 +8,20 @@ interface CyclePhaseCardProps {
   context: "meals" | "exercise" | "mood";
 }
 
+const CONTEXT_MAP: Record<string, { label: string; getGuidance: (phase: CyclePhase) => PhaseGuidanceDetail }> = {
+  meals: { label: "Meals", getGuidance: (p) => MEAL_GUIDANCE[p] },
+  exercise: { label: "Exercise", getGuidance: (p) => EXERCISE_GUIDANCE[p] },
+  mood: { label: "Mood", getGuidance: (p) => MENTAL_GUIDANCE[p] },
+};
+
 export const CyclePhaseCard = ({ cycleStartDate, context }: CyclePhaseCardProps) => {
   const info = getCycleInfo(cycleStartDate);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!info) return null;
+
+  const { label, getGuidance } = CONTEXT_MAP[context];
+  const guidance = getGuidance(info.phase);
 
   return (
     <>
@@ -40,27 +49,33 @@ export const CyclePhaseCard = ({ cycleStartDate, context }: CyclePhaseCardProps)
               {info.phase} Phase · Day {info.cycleDay}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-5 pt-2">
-            <Section title="Meals" tips={MEAL_GUIDANCE[info.phase]} />
-            <Section title="Exercise" tips={EXERCISE_GUIDANCE[info.phase]} />
-            <Section title="Mood" tips={MENTAL_GUIDANCE[info.phase]} />
+          <div className="space-y-4 pt-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">What's happening</p>
+              <p className="text-sm text-foreground">{guidance.whatsHappening}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">What this means</p>
+              <p className="text-sm text-foreground">{guidance.whatThisMeans}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">What to focus on</p>
+              <ul className="space-y-1.5">
+                {guidance.tips.map((tip) => (
+                  <li key={tip} className="flex items-start gap-2 text-sm text-foreground">
+                    <span className="text-muted-foreground mt-0.5">·</span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
     </>
   );
 };
-
-const Section = ({ title, tips }: { title: string; tips: string[] }) => (
-  <div>
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{title}</p>
-    <ul className="space-y-1.5">
-      {tips.map((tip) => (
-        <li key={tip} className="flex items-start gap-2 text-sm text-foreground">
-          <span className="text-muted-foreground mt-0.5">·</span>
-          {tip}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
