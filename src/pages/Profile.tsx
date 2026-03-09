@@ -503,9 +503,12 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">My Information</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
-              <Pencil className="h-3 w-3 mr-1" /> Edit
-            </Button>
+            <button
+              onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}
+              className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
           </div>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
