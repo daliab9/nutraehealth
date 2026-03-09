@@ -396,6 +396,8 @@ export function useUserStore() {
     removeExercise,
     updateExercise,
     getDayTotals,
+    moveFoodBetweenMeals,
+    mergeItemsIntoGroup,
     health,
     getHealthEntry,
     setHealthEntry,
