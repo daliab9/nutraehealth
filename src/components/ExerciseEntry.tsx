@@ -374,7 +374,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: Exerc
             </div>
 
             <Button onClick={handleAdd} className="w-full rounded-xl h-12">
-              Add Exercise
+              {editExercise ? "Save" : "Add Exercise"}
             </Button>
           </div>
         )}
