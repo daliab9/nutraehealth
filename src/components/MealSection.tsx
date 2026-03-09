@@ -166,17 +166,16 @@ export const MealSection = ({
                     {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
                     <span className="font-semibold text-foreground text-sm text-left">{group.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
-                    {onSaveMeal &&
+                    {(onSaveMeal || onUnsaveMeal) &&
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSaveGroup(groupId, group.name, group.items);
+                      handleToggleSaveGroup(groupId, group.name, group.items);
                     }}
-                    className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground">
-                    
-                        <Bookmark className="h-3.5 w-3.5" />
+                    className="h-8 w-8 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform">
+                        <Heart className={`h-5 w-5 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
                       </button>
                   }
                     {onRemoveItem &&
@@ -185,9 +184,8 @@ export const MealSection = ({
                       e.stopPropagation();
                       group.items.forEach((i) => onRemoveItem(i.id));
                     }}
-                    className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive">
-                    
-                        <X className="h-3 w-3" />
+                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                        <X className="h-5 w-5" />
                       </button>
                   }
                   </div>
@@ -197,19 +195,19 @@ export const MealSection = ({
                     {group.items.map((item) =>
                 <div key={item.id} className="flex items-center justify-between py-1.5 pl-5 text-sm">
                         <div className="flex flex-col min-w-0 flex-1 mr-2">
-                          <span className="text-foreground truncate">{item.name}</span>
+                          <span className="text-foreground break-words">{item.name}</span>
                           {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
                           {onUpdateItem &&
-                    <button onClick={() => setEditingItem(item)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground">
-                              <Pencil className="h-2.5 w-2.5" />
+                    <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                              <Pencil className="h-4 w-4" />
                             </button>
                     }
                           {onRemoveItem &&
-                    <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-destructive">
-                              <X className="h-2.5 w-2.5" />
+                    <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                              <X className="h-4 w-4" />
                             </button>
                     }
                         </div>
