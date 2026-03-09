@@ -449,15 +449,25 @@ const Profile = () => {
           {profile.goalDate && <p className="text-xs text-muted-foreground mt-2">Target: {profile.goalDate}</p>}
         </div>
 
-        {/* My Health Information */}
+        {/* My Information */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">My Health Information</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
+            <h3 className="text-sm font-semibold text-foreground">My Information</h3>
+            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
               <Pencil className="h-3 w-3 mr-1" /> Edit
             </Button>
           </div>
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Gender</p>
+                <p className="text-sm text-foreground">{profile.gender || "Not set"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Age</p>
+                <p className="text-sm text-foreground">{profile.age || "Not set"}</p>
+              </div>
+            </div>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dietary Preferences</p>
               {(profile.dietaryPreferences || []).length > 0 ? (
