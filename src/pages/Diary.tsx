@@ -95,6 +95,34 @@ const Diary = () => {
     });
   };
 
+  const handleUnsaveMeal = (mealName: string) => {
+    setProfile({
+      savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()),
+    });
+  };
+
+  const isExerciseSaved = (name: string) => {
+    return (profile.savedExercises || []).some((e) => e.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const handleToggleSaveExercise = (ex: Exercise) => {
+    const saved = profile.savedExercises || [];
+    if (isExerciseSaved(ex.name)) {
+      setProfile({ savedExercises: saved.filter((e) => e.name.toLowerCase() !== ex.name.toLowerCase()) });
+    } else {
+      setProfile({
+        savedExercises: [...saved, {
+          id: Date.now().toString(),
+          name: ex.name,
+          duration: ex.duration,
+          caloriesBurned: ex.caloriesBurned,
+          secondaryMetric: ex.secondaryMetric,
+          secondaryUnit: ex.secondaryUnit,
+        }],
+      });
+    }
+  };
+
   const alerts = healthAlerts();
   const netCalories = totals.calories - totals.exerciseCals;
   const totalFoodCals = totals.calories;
