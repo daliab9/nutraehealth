@@ -911,6 +911,24 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Add Exercise Dialog (for saved exercises) */}
+      <ExerciseEntry
+        open={addExerciseOpen}
+        onOpenChange={setAddExerciseOpen}
+        onAdd={(exercise: Exercise) => {
+          const newSaved: SavedExercise = {
+            id: Date.now().toString(),
+            name: exercise.name,
+            duration: exercise.duration,
+            caloriesBurned: exercise.caloriesBurned,
+            secondaryMetric: exercise.secondaryMetric,
+            secondaryUnit: exercise.secondaryUnit,
+          };
+          setProfile({ savedExercises: [...(profile.savedExercises || []), newSaved] });
+          setAddExerciseOpen(false);
+        }}
+      />
+
       <BottomNav />
     </div>
   );
