@@ -547,7 +547,7 @@ const Profile = () => {
       {/* Edit Calories Dialog */}
       <Dialog open={editField === "calories"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
         <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle>Target Daily Calories</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Target Net Daily Calories</DialogTitle></DialogHeader>
           <ScrollPicker
             items={CAL_VALUES}
             value={scrollCalories}
