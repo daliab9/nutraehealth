@@ -48,7 +48,7 @@ const Chip = ({
 );
 
 const HealthDiary = () => {
-  const { getHealthEntry, setHealthEntry } = useUserStore();
+  const { profile, getHealthEntry, setHealthEntry } = useUserStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, "yyyy-MM-dd");
   const entry = getHealthEntry(dateKey);
