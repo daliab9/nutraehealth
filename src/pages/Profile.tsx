@@ -293,7 +293,14 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={openWeightEdit}>Log weight</Button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setWeightHistoryOpen(true)}
+                className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+              >
+                <Pencil className="h-3.5 w-3.5 text-foreground" />
+              </button>
+            </div>
           </div>
           {weightData.length >= 2 ? (
             <div className="h-40">
