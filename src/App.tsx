@@ -35,7 +35,8 @@ function calculateCalories(data: OnboardingData): number {
   const weight = data.currentWeight;
   const height = data.height;
   const age = data.age || 30;
-  const genderOffset = data.gender === "female" ? -161 : 5;
+  const g = data.gender?.toLowerCase() || "";
+  const genderOffset = g === "female" ? -161 : 5;
   const bmr = 10 * weight + 6.25 * height - 5 * age + genderOffset;
   const tdee = bmr * 1.4;
   const goal = getMainGoal(data.goals);

@@ -36,8 +36,8 @@ function getMainGoal(goals: string[]): string {
 }
 
 function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[]): number {
-  // Mifflin-St Jeor: gender-aware BMR
-  const genderOffset = gender === "female" ? -161 : 5;
+  const g = gender?.toLowerCase() || "";
+  const genderOffset = g === "female" ? -161 : 5;
   const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + genderOffset;
   const tdee = bmr * 1.4;
   const goal = getMainGoal(goals);
@@ -98,6 +98,8 @@ const Profile = () => {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [editGoals, setEditGoals] = useState<string[]>(profile.goals || []);
   const [healthInfoOpen, setHealthInfoOpen] = useState(false);
+  const [editGender, setEditGender] = useState(profile.gender || "");
+  const [editAge, setEditAge] = useState(profile.age || 25);
   const [editDietPrefs, setEditDietPrefs] = useState<string[]>(profile.dietaryPreferences || []);
   const [editDietRestrictions, setEditDietRestrictions] = useState<string[]>(profile.dietaryRestrictions || []);
   const [editHealthConcerns, setEditHealthConcerns] = useState<string[]>(profile.healthConcerns || []);
@@ -449,15 +451,25 @@ const Profile = () => {
           {profile.goalDate && <p className="text-xs text-muted-foreground mt-2">Target: {profile.goalDate}</p>}
         </div>
 
-        {/* My Health Information */}
+        {/* My Information */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">My Health Information</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
+            <h3 className="text-sm font-semibold text-foreground">My Information</h3>
+            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setEditGender(profile.gender || ""); setEditAge(profile.age || 25); setEditDietPrefs(profile.dietaryPreferences || []); setEditDietRestrictions(profile.dietaryRestrictions || []); setEditHealthConcerns(profile.healthConcerns || []); setHealthInfoOpen(true); }}>
               <Pencil className="h-3 w-3 mr-1" /> Edit
             </Button>
           </div>
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Gender</p>
+                <p className="text-sm text-foreground">{profile.gender || "Not set"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Age</p>
+                <p className="text-sm text-foreground">{profile.age || "Not set"}</p>
+              </div>
+            </div>
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dietary Preferences</p>
               {(profile.dietaryPreferences || []).length > 0 ? (
@@ -573,10 +585,22 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Health Info Dialog */}
+      {/* My Information Dialog */}
       <Dialog open={healthInfoOpen} onOpenChange={setHealthInfoOpen}>
-        <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>My Health Information</DialogTitle></DialogHeader>
+        <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>My Information</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Gender</p>
+              <div className="flex flex-wrap gap-2">
+                {["Male", "Female", "Other", "Prefer not to say"].map((g) => (
+                  <button key={g} onClick={() => setEditGender(g)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${editGender === g ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{g}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Age</p>
+              <ScrollPicker items={Array.from({ length: 82 }, (_, i) => i + 14)} value={editAge} onChange={(v) => setEditAge(Number(v))} />
+            </div>
             <div>
               <p className="text-sm font-medium text-foreground mb-2">Dietary Preferences</p>
               <div className="flex flex-wrap gap-2">
@@ -601,7 +625,11 @@ const Profile = () => {
                 ))}
               </div>
             </div>
-            <Button onClick={() => { setProfile({ dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns }); setHealthInfoOpen(false); }} className="w-full rounded-xl h-12">Save</Button>
+            <Button onClick={() => {
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || []);
+              setProfile({ gender: editGender, age: editAge, dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns, dailyCalorieTarget: newCalories });
+              setHealthInfoOpen(false);
+            }} className="w-full rounded-xl h-12">Save</Button>
           </div>
         </DialogContent>
       </Dialog>
