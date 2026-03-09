@@ -331,20 +331,58 @@ const Profile = () => {
           <div className="rounded-2xl bg-card border border-border p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-pink-500" />
+                <span className="text-base">♀</span>
                 <h3 className="text-sm font-semibold text-foreground">Cycle Tracker</h3>
               </div>
-              <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => { setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd")); setCycleOpen(true); }}>
-                {profile.cycleStartDate ? "Update" : "Set start date"}
-              </Button>
+              <div className="flex items-center gap-2">
+                {profile.cycleStartDate && (
+                  <button
+                    onClick={() => { setProfile({ cycleStartDate: undefined }); }}
+                    className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                )}
+                <button
+                  onClick={() => { setCycleDate(profile.cycleStartDate || format(new Date(), "yyyy-MM-dd")); setCycleOpen(true); }}
+                  className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-foreground" />
+                </button>
+              </div>
             </div>
             {profile.cycleStartDate ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Started {format(new Date(profile.cycleStartDate), "MMM d, yyyy")}</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Started {format(new Date(profile.cycleStartDate), "MMM d, yyyy")}</span>
+                  </div>
+                  {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
                 </div>
-                {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
+                {(() => {
+                  const phases = getPhaseDates(profile.cycleStartDate);
+                  if (!phases) return null;
+                  return (
+                    <div className="space-y-1.5">
+                      {phases.map((p) => (
+                        <div
+                          key={p.phase}
+                          className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
+                            p.isCurrent
+                              ? "bg-[hsl(var(--accent))] border-[hsl(var(--accent))]"
+                              : "border-border"
+                          }`}
+                        >
+                          <span className={`text-sm font-medium ${p.isCurrent ? "text-accent-foreground" : "text-foreground"}`}>{p.label}</span>
+                          <span className={`text-xs ${p.isCurrent ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
+                            {p.startDate} – {p.endDate}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Log the first day of your cycle to start tracking</p>
