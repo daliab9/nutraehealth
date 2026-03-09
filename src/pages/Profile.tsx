@@ -112,6 +112,14 @@ const Profile = () => {
   const [editMealAddingItem, setEditMealAddingItem] = useState(false);
   const [editingMealItem, setEditingMealItem] = useState<FoodItem | null>(null);
 
+  // Weight history management
+  const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
+  const [addWeightOpen, setAddWeightOpen] = useState(false);
+  const [addWeightDate, setAddWeightDate] = useState<Date | undefined>(new Date());
+  const [addWeightValue, setAddWeightValue] = useState<number>(profile.currentWeight);
+  const [addWeightUnit, setAddWeightUnit] = useState<"kg" | "lbs">(profile.weightUnit || "kg");
+  const [editingWeightDate, setEditingWeightDate] = useState<string | null>(null);
+
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
   const displayWeight = weightUnit === "lbs" ? kgToLbs(profile.currentWeight) : profile.currentWeight;
