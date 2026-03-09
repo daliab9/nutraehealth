@@ -60,6 +60,15 @@ export interface SavedMeal {
   items: FoodItem[];
 }
 
+export interface SavedExercise {
+  id: string;
+  name: string;
+  duration: number;
+  caloriesBurned: number;
+  secondaryMetric?: number;
+  secondaryUnit?: string;
+}
+
 export interface UserProfile {
   onboardingComplete: boolean;
   goal: string;
@@ -80,6 +89,7 @@ export interface UserProfile {
   goalDate: string;
   weightHistory: { date: string; weight: number }[];
   savedMeals: SavedMeal[];
+  savedExercises: SavedExercise[];
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
