@@ -3,78 +3,94 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollPicker } from "@/components/ScrollPicker";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { Exercise } from "@/stores/useUserStore";
 
-// Calories burned per minute (moderate intensity, ~70kg person)
 const EXERCISE_DATABASE: Record<string, number> = {
-  "Running": 11.5,
-  "Walking": 4.0,
-  "Cycling": 8.5,
-  "Swimming": 9.0,
-  "Yoga": 3.5,
-  "Pilates": 4.0,
-  "Weight Training": 6.0,
-  "HIIT": 12.0,
-  "CrossFit": 11.0,
-  "Boxing": 10.0,
-  "Kickboxing": 10.5,
-  "Jump Rope": 12.5,
-  "Rowing": 8.0,
-  "Elliptical": 7.5,
-  "Stair Climbing": 9.0,
-  "Dancing": 6.5,
-  "Tennis": 8.0,
-  "Basketball": 8.5,
-  "Soccer": 9.0,
-  "Football": 8.5,
-  "Volleyball": 5.0,
-  "Badminton": 6.0,
-  "Table Tennis": 4.5,
-  "Golf": 4.0,
-  "Hiking": 6.5,
-  "Rock Climbing": 9.5,
-  "Martial Arts": 10.0,
-  "Stretching": 2.5,
-  "Calisthenics": 7.0,
-  "Skiing": 8.0,
-  "Snowboarding": 6.5,
-  "Surfing": 5.0,
-  "Skateboarding": 5.5,
-  "Ice Skating": 7.0,
-  "Spinning": 10.0,
-  "Barre": 4.5,
-  "Tai Chi": 3.0,
-  "Zumba": 8.0,
-  "Aerobics": 7.5,
+  "Running": 11.5, "Walking": 4.0, "Cycling": 8.5, "Swimming": 9.0,
+  "Yoga": 3.5, "Pilates": 4.0, "Weight Training": 6.0, "HIIT": 12.0,
+  "CrossFit": 11.0, "Boxing": 10.0, "Kickboxing": 10.5, "Jump Rope": 12.5,
+  "Rowing": 8.0, "Elliptical": 7.5, "Stair Climbing": 9.0, "Dancing": 6.5,
+  "Tennis": 8.0, "Basketball": 8.5, "Soccer": 9.0, "Football": 8.5,
+  "Volleyball": 5.0, "Badminton": 6.0, "Table Tennis": 4.5, "Golf": 4.0,
+  "Hiking": 6.5, "Rock Climbing": 9.5, "Martial Arts": 10.0,
+  "Stretching": 2.5, "Calisthenics": 7.0, "Skiing": 8.0,
+  "Snowboarding": 6.5, "Surfing": 5.0, "Skateboarding": 5.5,
+  "Ice Skating": 7.0, "Spinning": 10.0, "Barre": 4.5, "Tai Chi": 3.0,
+  "Zumba": 8.0, "Aerobics": 7.5,
 };
 
-// Secondary metrics for exercises that have them
-interface SecondaryMetricConfig {
-  unit: string;
+// Metric options per exercise. "duration" is always available.
+// Additional options: "distance", "laps", "steps", "floors", "jumps", "runs", "waves"
+interface MetricOption {
+  key: string;
   label: string;
-  values: number[];
+  unit?: string; // if set, single scroller with this unit
+  hasUnitPicker?: boolean; // if true, show unit picker + value scroller
+  units?: string[];
+  values: Record<string, number[]>; // keyed by unit (or "default")
 }
 
-const SECONDARY_METRICS: Record<string, SecondaryMetricConfig> = {
-  "Running": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30, 35, 40, 42] },
-  "Walking": { unit: "steps", label: "Steps", values: [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 20000] },
-  "Cycling": { unit: "km", label: "Distance", values: [1, 2, 3, 5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100] },
-  "Swimming": { unit: "laps", label: "Laps", values: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 50, 60, 80, 100] },
-  "Hiking": { unit: "km", label: "Distance", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 18, 20, 25, 30] },
-  "Rowing": { unit: "m", label: "Meters", values: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000] },
-  "Elliptical": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10] },
-  "Stair Climbing": { unit: "floors", label: "Floors", values: [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 100] },
-  "Jump Rope": { unit: "jumps", label: "Jumps", values: [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000, 1500, 2000] },
-  "Skiing": { unit: "runs", label: "Runs", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] },
-  "Snowboarding": { unit: "runs", label: "Runs", values: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] },
-  "Skateboarding": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10] },
-  "Ice Skating": { unit: "km", label: "Distance", values: [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10] },
-  "Spinning": { unit: "km", label: "Distance", values: [2, 4, 6, 8, 10, 12, 15, 18, 20, 25, 30] },
-  "Surfing": { unit: "waves", label: "Waves", values: [2, 4, 6, 8, 10, 12, 15, 20, 25, 30] },
+const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 5);
+
+const DISTANCE_UNITS = ["m", "km", "miles"];
+const DISTANCE_VALUES: Record<string, number[]> = {
+  m: [100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000],
+  km: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12, 15, 18, 20, 25, 30, 35, 40, 42],
+  miles: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 13, 15, 20, 26],
+};
+
+const EXERCISE_METRICS: Record<string, MetricOption[]> = {
+  "Running": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+    { key: "steps", label: "Steps", unit: "steps", values: { default: [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 10000, 12000, 15000, 20000] } },
+  ],
+  "Walking": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+    { key: "steps", label: "Steps", unit: "steps", values: { default: [500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 20000] } },
+  ],
+  "Cycling": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Swimming": [
+    { key: "laps", label: "Laps", unit: "laps", values: { default: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 50, 60, 80, 100] } },
+  ],
+  "Hiking": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Rowing": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Elliptical": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Stair Climbing": [
+    { key: "floors", label: "Floors", unit: "floors", values: { default: [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 100] } },
+  ],
+  "Jump Rope": [
+    { key: "jumps", label: "Jumps", unit: "jumps", values: { default: [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000, 1500, 2000] } },
+  ],
+  "Skiing": [
+    { key: "runs", label: "Runs", unit: "runs", values: { default: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] } },
+  ],
+  "Snowboarding": [
+    { key: "runs", label: "Runs", unit: "runs", values: { default: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20] } },
+  ],
+  "Skateboarding": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Ice Skating": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Spinning": [
+    { key: "distance", label: "Distance", hasUnitPicker: true, units: DISTANCE_UNITS, values: DISTANCE_VALUES },
+  ],
+  "Surfing": [
+    { key: "waves", label: "Waves", unit: "waves", values: { default: [2, 4, 6, 8, 10, 12, 15, 20, 25, 30] } },
+  ],
 };
 
 const EXERCISE_NAMES = Object.keys(EXERCISE_DATABASE);
-const DURATION_VALUES = Array.from({ length: 24 }, (_, i) => (i + 1) * 5);
 
 interface ExerciseEntryProps {
   open: boolean;
@@ -86,9 +102,23 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
   const [step, setStep] = useState<"search" | "duration">("search");
   const [query, setQuery] = useState("");
   const [selectedExercise, setSelectedExercise] = useState("");
-  const [duration, setDuration] = useState<string | number>(30);
-  const [secondaryValue, setSecondaryValue] = useState<number | null>(null);
+  // Toggle: "duration" or one of the metric keys
+  const [activeMetric, setActiveMetric] = useState<string>("duration");
+  const [durationValue, setDurationValue] = useState<number>(30);
+  const [metricValue, setMetricValue] = useState<number>(5);
+  const [distanceUnit, setDistanceUnit] = useState<string>("km");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const metrics = EXERCISE_METRICS[selectedExercise] || [];
+  const toggleOptions = [
+    { key: "duration", label: "Duration" },
+    ...metrics.map((m) => ({ key: m.key, label: m.label })),
+  ];
+
+  const activeMetricConfig = metrics.find((m) => m.key === activeMetric);
+
+  const calPerMin = EXERCISE_DATABASE[selectedExercise] || 6.0;
+  const estimatedCals = Math.round(calPerMin * durationValue);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return EXERCISE_NAMES.slice(0, 8);
@@ -96,17 +126,15 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
     return EXERCISE_NAMES.filter((name) => name.toLowerCase().includes(q));
   }, [query]);
 
-  const calPerMin = EXERCISE_DATABASE[selectedExercise] || 6.0;
-  const estimatedCals = Math.round(calPerMin * Number(duration));
-  const secondaryMetric = SECONDARY_METRICS[selectedExercise] || null;
-
   useEffect(() => {
     if (open) {
       setStep("search");
       setQuery("");
       setSelectedExercise("");
-      setDuration(30);
-      setSecondaryValue(null);
+      setActiveMetric("duration");
+      setDurationValue(30);
+      setMetricValue(5);
+      setDistanceUnit("km");
     }
   }, [open]);
 
@@ -118,30 +146,64 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
   const selectExercise = (name: string) => {
     setSelectedExercise(name);
-    const metric = SECONDARY_METRICS[name];
-    if (metric) {
-      // Pick a reasonable default
-      const midIndex = Math.floor(metric.values.length / 3);
-      setSecondaryValue(metric.values[midIndex]);
-    } else {
-      setSecondaryValue(null);
+    setActiveMetric("duration");
+    setDurationValue(30);
+    setDistanceUnit("km");
+    // Set a sensible default for the first metric
+    const m = EXERCISE_METRICS[name];
+    if (m && m.length > 0) {
+      const firstMetric = m[0];
+      const unit = firstMetric.hasUnitPicker ? (firstMetric.units?.[1] || "km") : "default";
+      const vals = firstMetric.values[unit] || firstMetric.values["default"] || [];
+      setMetricValue(vals[Math.floor(vals.length / 3)] || 5);
     }
     setStep("duration");
+  };
+
+  const handleMetricToggle = (val: string) => {
+    if (!val) return;
+    setActiveMetric(val);
+    if (val !== "duration") {
+      const config = metrics.find((m) => m.key === val);
+      if (config) {
+        const unit = config.hasUnitPicker ? distanceUnit : "default";
+        const vals = config.values[unit] || config.values["default"] || [];
+        setMetricValue(vals[Math.floor(vals.length / 3)] || 5);
+      }
+    }
   };
 
   const handleAdd = () => {
     const exercise: Exercise = {
       id: Date.now().toString(),
       name: selectedExercise || query,
-      duration: Number(duration),
-      caloriesBurned: estimatedCals,
+      duration: activeMetric === "duration" ? durationValue : 0,
+      caloriesBurned: activeMetric === "duration" ? estimatedCals : 0,
     };
-    if (secondaryMetric && secondaryValue !== null) {
-      exercise.secondaryMetric = secondaryValue;
-      exercise.secondaryUnit = secondaryMetric.unit;
+    if (activeMetric !== "duration" && activeMetricConfig) {
+      exercise.secondaryMetric = metricValue;
+      exercise.secondaryUnit = activeMetricConfig.hasUnitPicker ? distanceUnit : (activeMetricConfig.unit || activeMetric);
+      // For non-duration metrics, still estimate cals if we have duration=0
+      exercise.caloriesBurned = estimatedCals > 0 ? estimatedCals : Math.round(calPerMin * 15);
+      exercise.duration = durationValue || 0;
     }
     onAdd(exercise);
     onOpenChange(false);
+  };
+
+  // Get the values array for the active metric
+  const getMetricValues = (): number[] => {
+    if (!activeMetricConfig) return [];
+    if (activeMetricConfig.hasUnitPicker) {
+      return activeMetricConfig.values[distanceUnit] || [];
+    }
+    return activeMetricConfig.values["default"] || [];
+  };
+
+  const getMetricSuffix = (): string => {
+    if (!activeMetricConfig) return "";
+    if (activeMetricConfig.hasUnitPicker) return ` ${distanceUnit}`;
+    return ` ${activeMetricConfig.unit || ""}`;
   };
 
   return (
@@ -189,44 +251,92 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd }: ExerciseEntryProps)
 
         {step === "duration" && (
           <div className="space-y-4 pt-2">
-            <div className="flex items-start justify-center gap-3">
-              {/* Duration picker */}
-              <div className="flex-1 text-center">
-                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">Duration</p>
+            {/* Metric toggle */}
+            {toggleOptions.length > 1 && (
+              <ToggleGroup
+                type="single"
+                value={activeMetric}
+                onValueChange={handleMetricToggle}
+                className="w-full bg-secondary/50 rounded-xl p-1"
+              >
+                {toggleOptions.map((opt) => (
+                  <ToggleGroupItem
+                    key={opt.key}
+                    value={opt.key}
+                    className="flex-1 rounded-lg text-xs data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm px-3 py-1.5"
+                  >
+                    {opt.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            )}
+
+            {/* Duration scroller */}
+            {activeMetric === "duration" && (
+              <div className="text-center">
                 <ScrollPicker
                   items={DURATION_VALUES}
-                  value={duration}
-                  onChange={(v) => setDuration(v)}
+                  value={durationValue}
+                  onChange={(v) => setDurationValue(Number(v))}
                   suffix=" min"
                   visibleItems={3}
                   itemHeight={40}
                 />
               </div>
+            )}
 
-              {/* Secondary metric picker */}
-              {secondaryMetric && secondaryValue !== null && (
+            {/* Metric scroller(s) */}
+            {activeMetric !== "duration" && activeMetricConfig && (
+              <div className="flex items-start justify-center gap-3">
+                {/* Unit picker (left) for distance */}
+                {activeMetricConfig.hasUnitPicker && activeMetricConfig.units && (
+                  <div className="flex-shrink-0 text-center" style={{ width: 72 }}>
+                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Unit</p>
+                    <ScrollPicker
+                      items={activeMetricConfig.units}
+                      value={distanceUnit}
+                      onChange={(v) => {
+                        const newUnit = String(v);
+                        setDistanceUnit(newUnit);
+                        const vals = activeMetricConfig.values[newUnit] || [];
+                        setMetricValue(vals[Math.floor(vals.length / 3)] || vals[0] || 1);
+                      }}
+                      visibleItems={3}
+                      itemHeight={40}
+                    />
+                  </div>
+                )}
+
+                {/* Value scroller (right, or centered if no unit picker) */}
                 <div className="flex-1 text-center">
-                  <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">{secondaryMetric.label}</p>
+                  {activeMetricConfig.hasUnitPicker && (
+                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Value</p>
+                  )}
                   <ScrollPicker
-                    items={secondaryMetric.values}
-                    value={secondaryValue}
-                    onChange={(v) => setSecondaryValue(Number(v))}
-                    suffix={` ${secondaryMetric.unit}`}
+                    key={activeMetric + (activeMetricConfig.hasUnitPicker ? distanceUnit : "")}
+                    items={getMetricValues()}
+                    value={metricValue}
+                    onChange={(v) => setMetricValue(Number(v))}
+                    suffix={activeMetricConfig.hasUnitPicker ? "" : getMetricSuffix()}
                     visibleItems={3}
                     itemHeight={40}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="text-center py-2">
-              <p className="text-2xl font-bold text-foreground">{estimatedCals}</p>
-              <p className="text-xs text-muted-foreground">estimated calories burned</p>
+              <p className="text-2xl font-bold text-foreground">
+                {activeMetric === "duration" ? estimatedCals : metricValue}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {activeMetric === "duration"
+                  ? "estimated calories burned"
+                  : `${getMetricSuffix().trim()}`}
+              </p>
             </div>
-            <Button
-              onClick={handleAdd}
-              className="w-full rounded-xl h-12"
-            >
+
+            <Button onClick={handleAdd} className="w-full rounded-xl h-12">
               Add Exercise
             </Button>
           </div>
