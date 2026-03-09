@@ -8,7 +8,7 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot } from "lucide-react";
+import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
 import { useUserStore, type Exercise, type SavedMeal, type SavedExercise, type PoopEntry } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
