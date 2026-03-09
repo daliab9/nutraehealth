@@ -7,11 +7,13 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar as CalendarWidget } from "@/components/ui/calendar";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X, Dumbbell, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const GOALS_MAP: Record<string, string> = {
   lose_weight: "Lose weight",
@@ -109,6 +111,14 @@ const Profile = () => {
   const [editMealName, setEditMealName] = useState("");
   const [editMealAddingItem, setEditMealAddingItem] = useState(false);
   const [editingMealItem, setEditingMealItem] = useState<FoodItem | null>(null);
+
+  // Weight history management
+  const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
+  const [addWeightOpen, setAddWeightOpen] = useState(false);
+  const [addWeightDate, setAddWeightDate] = useState<Date | undefined>(new Date());
+  const [addWeightValue, setAddWeightValue] = useState<number>(profile.currentWeight);
+  const [addWeightUnit, setAddWeightUnit] = useState<"kg" | "lbs">(profile.weightUnit || "kg");
+  const [editingWeightDate, setEditingWeightDate] = useState<string | null>(null);
 
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
@@ -283,7 +293,14 @@ const Profile = () => {
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={openWeightEdit}>Log weight</Button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setWeightHistoryOpen(true)}
+                className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+              >
+                <Pencil className="h-3.5 w-3.5 text-foreground" />
+              </button>
+            </div>
           </div>
           {weightData.length >= 2 ? (
             <div className="h-40">
@@ -666,6 +683,150 @@ const Profile = () => {
               <Button onClick={saveEditedMeal} className="w-full rounded-xl h-12" disabled={editMealItems.length === 0 || !editMealName.trim()}>Save changes</Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Weight History Dialog */}
+      <Dialog open={weightHistoryOpen} onOpenChange={setWeightHistoryOpen}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Weight History</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Button
+              variant="outline"
+              className="w-full rounded-xl h-12 gap-2"
+              onClick={() => {
+                setAddWeightDate(new Date());
+                setAddWeightUnit(weightUnit);
+                setAddWeightValue(weightUnit === "lbs" ? kgToLbs(profile.currentWeight) : profile.currentWeight);
+                setEditingWeightDate(null);
+                setAddWeightOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Add weight entry
+            </Button>
+            {profile.weightHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No weight entries yet</p>
+            ) : (
+              <div className="space-y-1.5">
+                {[...profile.weightHistory].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => {
+                  const displayW = weightUnit === "lbs" ? kgToLbs(entry.weight) : entry.weight;
+                  return (
+                    <div key={entry.date} className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-border">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground">{displayW} {weightUnit}</span>
+                        <span className="text-[10px] text-muted-foreground">{format(new Date(entry.date), "MMM d, yyyy")}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingWeightDate(entry.date);
+                            setAddWeightDate(new Date(entry.date));
+                            setAddWeightUnit(weightUnit);
+                            setAddWeightValue(weightUnit === "lbs" ? kgToLbs(entry.weight) : entry.weight);
+                            setAddWeightOpen(true);
+                          }}
+                          className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProfile({
+                              weightHistory: profile.weightHistory.filter((h) => h.date !== entry.date),
+                            });
+                          }}
+                          className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Weight Entry Dialog */}
+      <Dialog open={addWeightOpen} onOpenChange={(o) => { if (!o) setAddWeightOpen(false); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>{editingWeightDate ? "Edit Weight Entry" : "Add Weight Entry"}</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            {/* Unit toggle */}
+            <div className="flex justify-center gap-2">
+              <button
+                onClick={() => {
+                  const cur = addWeightValue;
+                  setAddWeightUnit("kg");
+                  setAddWeightValue(addWeightUnit === "lbs" ? lbsToKg(cur) : cur);
+                }}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${addWeightUnit === "kg" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+              >kg</button>
+              <button
+                onClick={() => {
+                  const cur = addWeightValue;
+                  setAddWeightUnit("lbs");
+                  setAddWeightValue(addWeightUnit === "kg" ? kgToLbs(cur) : cur);
+                }}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${addWeightUnit === "lbs" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+              >lbs</button>
+            </div>
+
+            {/* Date picker */}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Date</p>
+              <CalendarWidget
+                mode="single"
+                selected={addWeightDate}
+                onSelect={setAddWeightDate}
+                disabled={(date) => date > new Date()}
+                className={cn("p-3 pointer-events-auto rounded-xl border border-border")}
+              />
+            </div>
+
+            {/* Weight scroller */}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Weight</p>
+              <ScrollPicker
+                items={addWeightUnit === "kg" ? KG_VALUES : LBS_VALUES}
+                value={addWeightValue}
+                onChange={(v) => setAddWeightValue(Number(v))}
+                suffix={` ${addWeightUnit}`}
+              />
+            </div>
+
+            <Button
+              onClick={() => {
+                if (!addWeightDate) return;
+                const dateStr = format(addWeightDate, "yyyy-MM-dd");
+                const kgVal = addWeightUnit === "lbs" ? lbsToKg(addWeightValue) : addWeightValue;
+
+                // Remove old entry if editing
+                let history = editingWeightDate
+                  ? profile.weightHistory.filter((h) => h.date !== editingWeightDate)
+                  : profile.weightHistory.filter((h) => h.date !== dateStr);
+
+                history = [...history, { date: dateStr, weight: kgVal }].sort((a, b) => a.date.localeCompare(b.date));
+
+                // Update current weight if this is today's entry or the most recent
+                const mostRecent = history[history.length - 1];
+                const updates: any = { weightHistory: history };
+                if (mostRecent.date === dateStr) {
+                  updates.currentWeight = kgVal;
+                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+                }
+
+                setProfile(updates);
+                setAddWeightOpen(false);
+              }}
+              className="w-full rounded-xl h-12"
+              disabled={!addWeightDate}
+            >
+              {editingWeightDate ? "Save changes" : "Add entry"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
