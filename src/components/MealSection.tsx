@@ -246,6 +246,7 @@ export const MealSection = ({
               </div>
           )}
           </div>
+        </div>
       }
 
       {/* Edit food item dialog */}
