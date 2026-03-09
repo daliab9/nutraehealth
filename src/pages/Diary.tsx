@@ -8,8 +8,8 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot } from "lucide-react";
-import { useUserStore, type Exercise, type SavedMeal, type PoopEntry } from "@/stores/useUserStore";
+import { AlertTriangle, Dumbbell, Pencil, Plus, Trash2, Utensils, X, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
+import { useUserStore, type Exercise, type SavedMeal, type SavedExercise, type PoopEntry } from "@/stores/useUserStore";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -93,6 +93,34 @@ const Diary = () => {
     setProfile({
       savedMeals: [...(profile.savedMeals || []), meal],
     });
+  };
+
+  const handleUnsaveMeal = (mealName: string) => {
+    setProfile({
+      savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()),
+    });
+  };
+
+  const isExerciseSaved = (name: string) => {
+    return (profile.savedExercises || []).some((e) => e.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const handleToggleSaveExercise = (ex: Exercise) => {
+    const saved = profile.savedExercises || [];
+    if (isExerciseSaved(ex.name)) {
+      setProfile({ savedExercises: saved.filter((e) => e.name.toLowerCase() !== ex.name.toLowerCase()) });
+    } else {
+      setProfile({
+        savedExercises: [...saved, {
+          id: Date.now().toString(),
+          name: ex.name,
+          duration: ex.duration,
+          caloriesBurned: ex.caloriesBurned,
+          secondaryMetric: ex.secondaryMetric,
+          secondaryUnit: ex.secondaryUnit,
+        }],
+      });
+    }
   };
 
   const alerts = healthAlerts();
@@ -195,6 +223,7 @@ const Diary = () => {
                     pastItems={getPastItemsForMealType(type)}
                     savedMeals={profile.savedMeals || []}
                     onSaveMeal={handleSaveMeal}
+                    onUnsaveMeal={handleUnsaveMeal}
                   />
                 ))}
               </div>
@@ -221,25 +250,31 @@ const Diary = () => {
                 {dayEntry.exercises.map((ex) => (
                   <div key={ex.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
                     <div className="flex flex-col min-w-0 flex-1 mr-2">
-                      <span className="text-sm text-foreground font-bold truncate">{ex.name}</span>
+                      <span className="text-sm text-foreground font-bold break-words">{ex.name}</span>
                       <span className="text-[10px] text-muted-foreground">
                         {ex.secondaryMetric && ex.secondaryUnit
                           ? `${ex.secondaryMetric} ${ex.secondaryUnit} · -${ex.caloriesBurned} kcal`
                           : `${ex.duration}min · -${ex.caloriesBurned} kcal`}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleToggleSaveExercise(ex)}
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-foreground transition-colors active:scale-95"
+                      >
+                        <Heart className={`h-5 w-5 ${isExerciseSaved(ex.name) ? "fill-foreground" : ""}`} />
+                      </button>
                       <button
                         onClick={() => setEditingExercise(ex)}
-                        className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95"
                       >
-                        <Pencil className="h-3 w-3" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => removeExercise(dateKey, ex.id)}
-                        className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-5 w-5" />
                       </button>
                     </div>
                   </div>

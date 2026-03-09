@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Bookmark, FolderPlus, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Bookmark, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +20,7 @@ interface MealSectionProps {
   pastItems?: FoodItem[];
   savedMeals?: SavedMeal[];
   onSaveMeal?: (meal: SavedMeal) => void;
+  onUnsaveMeal?: (mealName: string) => void;
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
@@ -34,7 +35,8 @@ export const MealSection = ({
   onAddItems,
   pastItems = [],
   savedMeals = [],
-  onSaveMeal
+  onSaveMeal,
+  onUnsaveMeal
 }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -107,14 +109,22 @@ export const MealSection = ({
     setMode(null);
   };
 
-  const handleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
-    if (!onSaveMeal) return;
-    onSaveMeal({
-      id: Date.now().toString(),
-      name,
-      items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest)
-    });
-    toast.success(`"${name}" saved to your meals`);
+  const isMealSaved = (name: string) => {
+    return savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const handleToggleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
+    if (isMealSaved(name)) {
+      onUnsaveMeal?.(name);
+      toast.success(`"${name}" removed from saved meals`);
+    } else {
+      onSaveMeal?.({
+        id: Date.now().toString(),
+        name,
+        items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest)
+      });
+      toast.success(`"${name}" saved to your meals`);
+    }
   };
 
   const toggleGroup = (groupId: string) => {
@@ -156,17 +166,16 @@ export const MealSection = ({
                     {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
                     <span className="font-semibold text-foreground text-sm text-left">{group.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
-                    {onSaveMeal &&
+                    {(onSaveMeal || onUnsaveMeal) &&
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSaveGroup(groupId, group.name, group.items);
+                      handleToggleSaveGroup(groupId, group.name, group.items);
                     }}
-                    className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground">
-                    
-                        <Bookmark className="h-3.5 w-3.5" />
+                    className="h-8 w-8 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform">
+                        <Heart className={`h-5 w-5 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
                       </button>
                   }
                     {onRemoveItem &&
@@ -175,9 +184,8 @@ export const MealSection = ({
                       e.stopPropagation();
                       group.items.forEach((i) => onRemoveItem(i.id));
                     }}
-                    className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-destructive">
-                    
-                        <X className="h-3 w-3" />
+                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                        <X className="h-5 w-5" />
                       </button>
                   }
                   </div>
@@ -187,19 +195,19 @@ export const MealSection = ({
                     {group.items.map((item) =>
                 <div key={item.id} className="flex items-center justify-between py-1.5 pl-5 text-sm">
                         <div className="flex flex-col min-w-0 flex-1 mr-2">
-                          <span className="text-foreground truncate">{item.name}</span>
+                          <span className="text-foreground break-words">{item.name}</span>
                           {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
                           {onUpdateItem &&
-                    <button onClick={() => setEditingItem(item)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground">
-                              <Pencil className="h-2.5 w-2.5" />
+                    <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                              <Pencil className="h-4 w-4" />
                             </button>
                     }
                           {onRemoveItem &&
-                    <button onClick={() => onRemoveItem(item.id)} className="h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-destructive">
-                              <X className="h-2.5 w-2.5" />
+                    <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                              <X className="h-4 w-4" />
                             </button>
                     }
                         </div>
@@ -216,22 +224,22 @@ export const MealSection = ({
             {ungrouped.map((item) =>
           <div key={item.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]">
                 <div className="flex flex-col min-w-0 flex-1 mr-2">
-                  <span className="font-medium text-foreground text-sm truncate">{item.name}</span>
+                  <span className="font-medium text-foreground text-sm break-words">{item.name}</span>
                   {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
                   {onUpdateItem &&
-              <button onClick={() => setEditingItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                      <Pencil className="h-2.5 w-2.5" />
+              <button onClick={() => setEditingItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                      <Pencil className="h-4 w-4" />
                     </button>
               }
-                  <button onClick={() => setAddToMealItem(item)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                    <FolderPlus className="h-2.5 w-2.5" />
+                  <button onClick={() => setAddToMealItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                    <Bookmark className="h-4 w-4" />
                   </button>
                   {onRemoveItem &&
-              <button onClick={() => onRemoveItem(item.id)} className="h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
-                      <X className="h-3 w-3" />
+              <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
+                      <X className="h-4 w-4" />
                     </button>
               }
                 </div>
