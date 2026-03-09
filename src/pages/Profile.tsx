@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
+import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
-import { Scale, Ruler, Target, Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X, Dumbbell } from "lucide-react";
+import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Bookmark, Plus, X, Dumbbell, RotateCcw } from "lucide-react";
 
 const GOALS_MAP: Record<string, string> = {
   lose_weight: "Lose weight",
@@ -25,12 +26,71 @@ const GOALS_MAP: Record<string, string> = {
   reduce_stress: "Reduce stress",
 };
 
+function getMainGoal(goals: string[]): string {
+  if (goals.includes("lose_weight") || goals.includes("reduce_body_fat")) return "lose";
+  if (goals.includes("gain_muscle")) return "gain";
+  if (goals.includes("maintain_weight")) return "maintain";
+  return "health";
+}
+
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, goals: string[]): number {
+  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + 5;
+  const tdee = bmr * 1.4;
+  const goal = getMainGoal(goals);
+  switch (goal) {
+    case "lose": return Math.round(tdee - 500);
+    case "gain": return Math.round(tdee + 300);
+    default: return Math.round(tdee);
+  }
+}
+
+// Weight ranges
+const KG_VALUES = Array.from({ length: 201 }, (_, i) => 30 + i); // 30-230
+const LBS_VALUES = Array.from({ length: 441 }, (_, i) => 66 + i); // 66-506
+// Height ranges
+const CM_VALUES = Array.from({ length: 121 }, (_, i) => 100 + i); // 100-220
+const FT_INCHES = (() => {
+  const vals: string[] = [];
+  for (let ft = 3; ft <= 7; ft++) {
+    for (let inch = 0; inch < 12; inch++) {
+      vals.push(`${ft}'${inch}"`);
+    }
+  }
+  return vals;
+})();
+// Calorie range
+const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10); // 1000-4000
+
+function kgToLbs(kg: number) { return Math.round(kg * 2.20462); }
+function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462); }
+function cmToFtStr(cm: number) {
+  const totalInches = Math.round(cm / 2.54);
+  const ft = Math.floor(totalInches / 12);
+  const inch = totalInches % 12;
+  return `${ft}'${inch}"`;
+}
+function ftStrToCm(s: string) {
+  const match = s.match(/(\d+)'(\d+)"/);
+  if (!match) return 170;
+  return Math.round((parseInt(match[1]) * 12 + parseInt(match[2])) * 2.54);
+}
+
 const Profile = () => {
   const { profile, setProfile } = useUserStore();
-  const [weightOpen, setWeightOpen] = useState(false);
-  const [newWeight, setNewWeight] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [editCalories, setEditCalories] = useState(String(profile.dailyCalorieTarget));
+
+  // Unit toggles
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">(profile.weightUnit || "kg");
+  const [heightUnit, setHeightUnit] = useState<"cm" | "ft">(profile.heightUnit || "cm");
+
+  // Edit dialogs
+  const [editField, setEditField] = useState<"weight" | "goal" | "height" | "calories" | null>(null);
+  const [scrollWeight, setScrollWeight] = useState<number>(profile.currentWeight);
+  const [scrollGoalWeight, setScrollGoalWeight] = useState<number>(profile.targetWeight);
+  const [scrollHeight, setScrollHeight] = useState<number>(profile.height);
+  const [scrollHeightFt, setScrollHeightFt] = useState<string>(cmToFtStr(profile.height));
+  const [scrollCalories, setScrollCalories] = useState<number>(profile.dailyCalorieTarget);
+
+  // Other dialogs
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [editGoals, setEditGoals] = useState<string[]>(profile.goals || []);
   const [healthInfoOpen, setHealthInfoOpen] = useState(false);
@@ -39,10 +99,6 @@ const Profile = () => {
   const [editHealthConcerns, setEditHealthConcerns] = useState<string[]>(profile.healthConcerns || []);
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
-  const [editHeightOpen, setEditHeightOpen] = useState(false);
-  const [editHeight, setEditHeight] = useState(String(profile.height));
-  const [editTargetWeightOpen, setEditTargetWeightOpen] = useState(false);
-  const [editTargetWeight, setEditTargetWeight] = useState(String(profile.targetWeight));
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [createMealOpen, setCreateMealOpen] = useState(false);
   const [createMealName, setCreateMealName] = useState("");
@@ -56,20 +112,9 @@ const Profile = () => {
 
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
 
-  const handleAddWeight = () => {
-    if (!newWeight) return;
-    const w = Number(newWeight);
-    const today = format(new Date(), "yyyy-MM-dd");
-    setProfile({
-      currentWeight: w,
-      weightHistory: [
-        ...profile.weightHistory.filter((h) => h.date !== today),
-        { date: today, weight: w },
-      ].sort((a, b) => a.date.localeCompare(b.date)),
-    });
-    setNewWeight("");
-    setWeightOpen(false);
-  };
+  const displayWeight = weightUnit === "lbs" ? kgToLbs(profile.currentWeight) : profile.currentWeight;
+  const displayGoalWeight = weightUnit === "lbs" ? kgToLbs(profile.targetWeight) : profile.targetWeight;
+  const displayHeight = heightUnit === "ft" ? cmToFtStr(profile.height) : profile.height;
 
   const weightData = profile.weightHistory.map((h) => ({
     date: format(new Date(h.date), "MMM d"),
@@ -90,9 +135,7 @@ const Profile = () => {
     list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 
   const deleteSavedMeal = (mealId: string) => {
-    setProfile({
-      savedMeals: (profile.savedMeals || []).filter((m) => m.id !== mealId),
-    });
+    setProfile({ savedMeals: (profile.savedMeals || []).filter((m) => m.id !== mealId) });
   };
 
   const openEditMeal = (meal: SavedMeal) => {
@@ -117,47 +160,130 @@ const Profile = () => {
   };
 
   const deleteSavedExercise = (exerciseId: string) => {
-    setProfile({
-      savedExercises: (profile.savedExercises || []).filter((e) => e.id !== exerciseId),
-    });
+    setProfile({ savedExercises: (profile.savedExercises || []).filter((e) => e.id !== exerciseId) });
   };
 
   const savedMeals = profile.savedMeals || [];
   const savedExercises = profile.savedExercises || [];
+
+  // Open edit dialogs
+  const openWeightEdit = () => {
+    setScrollWeight(weightUnit === "lbs" ? kgToLbs(profile.currentWeight) : profile.currentWeight);
+    setEditField("weight");
+  };
+  const openGoalEdit = () => {
+    setScrollGoalWeight(weightUnit === "lbs" ? kgToLbs(profile.targetWeight) : profile.targetWeight);
+    setEditField("goal");
+  };
+  const openHeightEdit = () => {
+    if (heightUnit === "ft") {
+      setScrollHeightFt(cmToFtStr(profile.height));
+    } else {
+      setScrollHeight(profile.height);
+    }
+    setEditField("height");
+  };
+  const openCaloriesEdit = () => {
+    // Snap to nearest 10
+    const snapped = Math.round(profile.dailyCalorieTarget / 10) * 10;
+    setScrollCalories(Math.max(1000, Math.min(4000, snapped)));
+    setEditField("calories");
+  };
+
+  const saveWeight = () => {
+    const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
+    const today = format(new Date(), "yyyy-MM-dd");
+    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+    setProfile({
+      currentWeight: kgVal,
+      weightUnit,
+      dailyCalorieTarget: newCalories,
+      weightHistory: [
+        ...profile.weightHistory.filter((h) => h.date !== today),
+        { date: today, weight: kgVal },
+      ].sort((a, b) => a.date.localeCompare(b.date)),
+    });
+    setEditField(null);
+  };
+
+  const saveGoalWeight = () => {
+    const kgVal = weightUnit === "lbs" ? lbsToKg(scrollGoalWeight) : scrollGoalWeight;
+    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.goals || []);
+    setProfile({ targetWeight: kgVal, dailyCalorieTarget: newCalories });
+    setEditField(null);
+  };
+
+  const saveHeight = () => {
+    const cmVal = heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight;
+    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.goals || []);
+    setProfile({ height: cmVal, heightUnit, dailyCalorieTarget: newCalories });
+    setEditField(null);
+  };
+
+  const saveCalories = () => {
+    setProfile({ dailyCalorieTarget: scrollCalories });
+    setEditField(null);
+  };
+
+  const autoCalcAndSet = () => {
+    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+    const snapped = Math.round(cal / 10) * 10;
+    setScrollCalories(Math.max(1000, Math.min(4000, snapped)));
+  };
+
+  const EditButton = ({ onClick }: { onClick: () => void }) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+    >
+      <Pencil className="h-3.5 w-3.5 text-foreground" />
+    </button>
+  );
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="pt-12 px-4">
         <h1 className="text-2xl font-bold text-foreground mb-6">Profile</h1>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => { setNewWeight(String(profile.currentWeight)); setWeightOpen(true); }} className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20">
-            <Scale className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{profile.currentWeight}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Current kg</p>
-          </button>
-          <button onClick={() => { setEditHeight(String(profile.height)); setEditHeightOpen(true); }} className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20">
-            <Ruler className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{profile.height}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Height cm</p>
-          </button>
-          <div className="rounded-2xl bg-card border border-border p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-1">BMI</p>
-            <p className="text-2xl font-bold text-foreground">{bmi}</p>
+        {/* Row 1: Current KG, Goal KG */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
+            <EditButton onClick={openWeightEdit} />
+            <p className="text-2xl font-bold text-foreground">{displayWeight}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Current {weightUnit}</p>
           </div>
-          <button onClick={() => { setEditTargetWeight(String(profile.targetWeight)); setEditTargetWeightOpen(true); }} className="rounded-2xl bg-card border border-border p-4 text-center transition-colors hover:bg-accent/20">
-            <Target className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{profile.targetWeight}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Goal kg</p>
-          </button>
+          <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
+            <EditButton onClick={openGoalEdit} />
+            <p className="text-2xl font-bold text-foreground">{displayGoalWeight}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Goal {weightUnit}</p>
+          </div>
+        </div>
+
+        {/* Row 2: BMI, Height */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="rounded-2xl bg-card border border-border p-4 text-center">
+            <p className="text-2xl font-bold text-foreground">{bmi}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">BMI</p>
+          </div>
+          <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
+            <EditButton onClick={openHeightEdit} />
+            <p className="text-2xl font-bold text-foreground">{displayHeight}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Height {heightUnit}</p>
+          </div>
+        </div>
+
+        {/* Row 3: Target daily calories */}
+        <div className="relative rounded-2xl bg-card border border-border p-4 text-center mb-6">
+          <EditButton onClick={openCaloriesEdit} />
+          <p className="text-2xl font-bold text-foreground">{profile.dailyCalorieTarget}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target daily calories</p>
         </div>
 
         {/* Weight tracking */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
-            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={() => setWeightOpen(true)}>Log weight</Button>
+            <Button variant="ghost" size="sm" className="rounded-xl text-xs" onClick={openWeightEdit}>Log weight</Button>
           </div>
           {weightData.length >= 2 ? (
             <div className="h-40">
@@ -213,7 +339,7 @@ const Profile = () => {
             </Button>
           </div>
           {savedMeals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No saved meals yet. Save meals from the diary to quickly add them later.</p>
+            <p className="text-sm text-muted-foreground">No saved meals yet.</p>
           ) : (
             <div className="space-y-2">
               {savedMeals.map((meal) => {
@@ -262,7 +388,7 @@ const Profile = () => {
             </div>
           </div>
           {savedExercises.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No saved exercises yet. Save exercises from the diary using the heart icon.</p>
+            <p className="text-sm text-muted-foreground">No saved exercises yet.</p>
           ) : (
             <div className="space-y-2">
               {savedExercises.map((ex) => (
@@ -333,51 +459,90 @@ const Profile = () => {
             </div>
           </div>
         </div>
-
-        {/* Settings */}
-        <div className="rounded-2xl bg-card border border-border p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Settings</h3>
-          <button onClick={() => setSettingsOpen(true)} className="w-full text-left text-sm text-foreground py-2">Edit daily calorie target</button>
-        </div>
       </div>
 
-      {/* Dialogs */}
-      <Dialog open={weightOpen} onOpenChange={setWeightOpen}>
-        <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>Log Weight</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input placeholder="Weight (kg)" type="number" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} className="rounded-xl" />
-            <Button onClick={handleAddWeight} className="w-full rounded-xl h-12" disabled={!newWeight}>Save</Button>
+      {/* ===== DIALOGS ===== */}
+
+      {/* Edit Weight Dialog */}
+      <Dialog open={editField === "weight"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Edit Current Weight</DialogTitle></DialogHeader>
+          <div className="flex justify-center gap-2 mb-4">
+            <button onClick={() => { const cur = scrollWeight; setWeightUnit("kg"); setScrollWeight(weightUnit === "lbs" ? lbsToKg(cur) : cur); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${weightUnit === "kg" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>kg</button>
+            <button onClick={() => { const cur = scrollWeight; setWeightUnit("lbs"); setScrollWeight(weightUnit === "kg" ? kgToLbs(cur) : cur); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${weightUnit === "lbs" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>lbs</button>
           </div>
+          <ScrollPicker
+            items={weightUnit === "kg" ? KG_VALUES : LBS_VALUES}
+            value={scrollWeight}
+            onChange={(v) => setScrollWeight(Number(v))}
+            suffix={` ${weightUnit}`}
+          />
+          <Button onClick={saveWeight} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editHeightOpen} onOpenChange={setEditHeightOpen}>
-        <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>Edit Height</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input placeholder="Height (cm)" type="number" value={editHeight} onChange={(e) => setEditHeight(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ height: Number(editHeight) }); setEditHeightOpen(false); }} className="w-full rounded-xl h-12" disabled={!editHeight}>Save</Button>
+      {/* Edit Goal Weight Dialog */}
+      <Dialog open={editField === "goal"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Edit Goal Weight</DialogTitle></DialogHeader>
+          <div className="flex justify-center gap-2 mb-4">
+            <button onClick={() => { const cur = scrollGoalWeight; setWeightUnit("kg"); setScrollGoalWeight(weightUnit === "lbs" ? lbsToKg(cur) : cur); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${weightUnit === "kg" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>kg</button>
+            <button onClick={() => { const cur = scrollGoalWeight; setWeightUnit("lbs"); setScrollGoalWeight(weightUnit === "kg" ? kgToLbs(cur) : cur); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${weightUnit === "lbs" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>lbs</button>
           </div>
+          <ScrollPicker
+            items={weightUnit === "kg" ? KG_VALUES : LBS_VALUES}
+            value={scrollGoalWeight}
+            onChange={(v) => setScrollGoalWeight(Number(v))}
+            suffix={` ${weightUnit}`}
+          />
+          <Button onClick={saveGoalWeight} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editTargetWeightOpen} onOpenChange={setEditTargetWeightOpen}>
-        <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>Edit Target Weight</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input placeholder="Target weight (kg)" type="number" value={editTargetWeight} onChange={(e) => setEditTargetWeight(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ targetWeight: Number(editTargetWeight) }); setEditTargetWeightOpen(false); }} className="w-full rounded-xl h-12" disabled={!editTargetWeight}>Save</Button>
+      {/* Edit Height Dialog */}
+      <Dialog open={editField === "height"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Edit Height</DialogTitle></DialogHeader>
+          <div className="flex justify-center gap-2 mb-4">
+            <button onClick={() => { setHeightUnit("cm"); setScrollHeight(heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${heightUnit === "cm" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>cm</button>
+            <button onClick={() => { setHeightUnit("ft"); setScrollHeightFt(cmToFtStr(heightUnit === "cm" ? scrollHeight : profile.height)); }} className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${heightUnit === "ft" ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>ft</button>
           </div>
+          {heightUnit === "cm" ? (
+            <ScrollPicker
+              items={CM_VALUES}
+              value={scrollHeight}
+              onChange={(v) => setScrollHeight(Number(v))}
+              suffix=" cm"
+            />
+          ) : (
+            <ScrollPicker
+              items={FT_INCHES}
+              value={scrollHeightFt}
+              onChange={(v) => setScrollHeightFt(String(v))}
+            />
+          )}
+          <Button onClick={saveHeight} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>Daily Calorie Target</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-2">
-            <Input placeholder="Calories" type="number" value={editCalories} onChange={(e) => setEditCalories(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ dailyCalorieTarget: Number(editCalories) }); setSettingsOpen(false); }} className="w-full rounded-xl h-12">Save</Button>
-          </div>
+      {/* Edit Calories Dialog */}
+      <Dialog open={editField === "calories"} onOpenChange={(o) => { if (!o) setEditField(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Target Daily Calories</DialogTitle></DialogHeader>
+          <ScrollPicker
+            items={CAL_VALUES}
+            value={scrollCalories}
+            onChange={(v) => setScrollCalories(Number(v))}
+            suffix=" kcal"
+          />
+          <Button variant="outline" onClick={autoCalcAndSet} className="w-full rounded-xl h-10 mt-2 gap-2">
+            <RotateCcw className="h-4 w-4" /> Auto-calculate from weight
+          </Button>
+          <Button onClick={saveCalories} className="w-full rounded-xl h-12 mt-1">Save</Button>
         </DialogContent>
       </Dialog>
 
+      {/* Goals Dialog */}
       <Dialog open={goalsOpen} onOpenChange={setGoalsOpen}>
         <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>Edit Goals</DialogTitle></DialogHeader>
           <div className="space-y-2 pt-2">
@@ -389,6 +554,7 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Health Info Dialog */}
       <Dialog open={healthInfoOpen} onOpenChange={setHealthInfoOpen}>
         <DialogContent className="rounded-2xl max-h-[80vh] overflow-y-auto"><DialogHeader><DialogTitle>My Health Information</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
@@ -421,6 +587,7 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Cycle Dialog */}
       <Dialog open={cycleOpen} onOpenChange={setCycleOpen}>
         <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
@@ -438,62 +605,27 @@ const Profile = () => {
           </DialogHeader>
           {createMealStep === "name" ? (
             <div className="space-y-3 pt-2">
-              <Input
-                placeholder="e.g. Greek Yogurt Bowl"
-                value={createMealName}
-                onChange={(e) => setCreateMealName(e.target.value)}
-                className="rounded-xl"
-                autoFocus
-              />
-              <Button
-                onClick={() => { if (createMealName.trim()) setCreateMealStep("add"); }}
-                className="w-full rounded-xl h-12"
-                disabled={!createMealName.trim()}
-              >
-                Next — Add ingredients
-              </Button>
+              <Input placeholder="e.g. Greek Yogurt Bowl" value={createMealName} onChange={(e) => setCreateMealName(e.target.value)} className="rounded-xl" autoFocus />
+              <Button onClick={() => { if (createMealName.trim()) setCreateMealStep("add"); }} className="w-full rounded-xl h-12" disabled={!createMealName.trim()}>Next — Add ingredients</Button>
             </div>
           ) : (
             <div className="space-y-3">
               {createMealItems.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {createMealItems.length} items · {createMealItems.reduce((s, i) => s + i.calories, 0)} kcal
-                  </p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{createMealItems.length} items · {createMealItems.reduce((s, i) => s + i.calories, 0)} kcal</p>
                   {createMealItems.map((item, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
                       <span className="text-sm text-foreground">{item.name}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
-                        <button onClick={() => setCreateMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
+                        <button onClick={() => setCreateMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <FoodSearchInput
-                onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])}
-                onClose={() => {}}
-                keepOpenOnAdd
-              />
-              <Button
-                onClick={() => {
-                  if (createMealItems.length === 0) return;
-                  const newMeal = {
-                    id: Date.now().toString(),
-                    name: createMealName.trim(),
-                    items: createMealItems,
-                  };
-                  setProfile({ savedMeals: [...(profile.savedMeals || []), newMeal] });
-                  setCreateMealOpen(false);
-                }}
-                className="w-full rounded-xl h-12"
-                disabled={createMealItems.length === 0}
-              >
-                Save meal ({createMealItems.length} items)
-              </Button>
+              <FoodSearchInput onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])} onClose={() => {}} keepOpenOnAdd />
+              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal = { id: Date.now().toString(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...(profile.savedMeals || []), newMeal] }); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
             </div>
           )}
         </DialogContent>
@@ -502,31 +634,15 @@ const Profile = () => {
       {/* Edit Saved Meal Dialog */}
       <Dialog open={!!editingSavedMeal} onOpenChange={(o) => { if (!o) { setEditingSavedMeal(null); setEditingMealItem(null); } }}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Meal</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Edit Meal</DialogTitle></DialogHeader>
           {editingMealItem ? (
-            <FoodEditInput
-              item={editingMealItem}
-              onSave={(updated) => {
-                setEditMealItems((prev) => prev.map((it) => it.id === updated.id ? updated : it));
-                setEditingMealItem(null);
-              }}
-              onCancel={() => setEditingMealItem(null)}
-            />
+            <FoodEditInput item={editingMealItem} onSave={(updated) => { setEditMealItems((prev) => prev.map((it) => it.id === updated.id ? updated : it)); setEditingMealItem(null); }} onCancel={() => setEditingMealItem(null)} />
           ) : (
             <div className="space-y-3">
-              <Input
-                value={editMealName}
-                onChange={(e) => setEditMealName(e.target.value)}
-                className="rounded-xl font-medium"
-                placeholder="Meal name"
-              />
+              <Input value={editMealName} onChange={(e) => setEditMealName(e.target.value)} className="rounded-xl font-medium" placeholder="Meal name" />
               {editMealItems.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {editMealItems.length} items · {editMealItems.reduce((s, i) => s + i.calories, 0)} kcal
-                  </p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{editMealItems.length} items · {editMealItems.reduce((s, i) => s + i.calories, 0)} kcal</p>
                   {editMealItems.map((item, i) => (
                     <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
                       <div className="flex flex-col min-w-0 flex-1 mr-2">
@@ -535,33 +651,19 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
-                        <button onClick={() => setEditingMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => removeEditMealItem(i)} className="text-muted-foreground hover:text-destructive">
-                          <X className="h-4 w-4" />
-                        </button>
+                        <button onClick={() => setEditingMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => removeEditMealItem(i)} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
               {editMealAddingItem ? (
-                <FoodSearchInput
-                  onAddItem={(item) => {
-                    setEditMealItems((prev) => [...prev, item]);
-                    setEditMealAddingItem(false);
-                  }}
-                  onClose={() => setEditMealAddingItem(false)}
-                />
+                <FoodSearchInput onAddItem={(item) => { setEditMealItems((prev) => [...prev, item]); setEditMealAddingItem(false); }} onClose={() => setEditMealAddingItem(false)} />
               ) : (
-                <Button variant="outline" className="w-full rounded-xl h-10" onClick={() => setEditMealAddingItem(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Add ingredient
-                </Button>
+                <Button variant="outline" className="w-full rounded-xl h-10" onClick={() => setEditMealAddingItem(true)}><Plus className="h-4 w-4 mr-2" /> Add ingredient</Button>
               )}
-              <Button onClick={saveEditedMeal} className="w-full rounded-xl h-12" disabled={editMealItems.length === 0 || !editMealName.trim()}>
-                Save changes
-              </Button>
+              <Button onClick={saveEditedMeal} className="w-full rounded-xl h-12" disabled={editMealItems.length === 0 || !editMealName.trim()}>Save changes</Button>
             </div>
           )}
         </DialogContent>
