@@ -1,10 +1,12 @@
 import { getCycleInfo, MENTAL_GUIDANCE, type CyclePhase } from "@/utils/cyclePhase";
 import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 interface CycleMentalBannerProps {
   cycleStartDate?: string;
   isFemale: boolean;
   onAddCycleDate: () => void;
+  onEditCycleDate?: () => void;
 }
 
 export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate }: CycleMentalBannerProps) => {
