@@ -238,7 +238,7 @@ const Profile = () => {
   };
 
   const autoCalcAndSet = () => {
-    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.goals || []);
+    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
     const snapped = Math.round(cal / 10) * 10;
     setScrollCalories(Math.max(1000, Math.min(4000, snapped)));
   };
