@@ -329,7 +329,23 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: Exerc
             {/* Metric scroller(s) */}
             {activeMetric !== "duration" && activeMetricConfig && (
               <div className="flex items-start justify-center gap-3">
-                {/* Unit picker (left) for distance */}
+                {/* Value scroller (left) */}
+                <div className="flex-1 text-center">
+                  {activeMetricConfig.hasUnitPicker && (
+                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Value</p>
+                  )}
+                  <ScrollPicker
+                    key={activeMetric + (activeMetricConfig.hasUnitPicker ? distanceUnit : "")}
+                    items={getMetricValues()}
+                    value={metricValue}
+                    onChange={(v) => setMetricValue(Number(v))}
+                    suffix={activeMetricConfig.hasUnitPicker ? "" : getMetricSuffix()}
+                    visibleItems={3}
+                    itemHeight={40}
+                  />
+                </div>
+
+                {/* Unit picker (right) for distance */}
                 {activeMetricConfig.hasUnitPicker && activeMetricConfig.units && (
                   <div className="flex-shrink-0 text-center" style={{ width: 72 }}>
                     <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Unit</p>
@@ -347,22 +363,6 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: Exerc
                     />
                   </div>
                 )}
-
-                {/* Value scroller (right, or centered if no unit picker) */}
-                <div className="flex-1 text-center">
-                  {activeMetricConfig.hasUnitPicker && (
-                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Value</p>
-                  )}
-                  <ScrollPicker
-                    key={activeMetric + (activeMetricConfig.hasUnitPicker ? distanceUnit : "")}
-                    items={getMetricValues()}
-                    value={metricValue}
-                    onChange={(v) => setMetricValue(Number(v))}
-                    suffix={activeMetricConfig.hasUnitPicker ? "" : getMetricSuffix()}
-                    visibleItems={3}
-                    itemHeight={40}
-                  />
-                </div>
               </div>
             )}
 
