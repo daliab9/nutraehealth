@@ -304,39 +304,13 @@ const Profile = () => {
         {/* Activity Level & Goal Timeline */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
-            <button
-              onClick={() => {
-                const levels: ActivityLevel[] = ["sedentary", "lightly_active", "active"];
-                const currentIdx = levels.indexOf(profile.activityLevel || "sedentary");
-                const nextIdx = (currentIdx + 1) % levels.length;
-                const newLevel = levels[nextIdx];
-                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], newLevel, profile.goalTimeline);
-                setProfile({ activityLevel: newLevel, dailyCalorieTarget: newCalories });
-                persistToDB({ activity_level: newLevel, daily_calorie_goal: newCalories });
-              }}
-              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <Pencil className="h-3.5 w-3.5 text-foreground" />
-            </button>
+            <EditButton onClick={() => setActivityModalOpen(true)} />
             <p className="text-sm font-bold text-foreground">{ACTIVITY_LABELS[profile.activityLevel || "sedentary"]?.label}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Activity Level</p>
           </div>
           <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
-            <button
-              onClick={() => {
-                const timelines: GoalTimeline[] = ["slow", "moderate", "fast"];
-                const currentIdx = timelines.indexOf(profile.goalTimeline || "moderate");
-                const nextIdx = (currentIdx + 1) % timelines.length;
-                const newTimeline = timelines[nextIdx];
-                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, newTimeline);
-                setProfile({ goalTimeline: newTimeline, dailyCalorieTarget: newCalories });
-                persistToDB({ goal_timeline: newTimeline, daily_calorie_goal: newCalories });
-              }}
-              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <Pencil className="h-3.5 w-3.5 text-foreground" />
-            </button>
-            <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[profile.goalTimeline || "moderate"]?.label}</p>
+            <EditButton onClick={() => setTimelineModalOpen(true)} />
+            <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[(profile.goalTimeline as GoalTimeline) || "3_4_months"]?.label}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Goal Pace</p>
           </div>
         </div>
