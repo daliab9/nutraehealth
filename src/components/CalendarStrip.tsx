@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { format, addDays, isToday, isSameDay } from "date-fns";
+import { useMemo, useRef, useEffect } from "react";
+import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface CalendarStripProps {
@@ -7,45 +7,84 @@ interface CalendarStripProps {
   onDateSelect: (date: Date) => void;
 }
 
+const WEEKS_BACK = 12;
+
 export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps) => {
-  const days = useMemo(() => {
-    const result = [];
-    for (let i = -3; i <= 3; i++) {
-      result.push(addDays(new Date(), i));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const currentWeekRef = useRef<HTMLDivElement>(null);
+
+  // Generate weeks: WEEKS_BACK past weeks + current week
+  const weeks = useMemo(() => {
+    const today = new Date();
+    const result: Date[][] = [];
+    for (let w = -WEEKS_BACK; w <= 0; w++) {
+      const weekStart = startOfWeek(addDays(today, w * 7), { weekStartsOn: 1 });
+      const week: Date[] = [];
+      for (let d = 0; d < 7; d++) {
+        week.push(addDays(weekStart, d));
+      }
+      result.push(week);
     }
     return result;
   }, []);
 
+  // Scroll to current week on mount
+  useEffect(() => {
+    if (currentWeekRef.current && scrollRef.current) {
+      currentWeekRef.current.scrollIntoView({ inline: "end", block: "nearest" });
+    }
+  }, []);
+
   return (
-    <div className="flex items-center justify-between gap-1 py-4">
-      {days.map((day) => {
-        const selected = isSameDay(day, selectedDate);
-        const today = isToday(day);
+    <div
+      ref={scrollRef}
+      className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory py-2"
+    >
+      {weeks.map((week, wi) => {
+        const isCurrentWeek = wi === weeks.length - 1;
+        const monthLabel = format(week[0], "MMM dd");
         return (
-          <button
-            key={day.toISOString()}
-            onClick={() => onDateSelect(day)}
-            className={cn(
-              "flex flex-col items-center gap-1.5 rounded-2xl px-3 py-2.5 transition-all min-w-[46px]",
-              selected ?
-              "bg-foreground" :
-              "hover:bg-secondary"
-            )}>
-            
-            <span
-              className={cn("font-semibold uppercase tracking-wider text-sm",
-
-              selected ? "text-primary-foreground" : "text-muted-foreground"
-              )}>
-              
-              {format(day, "EEE")}
-            </span>
-            {today && !selected &&
-            <div className="h-1 w-1 rounded-full bg-accent" />
-            }
-          </button>);
-
+          <div
+            key={wi}
+            ref={isCurrentWeek ? currentWeekRef : undefined}
+            className="flex-shrink-0 w-full snap-end flex flex-col"
+          >
+            <p className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase text-center mb-1">
+              {monthLabel}
+            </p>
+            <div className="flex items-center justify-between gap-1 px-1">
+              {week.map((day) => {
+                const selected = isSameDay(day, selectedDate);
+                const today = isToday(day);
+                return (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => onDateSelect(day)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-2xl px-3 py-2.5 transition-all min-w-[42px]",
+                      selected
+                        ? "bg-foreground"
+                        : "hover:bg-secondary"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "font-semibold uppercase tracking-wider text-sm",
+                        selected ? "text-primary-foreground" : "text-muted-foreground"
+                      )}
+                    >
+                      {format(day, "EEE")}
+                    </span>
+                    {today && !selected && (
+                      <div className="h-1 w-1 rounded-full bg-accent" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
       })}
-    </div>);
-
+    </div>
+  );
 };
