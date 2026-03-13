@@ -235,7 +235,7 @@ const Profile = () => {
 
   const saveHeight = () => {
     const cmVal = heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({ height: cmVal, heightUnit, dailyCalorieTarget: newCalories });
     persistToDB({ height: cmVal, height_unit: heightUnit, daily_calorie_goal: newCalories });
     setEditField(null);
