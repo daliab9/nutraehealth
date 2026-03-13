@@ -24,7 +24,7 @@ interface AIScanDialogProps {
 
 export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AIScanDialogProps) => {
   const [step, setStep] = useState<"capture" | "analyzing" | "review" | "error">("capture");
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [editingItems, setEditingItems] = useState<ScannedItem[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
