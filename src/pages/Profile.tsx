@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS } from "@/utils/calorieCalculation";
+import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
 } from "recharts";
