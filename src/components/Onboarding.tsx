@@ -287,6 +287,33 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
       case 5:
         return (
           <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">How active are you outside of workouts?</h2>
+            <p className="text-sm text-muted-foreground">This helps us estimate your baseline calorie needs.</p>
+            <div className="mt-6 space-y-3">
+              {(["sedentary", "lightly_active", "active"] as const).map((level) => {
+                const labels: Record<string, { label: string; desc: string }> = {
+                  sedentary: { label: "Mostly seated", desc: "Desk job, minimal walking" },
+                  lightly_active: { label: "Lightly active", desc: "Regular walking, errands, light daily movement" },
+                  active: { label: "Active", desc: "On your feet most of the day" },
+                };
+                const { label, desc } = labels[level];
+                return (
+                  <button key={level} onClick={() => setData((d) => ({ ...d, activityLevel: level }))}
+                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                      data.activityLevel === level ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Target weight</h2>
             <div className="mt-4 flex justify-center">
               <ScrollPicker items={targetWeightItems} value={data.targetWeight}
@@ -296,7 +323,34 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 6:
+      case 7:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">When would you like to reach your goal weight?</h2>
+            <p className="text-sm text-muted-foreground">Choose a pace that feels realistic for you.</p>
+            <div className="mt-6 space-y-3">
+              {(["slow", "moderate", "fast"] as const).map((timeline) => {
+                const labels: Record<string, { label: string; desc: string }> = {
+                  slow: { label: "3–4 months", desc: "Steady & sustainable pace" },
+                  moderate: { label: "2–3 months", desc: "Balanced pace" },
+                  fast: { label: "1–2 months", desc: "Faster pace" },
+                };
+                const { label, desc } = labels[timeline];
+                return (
+                  <button key={timeline} onClick={() => setData((d) => ({ ...d, goalTimeline: timeline }))}
+                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                      data.goalTimeline === timeline ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 8:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary preferences</h2>
@@ -311,7 +365,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 7:
+      case 9:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary restrictions</h2>
@@ -333,7 +387,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 8:
+      case 10:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Health concerns</h2>
