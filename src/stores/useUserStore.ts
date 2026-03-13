@@ -112,7 +112,7 @@ const DEFAULT_PROFILE: UserProfile = {
   dietaryRestrictions: [],
   healthConcerns: [],
   activityLevel: "sedentary",
-  goalTimeline: "moderate",
+  goalTimeline: "3_4_months",
   dailyCalorieTarget: 2000,
   goalDate: "",
   weightHistory: [],
