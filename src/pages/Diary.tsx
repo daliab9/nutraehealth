@@ -343,6 +343,8 @@ const Diary = () => {
                       onSaveMeal={handleSaveMeal}
                       onUnsaveMeal={handleUnsaveMeal}
                       onAddToSavedMeal={handleAddToSavedMeal}
+                      onAddToGroup={(groupId, groupName, item) => addFoodToGroup(dateKey, type as any, groupId, groupName, item)}
+                      onRemoveFromGroup={(itemId) => removeFoodFromGroup(dateKey, type as any, itemId)}
                     />
                   ))}
                 </div>
