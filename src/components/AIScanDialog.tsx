@@ -458,7 +458,6 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     </Dialog>
   );
 };
-  return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="rounded-2xl max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
