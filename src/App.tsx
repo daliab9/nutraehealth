@@ -19,45 +19,10 @@ import Tracker from "./pages/Tracker";
 import HealthDiary from "./pages/HealthDiary";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import { format, addWeeks } from "date-fns";
+import { format } from "date-fns";
 import type { Session } from "@supabase/supabase-js";
-
-const queryClient = new QueryClient();
-
-function getMainGoal(goals: string[]): string {
-  if (goals.includes("lose_weight") || goals.includes("reduce_body_fat")) return "lose";
-  if (goals.includes("gain_muscle")) return "gain";
-  if (goals.includes("maintain_weight")) return "maintain";
-  return "health";
-}
-
-function calculateCalories(data: OnboardingData): number {
-  const weight = data.currentWeight;
-  const height = data.height;
-  const age = data.age || 30;
-  const g = data.gender?.toLowerCase() || "";
-  const genderOffset = g === "female" ? -161 : 5;
-  const bmr = 10 * weight + 6.25 * height - 5 * age + genderOffset;
-  const tdee = bmr * 1.4;
-  const goal = getMainGoal(data.goals);
-
-  switch (goal) {
-    case "lose": return Math.round(tdee - 500);
-    case "gain": return Math.round(tdee + 300);
-    default: return Math.round(tdee);
-  }
-}
-
-function calculateGoalDate(data: OnboardingData): string {
-  const goal = getMainGoal(data.goals);
-  const diff = Math.abs(data.currentWeight - data.targetWeight);
-  if (diff === 0 || goal === "maintain" || goal === "health") {
-    return "Ongoing";
-  }
-  const weeks = Math.round(diff / 0.5);
-  const date = addWeeks(new Date(), weeks);
-  return format(date, "MMMM yyyy");
-}
+import { calculateCalories, calculateGoalDate, getMainGoal } from "@/utils/calorieCalculation";
+import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
 
 type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
