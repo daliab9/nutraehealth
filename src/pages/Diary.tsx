@@ -34,6 +34,7 @@ const Diary = () => {
     profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal,
     updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
     getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
+    addFoodToGroup, removeFoodFromGroup,
   } = useUserStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -158,23 +159,68 @@ const Diary = () => {
     if (!over) return;
 
     const sourceData = active.data.current as { type: string; mealType: string; itemId: string; item: FoodItem };
-    const overData = over.data.current as { type: string; mealType: string; itemId?: string; item?: FoodItem };
+    const overData = over.data.current as { type: string; mealType: string; itemId?: string; item?: FoodItem; groupId?: string };
 
     if (!sourceData || !overData) return;
 
+    // Dropped on a meal group header → add to that group
+    if (overData.type === "meal-group" && overData.groupId) {
+      const sourceItem = sourceData.item;
+      // Find the group name from current items
+      const mealItems = getMealItems(overData.mealType);
+      const groupItem = mealItems.find((i) => i.groupId === overData.groupId);
+      const groupName = groupItem?.groupName || "Meal";
+
+      if (sourceData.mealType !== overData.mealType) {
+        // Move between sections first, then add to group
+        moveFoodBetweenMeals(dateKey, sourceData.mealType as MealEntry["type"], overData.mealType as MealEntry["type"], sourceData.itemId);
+        // After moving, update the item to be in the group
+        setTimeout(() => {
+          updateFoodInMeal(dateKey, overData.mealType as MealEntry["type"], {
+            ...sourceItem,
+            groupId: overData.groupId,
+            groupName,
+          });
+        }, 0);
+      } else if (sourceItem.groupId !== overData.groupId) {
+        // Same section, just update group
+        updateFoodInMeal(dateKey, sourceData.mealType as MealEntry["type"], {
+          ...sourceItem,
+          groupId: overData.groupId,
+          groupName,
+        });
+      }
+      toast.success(`Added to "${groupName}"`);
+      return;
+    }
+
     if (overData.type === "meal-section" && sourceData.mealType !== overData.mealType) {
-      // Move item to a different meal section
+      // Move item to a different meal section (strips group info)
       moveFoodBetweenMeals(dateKey, sourceData.mealType as MealEntry["type"], overData.mealType as MealEntry["type"], sourceData.itemId);
       toast.success(`Moved to ${MEAL_TYPES.find(m => m.type === overData.mealType)?.title || overData.mealType}`);
+    } else if (overData.type === "meal-section" && sourceData.mealType === overData.mealType && sourceData.item.groupId) {
+      // Dropped on own section zone while in a group → remove from group
+      removeFoodFromGroup(dateKey, sourceData.mealType as MealEntry["type"], sourceData.itemId);
+      toast.success("Removed from meal group");
     } else if (overData.type === "food-item" && sourceData.itemId !== overData.itemId) {
-      // Dropped on another food item → show merge dialog
-      setMergeData({
-        sourceItem: sourceData.item,
-        sourceMealType: sourceData.mealType,
-        targetItem: overData.item!,
-        targetMealType: overData.mealType,
-      });
-      setMergeMealName("");
+      // If target has a groupId, add source to that group
+      if (overData.item?.groupId) {
+        updateFoodInMeal(dateKey, sourceData.mealType as MealEntry["type"], {
+          ...sourceData.item,
+          groupId: overData.item.groupId,
+          groupName: overData.item.groupName,
+        });
+        toast.success(`Added to "${overData.item.groupName}"`);
+      } else {
+        // Dropped on another ungrouped food item → show merge dialog
+        setMergeData({
+          sourceItem: sourceData.item,
+          sourceMealType: sourceData.mealType,
+          targetItem: overData.item!,
+          targetMealType: overData.mealType,
+        });
+        setMergeMealName("");
+      }
     }
   };
 
@@ -297,6 +343,8 @@ const Diary = () => {
                       onSaveMeal={handleSaveMeal}
                       onUnsaveMeal={handleUnsaveMeal}
                       onAddToSavedMeal={handleAddToSavedMeal}
+                      onAddToGroup={(groupId, groupName, item) => addFoodToGroup(dateKey, type as any, groupId, groupName, item)}
+                      onRemoveFromGroup={(itemId) => removeFoodFromGroup(dateKey, type as any, itemId)}
                     />
                   ))}
                 </div>
