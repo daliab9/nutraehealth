@@ -2,9 +2,13 @@ import { addDays, format } from "date-fns";
 
 export type CyclePhase = "Menstrual" | "Follicular" | "Ovulatory" | "Luteal";
 
+export type SubPhase = "early" | "late";
+
 export interface CycleInfo {
   cycleDay: number;
   phase: CyclePhase;
+  subPhase: SubPhase;
+  subPhaseLabel: string;
   currentCycleStart: string;
 }
 
