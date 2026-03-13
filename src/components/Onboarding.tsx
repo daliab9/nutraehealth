@@ -73,8 +73,8 @@ const heightsFtValues = (() => {
   return vals;
 })();
 
-// Skippable steps: goals(0), dietary prefs(6), restrictions(7), health concerns(8)
-const SKIPPABLE_STEPS = [0, 6, 7, 8];
+// Skippable steps: goals(0), dietary prefs(8), restrictions(9), health concerns(10)
+const SKIPPABLE_STEPS = [0, 8, 9, 10];
 
 const UnitToggle = ({ options, value, onChange }: { options: [string, string]; value: string; onChange: (v: string) => void }) => (
   <div className="flex justify-center mb-4">
