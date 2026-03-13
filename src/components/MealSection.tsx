@@ -25,9 +25,24 @@ interface MealSectionProps {
   onSaveMeal?: (meal: SavedMeal) => void;
   onUnsaveMeal?: (mealName: string) => void;
   onAddToSavedMeal?: (mealId: string, item: FoodItem) => void;
+  onAddToGroup?: (groupId: string, groupName: string, item: FoodItem) => void;
+  onRemoveFromGroup?: (itemId: string) => void;
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
+
+// Droppable wrapper for group headers
+const DroppableGroupHeader = ({ groupId, mealType, children }: { groupId: string; mealType: string; children: React.ReactNode }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `group-${mealType}-${groupId}`,
+    data: { type: "meal-group", mealType, groupId },
+  });
+  return (
+    <div ref={setNodeRef} className={`transition-colors ${isOver ? "ring-2 ring-primary/50 rounded-xl" : ""}`}>
+      {children}
+    </div>
+  );
+};
 
 export const MealSection = ({
   title,
@@ -43,6 +58,8 @@ export const MealSection = ({
   onSaveMeal,
   onUnsaveMeal,
   onAddToSavedMeal,
+  onAddToGroup,
+  onRemoveFromGroup,
 }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -53,6 +70,7 @@ export const MealSection = ({
   const [newMealName, setNewMealName] = useState("");
   const [longPressItem, setLongPressItem] = useState<FoodItem | null>(null);
   const [newSavedMealName, setNewSavedMealName] = useState("");
+  const [addToGroupId, setAddToGroupId] = useState<{ groupId: string; groupName: string } | null>(null);
 
   // Droppable zone for the entire meal section (for moving items between sections)
   const { setNodeRef: setDropZoneRef, isOver: isOverZone } = useDroppable({
@@ -171,6 +189,11 @@ export const MealSection = ({
     }
   };
 
+  const handleAddItemToGroup = (item: FoodItem) => {
+    if (!addToGroupId || !onAddToGroup) return;
+    onAddToGroup(addToGroupId.groupId, addToGroupId.groupName, item);
+  };
+
   const creatingMealCals = creatingMealItems.reduce((s, i) => s + i.calories, 0);
 
   return (
@@ -198,71 +221,93 @@ export const MealSection = ({
             const isExpanded = expandedGroups.has(groupId);
             const groupCals = group.items.reduce((s, i) => s + i.calories, 0);
             return (
-              <div key={groupId} className="rounded-xl border border-border bg-[#e4e7c6] overflow-hidden">
-                <button onClick={() => toggleGroup(groupId)} className="w-full flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
-                    <span className="font-semibold text-foreground text-sm text-left">{group.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
-                    {(onSaveMeal || onUnsaveMeal) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleSaveGroup(groupId, group.name, group.items);
-                        }}
-                        className="h-8 w-8 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
-                      >
-                        <Heart className={`h-5 w-5 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
-                      </button>
-                    )}
-                    {onRemoveItem && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          group.items.forEach((i) => onRemoveItem(i.id));
-                        }}
-                        className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
-                </button>
-                {isExpanded && (
-                  <div className="px-3 pb-2 space-y-1 border-t border-border/50">
-                    {group.items.map((item) => (
-                      <DraggableFoodItem
-                        key={item.id}
-                        id={item.id}
-                        mealType={mealType}
-                        item={item}
-                        onLongPress={() => setLongPressItem(item)}
-                        className="py-1.5 pl-3 text-sm"
-                      >
-                        <div className="flex flex-col min-w-0 flex-1 mr-2">
-                          <span className="text-foreground break-words">{item.name}</span>
-                          {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
-                          {onUpdateItem && (
-                            <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          )}
-                          {onRemoveItem && (
-                            <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </DraggableFoodItem>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <DroppableGroupHeader key={groupId} groupId={groupId} mealType={mealType}>
+                <div className="rounded-xl border border-border bg-[#e4e7c6] overflow-hidden">
+                  <button onClick={() => toggleGroup(groupId)} className="w-full flex items-center justify-between px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
+                      <span className="font-semibold text-foreground text-sm text-left">{group.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
+                      {onAddToGroup && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddToGroupId({ groupId, groupName: group.name });
+                          }}
+                          className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      )}
+                      {(onSaveMeal || onUnsaveMeal) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleSaveGroup(groupId, group.name, group.items);
+                          }}
+                          className="h-7 w-7 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
+                        >
+                          <Heart className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
+                        </button>
+                      )}
+                      {onRemoveItem && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            group.items.forEach((i) => onRemoveItem(i.id));
+                          }}
+                          className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-3 pb-2 space-y-1 border-t border-border/50">
+                      {group.items.map((item) => (
+                        <DraggableFoodItem
+                          key={item.id}
+                          id={item.id}
+                          mealType={mealType}
+                          item={item}
+                          onLongPress={() => setLongPressItem(item)}
+                          className="py-1.5 pl-3 text-sm"
+                        >
+                          <div className="flex flex-col min-w-0 flex-1 mr-2">
+                            <span className="text-foreground break-words">{item.name}</span>
+                            {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
+                            {onUpdateItem && (
+                              <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            )}
+                            {onRemoveFromGroup && (
+                              <button
+                                onClick={() => onRemoveFromGroup(item.id)}
+                                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
+                                title="Remove from meal"
+                              >
+                                <Bookmark className="h-4 w-4 fill-foreground" />
+                              </button>
+                            )}
+                            {onRemoveItem && (
+                              <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </DraggableFoodItem>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DroppableGroupHeader>
             );
           })}
 
@@ -555,6 +600,22 @@ export const MealSection = ({
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add ingredient to existing group dialog */}
+      <Dialog open={!!addToGroupId} onOpenChange={(o) => { if (!o) setAddToGroupId(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add to {addToGroupId?.groupName}</DialogTitle>
+          </DialogHeader>
+          <FoodSearchInput
+            onAddItem={(item) => {
+              handleAddItemToGroup(item);
+            }}
+            onClose={() => setAddToGroupId(null)}
+            keepOpenOnAdd
+          />
         </DialogContent>
       </Dialog>
     </div>
