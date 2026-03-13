@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import type { Session } from "@supabase/supabase-js";
 import { calculateCalories, calculateGoalDate, getMainGoal } from "@/utils/calorieCalculation";
 import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
+const queryClient = new QueryClient();
 
 type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
