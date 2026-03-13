@@ -52,12 +52,28 @@ export function getCycleInfo(cycleStartDate: string): CycleInfo | null {
   }
 
   let phase: CyclePhase;
-  if (cycleDay <= 5) phase = "Menstrual";
-  else if (cycleDay <= 13) phase = "Follicular";
-  else if (cycleDay <= 16) phase = "Ovulatory";
-  else phase = "Luteal";
+  let subPhase: SubPhase;
+  let subPhaseLabel: string;
 
-  return { cycleDay, phase, currentCycleStart };
+  if (cycleDay <= 2) {
+    phase = "Menstrual"; subPhase = "early"; subPhaseLabel = "Early Menstrual";
+  } else if (cycleDay <= 5) {
+    phase = "Menstrual"; subPhase = "late"; subPhaseLabel = "Late Menstrual";
+  } else if (cycleDay <= 9) {
+    phase = "Follicular"; subPhase = "early"; subPhaseLabel = "Early Follicular";
+  } else if (cycleDay <= 13) {
+    phase = "Follicular"; subPhase = "late"; subPhaseLabel = "Late Follicular";
+  } else if (cycleDay <= 14) {
+    phase = "Ovulatory"; subPhase = "early"; subPhaseLabel = "Early Ovulation";
+  } else if (cycleDay <= 16) {
+    phase = "Ovulatory"; subPhase = "late"; subPhaseLabel = "Post-Ovulation Transition";
+  } else if (cycleDay <= 22) {
+    phase = "Luteal"; subPhase = "early"; subPhaseLabel = "Early Luteal";
+  } else {
+    phase = "Luteal"; subPhase = "late"; subPhaseLabel = "Late Luteal";
+  }
+
+  return { cycleDay, phase, subPhase, subPhaseLabel, currentCycleStart };
 }
 
 export function getPhaseDates(cycleStartDate: string): PhaseDate[] | null {
