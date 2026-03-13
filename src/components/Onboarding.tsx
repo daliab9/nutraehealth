@@ -329,11 +329,12 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
             <h2 className="text-2xl font-bold text-foreground">When would you like to reach your goal weight?</h2>
             <p className="text-sm text-muted-foreground">Choose a pace that feels realistic for you.</p>
             <div className="mt-6 space-y-3">
-              {(["slow", "moderate", "fast"] as const).map((timeline) => {
+              {(["1_2_months", "3_4_months", "5_6_months", "7_plus_months"] as const).map((timeline) => {
                 const labels: Record<string, { label: string; desc: string }> = {
-                  slow: { label: "3–4 months", desc: "Steady & sustainable pace" },
-                  moderate: { label: "2–3 months", desc: "Balanced pace" },
-                  fast: { label: "1–2 months", desc: "Faster pace" },
+                  "1_2_months": { label: "1–2 months", desc: "Faster pace" },
+                  "3_4_months": { label: "3–4 months", desc: "Balanced pace" },
+                  "5_6_months": { label: "5–6 months", desc: "Steady & sustainable pace" },
+                  "7_plus_months": { label: "7+ months", desc: "Gentle, long-term pace" },
                 };
                 const { label, desc } = labels[timeline];
                 return (
