@@ -105,6 +105,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activity_level: string | null
           age: number | null
           created_at: string
           current_weight: number | null
@@ -117,6 +118,7 @@ export type Database = {
           display_name: string | null
           gender: string | null
           goal_date: string | null
+          goal_timeline: string | null
           goals: string[] | null
           health_concerns: string[] | null
           height: number | null
@@ -129,6 +131,7 @@ export type Database = {
           weight_unit: string | null
         }
         Insert: {
+          activity_level?: string | null
           age?: number | null
           created_at?: string
           current_weight?: number | null
@@ -141,6 +144,7 @@ export type Database = {
           display_name?: string | null
           gender?: string | null
           goal_date?: string | null
+          goal_timeline?: string | null
           goals?: string[] | null
           health_concerns?: string[] | null
           height?: number | null
@@ -153,6 +157,7 @@ export type Database = {
           weight_unit?: string | null
         }
         Update: {
+          activity_level?: string | null
           age?: number | null
           created_at?: string
           current_weight?: number | null
@@ -165,6 +170,7 @@ export type Database = {
           display_name?: string | null
           gender?: string | null
           goal_date?: string | null
+          goal_timeline?: string | null
           goals?: string[] | null
           health_concerns?: string[] | null
           height?: number | null
