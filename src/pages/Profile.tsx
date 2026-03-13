@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS } from "@/utils/calorieCalculation";
+import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS, ACTIVITY_OPTIONS, TIMELINE_OPTIONS } from "@/utils/calorieCalculation";
 import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
@@ -41,7 +41,7 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "moderate"): number {
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "3_4_months"): number {
   return calculateCalories(currentWeight, targetWeight, age, height, gender, goals, activityLevel, goalTimeline);
 }
 
@@ -113,6 +113,12 @@ const Profile = () => {
   const [editMealName, setEditMealName] = useState("");
   const [editMealAddingItem, setEditMealAddingItem] = useState(false);
   const [editingMealItem, setEditingMealItem] = useState<FoodItem | null>(null);
+
+  // Activity & Timeline modal state
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<ActivityLevel>(profile.activityLevel || "sedentary");
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+  const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
@@ -304,39 +310,13 @@ const Profile = () => {
         {/* Activity Level & Goal Timeline */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
-            <button
-              onClick={() => {
-                const levels: ActivityLevel[] = ["sedentary", "lightly_active", "active"];
-                const currentIdx = levels.indexOf(profile.activityLevel || "sedentary");
-                const nextIdx = (currentIdx + 1) % levels.length;
-                const newLevel = levels[nextIdx];
-                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], newLevel, profile.goalTimeline);
-                setProfile({ activityLevel: newLevel, dailyCalorieTarget: newCalories });
-                persistToDB({ activity_level: newLevel, daily_calorie_goal: newCalories });
-              }}
-              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <Pencil className="h-3.5 w-3.5 text-foreground" />
-            </button>
+            <EditButton onClick={() => setActivityModalOpen(true)} />
             <p className="text-sm font-bold text-foreground">{ACTIVITY_LABELS[profile.activityLevel || "sedentary"]?.label}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Activity Level</p>
           </div>
           <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
-            <button
-              onClick={() => {
-                const timelines: GoalTimeline[] = ["slow", "moderate", "fast"];
-                const currentIdx = timelines.indexOf(profile.goalTimeline || "moderate");
-                const nextIdx = (currentIdx + 1) % timelines.length;
-                const newTimeline = timelines[nextIdx];
-                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, newTimeline);
-                setProfile({ goalTimeline: newTimeline, dailyCalorieTarget: newCalories });
-                persistToDB({ goal_timeline: newTimeline, daily_calorie_goal: newCalories });
-              }}
-              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <Pencil className="h-3.5 w-3.5 text-foreground" />
-            </button>
-            <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[profile.goalTimeline || "moderate"]?.label}</p>
+            <EditButton onClick={() => setTimelineModalOpen(true)} />
+            <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[(profile.goalTimeline as GoalTimeline) || "3_4_months"]?.label}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Goal Pace</p>
           </div>
         </div>
@@ -971,6 +951,74 @@ const Profile = () => {
           setAddExerciseOpen(false);
         }}
       />
+
+      {/* Activity Level Modal */}
+      <Dialog open={activityModalOpen} onOpenChange={setActivityModalOpen}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Activity Level</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {ACTIVITY_OPTIONS.map((level) => (
+              <button
+                key={level}
+                onClick={() => setPendingActivity(level)}
+                className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                  pendingActivity === level ? "border-foreground bg-secondary" : "border-border bg-card"
+                }`}
+              >
+                <span className="font-medium text-foreground">{ACTIVITY_LABELS[level].label}</span>
+                <p className="text-sm text-muted-foreground mt-0.5">{ACTIVITY_LABELS[level].description}</p>
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={() => {
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], pendingActivity, (profile.goalTimeline as GoalTimeline) || "3_4_months");
+              setProfile({ activityLevel: pendingActivity, dailyCalorieTarget: newCalories });
+              persistToDB({ activity_level: pendingActivity, daily_calorie_goal: newCalories });
+              setActivityModalOpen(false);
+            }}
+            className="w-full rounded-xl h-12 mt-2"
+          >
+            Save
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Goal Timeline Modal */}
+      <Dialog open={timelineModalOpen} onOpenChange={setTimelineModalOpen}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Goal Pace</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {TIMELINE_OPTIONS.map((timeline) => (
+              <button
+                key={timeline}
+                onClick={() => setPendingTimeline(timeline)}
+                className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                  pendingTimeline === timeline ? "border-foreground bg-secondary" : "border-border bg-card"
+                }`}
+              >
+                <span className="font-medium text-foreground">{TIMELINE_LABELS[timeline].label}</span>
+                <p className="text-sm text-muted-foreground mt-0.5">{TIMELINE_LABELS[timeline].description}</p>
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={() => {
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, pendingTimeline);
+              setProfile({ goalTimeline: pendingTimeline, dailyCalorieTarget: newCalories });
+              persistToDB({ goal_timeline: pendingTimeline, daily_calorie_goal: newCalories });
+              setTimelineModalOpen(false);
+            }}
+            className="w-full rounded-xl h-12 mt-2"
+          >
+            Save
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>

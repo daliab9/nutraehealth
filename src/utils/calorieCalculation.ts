@@ -1,7 +1,7 @@
 // Centralized calorie calculation logic
 
 export type ActivityLevel = "sedentary" | "lightly_active" | "active";
-export type GoalTimeline = "slow" | "moderate" | "fast";
+export type GoalTimeline = "1_2_months" | "3_4_months" | "5_6_months" | "7_plus_months";
 
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
@@ -9,11 +9,12 @@ export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   active: 1.5,
 };
 
-// Daily deficit in kcal
-export const TIMELINE_DEFICITS: Record<GoalTimeline, number> = {
-  slow: 275,    // ~0.25 kg/week
-  moderate: 500, // ~0.5 kg/week
-  fast: 750,    // ~0.75 kg/week
+// Average weeks for each timeline option
+export const TIMELINE_WEEKS: Record<GoalTimeline, number> = {
+  "1_2_months": 6,
+  "3_4_months": 14,
+  "5_6_months": 22,
+  "7_plus_months": 32,
 };
 
 export const ACTIVITY_LABELS: Record<ActivityLevel, { label: string; description: string }> = {
@@ -23,10 +24,14 @@ export const ACTIVITY_LABELS: Record<ActivityLevel, { label: string; description
 };
 
 export const TIMELINE_LABELS: Record<GoalTimeline, { label: string; description: string }> = {
-  slow: { label: "3–4 months", description: "Steady & sustainable pace" },
-  moderate: { label: "2–3 months", description: "Balanced pace" },
-  fast: { label: "1–2 months", description: "Faster pace" },
+  "1_2_months": { label: "1–2 months", description: "Faster pace" },
+  "3_4_months": { label: "3–4 months", description: "Balanced pace" },
+  "5_6_months": { label: "5–6 months", description: "Steady & sustainable pace" },
+  "7_plus_months": { label: "7+ months", description: "Gentle, long-term pace" },
 };
+
+export const TIMELINE_OPTIONS: GoalTimeline[] = ["1_2_months", "3_4_months", "5_6_months", "7_plus_months"];
+export const ACTIVITY_OPTIONS: ActivityLevel[] = ["sedentary", "lightly_active", "active"];
 
 export function getMainGoal(goals: string[]): string {
   if (goals.includes("lose_weight") || goals.includes("reduce_body_fat")) return "lose";
@@ -49,7 +54,7 @@ export function calculateCalories(
   gender: string,
   goals: string[],
   activityLevel: ActivityLevel = "sedentary",
-  goalTimeline: GoalTimeline = "moderate",
+  goalTimeline: GoalTimeline = "3_4_months",
 ): number {
   const bmr = calculateBMR(weight, height, age, gender);
   const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || 1.2;
@@ -64,8 +69,12 @@ export function calculateCalories(
     return Math.round(maintenance + 300);
   }
 
-  // Losing weight — apply deficit
-  let deficit = TIMELINE_DEFICITS[goalTimeline] || 500;
+  // Losing weight — dynamic deficit based on weight diff and timeline
+  const totalToLose = Math.abs(weight - targetWeight);
+  const weeks = TIMELINE_WEEKS[goalTimeline] || 14;
+  const weeklyLoss = totalToLose / weeks;
+  // 1 kg of fat ≈ 7700 kcal
+  let deficit = (weeklyLoss * 7700) / 7;
 
   // Cap deficit at 25% of maintenance
   const maxDeficit = maintenance * 0.25;
@@ -83,15 +92,36 @@ export function calculateGoalDate(
   currentWeight: number,
   targetWeight: number,
   goals: string[],
+  goalTimeline: GoalTimeline = "3_4_months",
+  age: number = 30,
+  height: number = 170,
+  gender: string = "",
+  activityLevel: ActivityLevel = "sedentary",
 ): string {
   const goal = getMainGoal(goals);
   const diff = Math.abs(currentWeight - targetWeight);
   if (diff === 0 || goal === "maintain" || goal === "health") {
     return "Ongoing";
   }
-  const weeks = Math.round(diff / 0.5);
+
+  // Check if the deficit gets capped — if so, extend the timeline
+  const bmr = calculateBMR(currentWeight, height, age, gender);
+  const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || 1.2;
+  const maintenance = bmr * multiplier;
+  const weeks = TIMELINE_WEEKS[goalTimeline] || 14;
+  const weeklyLoss = diff / weeks;
+  let dailyDeficit = (weeklyLoss * 7700) / 7;
+  const maxDeficit = maintenance * 0.25;
+
+  let actualWeeks = weeks;
+  if (dailyDeficit > maxDeficit) {
+    // Deficit was capped, so actual time will be longer
+    const actualWeeklyLoss = (maxDeficit * 7) / 7700;
+    actualWeeks = Math.ceil(diff / actualWeeklyLoss);
+  }
+
   const now = new Date();
-  const date = new Date(now.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
+  const date = new Date(now.getTime() + actualWeeks * 7 * 24 * 60 * 60 * 1000);
   const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return `${months[date.getMonth()]} ${date.getFullYear()}`;
 }

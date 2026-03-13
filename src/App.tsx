@@ -118,7 +118,7 @@ const AppContent = () => {
         dietaryRestrictions: data.dietary_restrictions ?? [],
         healthConcerns: data.health_concerns ?? [],
         activityLevel: (data.activity_level as ActivityLevel) || "sedentary",
-        goalTimeline: (data.goal_timeline as GoalTimeline) || "moderate",
+        goalTimeline: (data.goal_timeline as GoalTimeline) || "3_4_months",
         dailyCalorieTarget: data.daily_calorie_goal ?? 2000,
         goalDate: data.goal_date ?? "",
       });
@@ -130,7 +130,7 @@ const AppContent = () => {
 
   const saveOnboardingToDB = async (userId: string, data: OnboardingData) => {
     const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
-    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
+    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals, data.goalTimeline, data.age, data.height, data.gender, data.activityLevel);
 
     await ensureProfileRow(userId);
 
@@ -228,7 +228,7 @@ const AppContent = () => {
       <Onboarding
         onComplete={(data) => {
           const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
-          const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
+          const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals, data.goalTimeline, data.age, data.height, data.gender, data.activityLevel);
           setPendingOnboardingData(data);
           setProfile({ ...data, dailyCalorieTarget: calories, goalDate });
           setSummaryData({ calories, goalDate, goals: data.goals });

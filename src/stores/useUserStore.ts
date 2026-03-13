@@ -86,7 +86,7 @@ export interface UserProfile {
   healthConcerns: string[];
   healthConcernsOther?: string;
   activityLevel: "sedentary" | "lightly_active" | "active";
-  goalTimeline: "slow" | "moderate" | "fast";
+  goalTimeline: "1_2_months" | "3_4_months" | "5_6_months" | "7_plus_months";
   dailyCalorieTarget: number;
   goalDate: string;
   weightHistory: { date: string; weight: number }[];
@@ -112,7 +112,7 @@ const DEFAULT_PROFILE: UserProfile = {
   dietaryRestrictions: [],
   healthConcerns: [],
   activityLevel: "sedentary",
-  goalTimeline: "moderate",
+  goalTimeline: "3_4_months",
   dailyCalorieTarget: 2000,
   goalDate: "",
   weightHistory: [],
