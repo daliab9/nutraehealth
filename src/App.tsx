@@ -116,6 +116,8 @@ const AppContent = () => {
         dietaryPreferences: data.dietary_preferences ?? [],
         dietaryRestrictions: data.dietary_restrictions ?? [],
         healthConcerns: data.health_concerns ?? [],
+        activityLevel: (data.activity_level as ActivityLevel) || "sedentary",
+        goalTimeline: (data.goal_timeline as GoalTimeline) || "moderate",
         dailyCalorieTarget: data.daily_calorie_goal ?? 2000,
         goalDate: data.goal_date ?? "",
       });
