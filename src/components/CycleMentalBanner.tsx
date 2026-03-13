@@ -29,7 +29,7 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
             <span className="text-base">♀</span>
             <div>
               <h3 className="text-sm font-semibold text-foreground">Insights based on your cycle phase</h3>
-              <p className="text-xs text-muted-foreground">{info.phase} · Day {info.cycleDay}</p>
+              <p className="text-xs text-muted-foreground">{info.subPhaseLabel} · Day {info.cycleDay}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -55,7 +55,7 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <span className="text-base">♀</span>
-                {info.phase} Phase · Day {info.cycleDay}
+                {info.subPhaseLabel} · Day {info.cycleDay}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">

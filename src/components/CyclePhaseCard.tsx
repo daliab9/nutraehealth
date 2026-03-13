@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getCycleInfo, MEAL_GUIDANCE, EXERCISE_GUIDANCE, MENTAL_GUIDANCE, type CyclePhase, type PhaseGuidanceDetail } from "@/utils/cyclePhase";
+import { getCycleInfo, MENTAL_GUIDANCE, type CyclePhase, type PhaseGuidanceDetail } from "@/utils/cyclePhase";
+import { getSubPhaseGuidance } from "@/utils/cycleGuidance";
 import { Info } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -8,20 +9,19 @@ interface CyclePhaseCardProps {
   context: "meals" | "exercise" | "mood";
 }
 
-const CONTEXT_MAP: Record<string, { label: string; getGuidance: (phase: CyclePhase) => PhaseGuidanceDetail }> = {
-  meals: { label: "Meals", getGuidance: (p) => MEAL_GUIDANCE[p] },
-  exercise: { label: "Exercise", getGuidance: (p) => EXERCISE_GUIDANCE[p] },
-  mood: { label: "Mood", getGuidance: (p) => MENTAL_GUIDANCE[p] },
-};
-
 export const CyclePhaseCard = ({ cycleStartDate, context }: CyclePhaseCardProps) => {
   const info = getCycleInfo(cycleStartDate);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!info) return null;
 
-  const { label, getGuidance } = CONTEXT_MAP[context];
-  const guidance = getGuidance(info.phase);
+  const contextLabel = context === "meals" ? "Meals" : context === "exercise" ? "Exercise" : "Mood";
+
+  // Mood uses whole-phase guidance; meals/exercise use sub-phase
+  const guidance: PhaseGuidanceDetail =
+    context === "mood"
+      ? MENTAL_GUIDANCE[info.phase]
+      : getSubPhaseGuidance(info.phase, info.subPhase, context);
 
   return (
     <>
@@ -30,7 +30,7 @@ export const CyclePhaseCard = ({ cycleStartDate, context }: CyclePhaseCardProps)
           <span className="text-base">♀</span>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Insights based on your cycle phase</h3>
-            <p className="text-xs text-muted-foreground">{info.phase} · Day {info.cycleDay}</p>
+            <p className="text-xs text-muted-foreground">{info.subPhaseLabel} · Day {info.cycleDay}</p>
           </div>
         </div>
         <button
@@ -46,11 +46,11 @@ export const CyclePhaseCard = ({ cycleStartDate, context }: CyclePhaseCardProps)
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <span className="text-base">♀</span>
-              {info.phase} Phase · Day {info.cycleDay}
+              {info.subPhaseLabel} · Day {info.cycleDay}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{contextLabel}</p>
 
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">What's happening</p>
