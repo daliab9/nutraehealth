@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS } from "@/utils/calorieCalculation";
+import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -39,24 +41,15 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[]): number {
-  const g = gender?.toLowerCase() || "";
-  const genderOffset = g === "female" ? -161 : 5;
-  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + genderOffset;
-  const tdee = bmr * 1.4;
-  const goal = getMainGoal(goals);
-  switch (goal) {
-    case "lose": return Math.round(tdee - 500);
-    case "gain": return Math.round(tdee + 300);
-    default: return Math.round(tdee);
-  }
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "moderate"): number {
+  return calculateCalories(currentWeight, targetWeight, age, height, gender, goals, activityLevel, goalTimeline);
 }
 
 // Weight ranges
-const KG_VALUES = Array.from({ length: 201 }, (_, i) => 30 + i); // 30-230
-const LBS_VALUES = Array.from({ length: 441 }, (_, i) => 66 + i); // 66-506
+const KG_VALUES = Array.from({ length: 201 }, (_, i) => 30 + i);
+const LBS_VALUES = Array.from({ length: 441 }, (_, i) => 66 + i);
 // Height ranges
-const CM_VALUES = Array.from({ length: 121 }, (_, i) => 100 + i); // 100-220
+const CM_VALUES = Array.from({ length: 121 }, (_, i) => 100 + i);
 const FT_INCHES = (() => {
   const vals: string[] = [];
   for (let ft = 3; ft <= 7; ft++) {
@@ -67,7 +60,7 @@ const FT_INCHES = (() => {
   return vals;
 })();
 // Calorie range
-const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10); // 1000-4000
+const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10);
 
 function kgToLbs(kg: number) { return Math.round(kg * 2.20462); }
 function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462); }
@@ -218,7 +211,7 @@ const Profile = () => {
   const saveWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
-    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({
       currentWeight: kgVal,
       weightUnit,
@@ -234,7 +227,7 @@ const Profile = () => {
 
   const saveGoalWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollGoalWeight) : scrollGoalWeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({ targetWeight: kgVal, dailyCalorieTarget: newCalories });
     persistToDB({ target_weight: kgVal, daily_calorie_goal: newCalories });
     setEditField(null);
@@ -242,7 +235,7 @@ const Profile = () => {
 
   const saveHeight = () => {
     const cmVal = heightUnit === "ft" ? ftStrToCm(scrollHeightFt) : scrollHeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, cmVal, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({ height: cmVal, heightUnit, dailyCalorieTarget: newCalories });
     persistToDB({ height: cmVal, height_unit: heightUnit, daily_calorie_goal: newCalories });
     setEditField(null);
@@ -255,7 +248,7 @@ const Profile = () => {
   };
 
   const autoCalcAndSet = () => {
-    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
+    const cal = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     const snapped = Math.round(cal / 10) * 10;
     setScrollCalories(Math.max(1000, Math.min(4000, snapped)));
   };
@@ -308,7 +301,46 @@ const Profile = () => {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Target net daily calories</p>
         </div>
 
-        {/* Weight tracking */}
+        {/* Activity Level & Goal Timeline */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
+            <button
+              onClick={() => {
+                const levels: ActivityLevel[] = ["sedentary", "lightly_active", "active"];
+                const currentIdx = levels.indexOf(profile.activityLevel || "sedentary");
+                const nextIdx = (currentIdx + 1) % levels.length;
+                const newLevel = levels[nextIdx];
+                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], newLevel, profile.goalTimeline);
+                setProfile({ activityLevel: newLevel, dailyCalorieTarget: newCalories });
+                persistToDB({ activity_level: newLevel, daily_calorie_goal: newCalories });
+              }}
+              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
+            <p className="text-sm font-bold text-foreground">{ACTIVITY_LABELS[profile.activityLevel || "sedentary"]?.label}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Activity Level</p>
+          </div>
+          <div className="relative rounded-2xl bg-card border border-border p-4 text-center">
+            <button
+              onClick={() => {
+                const timelines: GoalTimeline[] = ["slow", "moderate", "fast"];
+                const currentIdx = timelines.indexOf(profile.goalTimeline || "moderate");
+                const nextIdx = (currentIdx + 1) % timelines.length;
+                const newTimeline = timelines[nextIdx];
+                const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, newTimeline);
+                setProfile({ goalTimeline: newTimeline, dailyCalorieTarget: newCalories });
+                persistToDB({ goal_timeline: newTimeline, daily_calorie_goal: newCalories });
+              }}
+              className="absolute top-2 right-2 h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Pencil className="h-3.5 w-3.5 text-foreground" />
+            </button>
+            <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[profile.goalTimeline || "moderate"]?.label}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Goal Pace</p>
+          </div>
+        </div>
+
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
@@ -688,7 +720,7 @@ const Profile = () => {
               </div>
             </div>
             <Button onClick={() => {
-              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || []);
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
               setProfile({ gender: editGender, age: editAge, dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns, dailyCalorieTarget: newCalories });
               setHealthInfoOpen(false);
             }} className="w-full rounded-xl h-12">Save</Button>
@@ -907,7 +939,7 @@ const Profile = () => {
                 const updates: any = { weightHistory: history };
                 if (mostRecent.date === dateStr) {
                   updates.currentWeight = kgVal;
-                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
+                  updates.dailyCalorieTarget = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
                 }
 
                 setProfile(updates);

@@ -17,6 +17,8 @@ export interface OnboardingData {
   height: number;
   heightUnit: "cm" | "ft";
   targetWeight: number;
+  activityLevel: "sedentary" | "lightly_active" | "active";
+  goalTimeline: "slow" | "moderate" | "fast";
   dietaryPreferences: string[];
   dietaryRestrictions: string[];
   dietaryRestrictionsOther?: string;
@@ -54,7 +56,7 @@ const HEALTH_CONCERNS = [
   "Other", "None",
 ];
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 11;
 
 const ages = Array.from({ length: 83 }, (_, i) => 18 + i);
 const weightsKg = Array.from({ length: 161 }, (_, i) => 30 + i);
@@ -71,8 +73,8 @@ const heightsFtValues = (() => {
   return vals;
 })();
 
-// Skippable steps: goals(0), dietary prefs(6), restrictions(7), health concerns(8)
-const SKIPPABLE_STEPS = [0, 6, 7, 8];
+// Skippable steps: goals(0), dietary prefs(8), restrictions(9), health concerns(10)
+const SKIPPABLE_STEPS = [0, 8, 9, 10];
 
 const UnitToggle = ({ options, value, onChange }: { options: [string, string]; value: string; onChange: (v: string) => void }) => (
   <div className="flex justify-center mb-4">
@@ -104,6 +106,8 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     height: 170,
     heightUnit: "cm",
     targetWeight: 65,
+    activityLevel: "sedentary",
+    goalTimeline: "moderate",
     dietaryPreferences: [],
     dietaryRestrictions: [],
     dietaryRestrictionsOther: "",
@@ -117,11 +121,11 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     switch (step) {
       case 0: return data.goals.length > 0;
       case 1: return data.gender !== "";
-      case 2: case 3: case 4: case 5: return true;
-      case 6: return data.dietaryPreferences.length > 0;
-      case 7: return data.dietaryRestrictions.length > 0 &&
+      case 2: case 3: case 4: case 5: case 6: case 7: return true;
+      case 8: return data.dietaryPreferences.length > 0;
+      case 9: return data.dietaryRestrictions.length > 0 &&
         (!data.dietaryRestrictions.includes("Other") || data.dietaryRestrictionsOther?.trim());
-      case 8: return data.healthConcerns.length > 0 &&
+      case 10: return data.healthConcerns.length > 0 &&
         (!data.healthConcerns.includes("Other") || data.healthConcernsOther?.trim());
       default: return false;
     }
@@ -283,6 +287,33 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
       case 5:
         return (
           <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">How active are you outside of workouts?</h2>
+            <p className="text-sm text-muted-foreground">This helps us estimate your baseline calorie needs.</p>
+            <div className="mt-6 space-y-3">
+              {(["sedentary", "lightly_active", "active"] as const).map((level) => {
+                const labels: Record<string, { label: string; desc: string }> = {
+                  sedentary: { label: "Mostly seated", desc: "Desk job, minimal walking" },
+                  lightly_active: { label: "Lightly active", desc: "Regular walking, errands, light daily movement" },
+                  active: { label: "Active", desc: "On your feet most of the day" },
+                };
+                const { label, desc } = labels[level];
+                return (
+                  <button key={level} onClick={() => setData((d) => ({ ...d, activityLevel: level }))}
+                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                      data.activityLevel === level ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Target weight</h2>
             <div className="mt-4 flex justify-center">
               <ScrollPicker items={targetWeightItems} value={data.targetWeight}
@@ -292,7 +323,34 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 6:
+      case 7:
+        return (
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">When would you like to reach your goal weight?</h2>
+            <p className="text-sm text-muted-foreground">Choose a pace that feels realistic for you.</p>
+            <div className="mt-6 space-y-3">
+              {(["slow", "moderate", "fast"] as const).map((timeline) => {
+                const labels: Record<string, { label: string; desc: string }> = {
+                  slow: { label: "3–4 months", desc: "Steady & sustainable pace" },
+                  moderate: { label: "2–3 months", desc: "Balanced pace" },
+                  fast: { label: "1–2 months", desc: "Faster pace" },
+                };
+                const { label, desc } = labels[timeline];
+                return (
+                  <button key={timeline} onClick={() => setData((d) => ({ ...d, goalTimeline: timeline }))}
+                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                      data.goalTimeline === timeline ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}>
+                    <span className="font-medium text-foreground">{label}</span>
+                    <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 8:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary preferences</h2>
@@ -307,7 +365,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 7:
+      case 9:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Dietary restrictions</h2>
@@ -329,7 +387,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
           </div>
         );
 
-      case 8:
+      case 10:
         return (
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Health concerns</h2>

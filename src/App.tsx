@@ -19,45 +19,11 @@ import Tracker from "./pages/Tracker";
 import HealthDiary from "./pages/HealthDiary";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import { format, addWeeks } from "date-fns";
+import { format } from "date-fns";
 import type { Session } from "@supabase/supabase-js";
-
+import { calculateCalories, calculateGoalDate, getMainGoal } from "@/utils/calorieCalculation";
+import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
 const queryClient = new QueryClient();
-
-function getMainGoal(goals: string[]): string {
-  if (goals.includes("lose_weight") || goals.includes("reduce_body_fat")) return "lose";
-  if (goals.includes("gain_muscle")) return "gain";
-  if (goals.includes("maintain_weight")) return "maintain";
-  return "health";
-}
-
-function calculateCalories(data: OnboardingData): number {
-  const weight = data.currentWeight;
-  const height = data.height;
-  const age = data.age || 30;
-  const g = data.gender?.toLowerCase() || "";
-  const genderOffset = g === "female" ? -161 : 5;
-  const bmr = 10 * weight + 6.25 * height - 5 * age + genderOffset;
-  const tdee = bmr * 1.4;
-  const goal = getMainGoal(data.goals);
-
-  switch (goal) {
-    case "lose": return Math.round(tdee - 500);
-    case "gain": return Math.round(tdee + 300);
-    default: return Math.round(tdee);
-  }
-}
-
-function calculateGoalDate(data: OnboardingData): string {
-  const goal = getMainGoal(data.goals);
-  const diff = Math.abs(data.currentWeight - data.targetWeight);
-  if (diff === 0 || goal === "maintain" || goal === "health") {
-    return "Ongoing";
-  }
-  const weeks = Math.round(diff / 0.5);
-  const date = addWeeks(new Date(), weeks);
-  return format(date, "MMMM yyyy");
-}
 
 type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
@@ -151,6 +117,8 @@ const AppContent = () => {
         dietaryPreferences: data.dietary_preferences ?? [],
         dietaryRestrictions: data.dietary_restrictions ?? [],
         healthConcerns: data.health_concerns ?? [],
+        activityLevel: (data.activity_level as ActivityLevel) || "sedentary",
+        goalTimeline: (data.goal_timeline as GoalTimeline) || "moderate",
         dailyCalorieTarget: data.daily_calorie_goal ?? 2000,
         goalDate: data.goal_date ?? "",
       });
@@ -161,8 +129,8 @@ const AppContent = () => {
   };
 
   const saveOnboardingToDB = async (userId: string, data: OnboardingData) => {
-    const calories = calculateCalories(data);
-    const goalDate = calculateGoalDate(data);
+    const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
+    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
 
     await ensureProfileRow(userId);
 
@@ -180,6 +148,8 @@ const AppContent = () => {
         dietary_preferences: data.dietaryPreferences,
         dietary_restrictions: data.dietaryRestrictions,
         health_concerns: data.healthConcerns,
+        activity_level: data.activityLevel,
+        goal_timeline: data.goalTimeline,
         daily_calorie_goal: calories,
         goal_date: goalDate,
         onboarding_complete: true,
@@ -257,8 +227,8 @@ const AppContent = () => {
     return (
       <Onboarding
         onComplete={(data) => {
-          const calories = calculateCalories(data);
-          const goalDate = calculateGoalDate(data);
+          const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
+          const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
           setPendingOnboardingData(data);
           setProfile({ ...data, dailyCalorieTarget: calories, goalDate });
           setSummaryData({ calories, goalDate, goals: data.goals });
