@@ -18,7 +18,7 @@ export interface OnboardingData {
   heightUnit: "cm" | "ft";
   targetWeight: number;
   activityLevel: "sedentary" | "lightly_active" | "active";
-  goalTimeline: "slow" | "moderate" | "fast";
+  goalTimeline: "1_2_months" | "3_4_months" | "5_6_months" | "7_plus_months";
   dietaryPreferences: string[];
   dietaryRestrictions: string[];
   dietaryRestrictionsOther?: string;
