@@ -114,6 +114,12 @@ const Profile = () => {
   const [editMealAddingItem, setEditMealAddingItem] = useState(false);
   const [editingMealItem, setEditingMealItem] = useState<FoodItem | null>(null);
 
+  // Activity & Timeline modal state
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<ActivityLevel>(profile.activityLevel || "sedentary");
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+  const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
+
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
   const [addWeightOpen, setAddWeightOpen] = useState(false);
