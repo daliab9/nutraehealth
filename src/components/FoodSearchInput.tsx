@@ -95,8 +95,12 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
 
   const selectFood = (food: FoodSuggestion) => {
     setSelected(food);
-    const amount = food.default_portion_amount || food.default_portion_g || 100;
+    let amount = food.default_portion_amount || food.default_portion_g || 100;
     const unit = food.default_portion_unit || "g";
+    // Clamp "whole" items to a sensible default (1) if the API returned an absurd amount
+    if (unit === "whole" && amount > 10) {
+      amount = 1;
+    }
     // Store the whole-item gram weight for this food
     if (food.default_portion_g) {
       wholeGramsMap.set(food.name, food.default_portion_g);

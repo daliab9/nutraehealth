@@ -110,7 +110,7 @@ export const ScrollPicker = ({
         ref={containerRef}
         className="hide-scrollbar h-full overflow-y-auto overscroll-contain"
         onScroll={handleScroll}
-        style={{ scrollSnapType: "y mandatory" }}
+        style={{}} /* manual snap via scroll timeout */
       >
         {/* Top padding */}
         <div style={{ height: paddingItems * itemHeight }} />
