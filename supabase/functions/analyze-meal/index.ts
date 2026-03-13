@@ -9,9 +9,26 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { image, mimeType } = await req.json();
+    const body = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Support both legacy single image and new multi-image format
+    let imageEntries: { base64: string; mimeType: string }[] = [];
+    if (body.images && Array.isArray(body.images)) {
+      imageEntries = body.images;
+    } else if (body.image) {
+      imageEntries = [{ base64: body.image, mimeType: body.mimeType || "image/jpeg" }];
+    }
+
+    if (imageEntries.length === 0) throw new Error("No images provided");
+
+    const imageContent = imageEntries.map((img) => ({
+      type: "image_url" as const,
+      image_url: { url: `data:${img.mimeType || "image/jpeg"};base64,${img.base64}` },
+    }));
+
+    const photoWord = imageEntries.length === 1 ? "this image" : `these ${imageEntries.length} images`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -24,18 +41,15 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition analysis AI. Analyze the food image and identify all food items with their estimated nutritional information. Be accurate and realistic with portions visible in the image.`,
+            content: `You are a nutrition analysis AI. Analyze food images and identify all food items with their estimated nutritional information. Be accurate and realistic with portions visible in the images.`,
           },
           {
             role: "user",
             content: [
-              {
-                type: "image_url",
-                image_url: { url: `data:${mimeType || "image/jpeg"};base64,${image}` },
-              },
+              ...imageContent,
               {
                 type: "text",
-                text: "Identify all food items in this image. For each item, estimate calories, protein (g), carbs (g), and fat (g). Also suggest a meal name.",
+                text: `Identify all food items in ${photoWord}. For each item, estimate calories, protein (g), carbs (g), and fat (g). Also suggest a meal name.`,
               },
             ],
           },

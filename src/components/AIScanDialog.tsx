@@ -24,7 +24,7 @@ interface AIScanDialogProps {
 
 export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AIScanDialogProps) => {
   const [step, setStep] = useState<"capture" | "analyzing" | "review" | "error">("capture");
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [editingItems, setEditingItems] = useState<ScannedItem[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
@@ -40,7 +40,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
   const reset = () => {
     setStep("capture");
-    setPreview(null);
+    setPreviews([]);
     setScannedItems([]);
     setEditingItems([]);
     setErrorMsg("");
@@ -62,50 +62,48 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     onOpenChange(isOpen);
   };
 
-  const processImage = async (file: File) => {
-    setPreview(URL.createObjectURL(file));
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processImages = async (files: File[]) => {
+    setPreviews(files.map((f) => URL.createObjectURL(f)));
     setStep("analyzing");
 
     try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const images = await Promise.all(
+        files.map(async (file) => ({
+          base64: await fileToBase64(file),
+          mimeType: file.type,
+        }))
+      );
 
       const { data, error } = await supabase.functions.invoke("analyze-meal", {
-        body: { image: base64, mimeType: file.type },
+        body: { images },
       });
 
-      if (error) {
-        throw new Error(error.message || "Analysis failed");
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      if (!data?.items || data.items.length === 0) {
-        throw new Error("No food items detected in the image");
-      }
+      if (error) throw new Error(error.message || "Analysis failed");
+      if (data?.error) throw new Error(data.error);
+      if (!data?.items || data.items.length === 0) throw new Error("No food items detected in the images");
 
       setScannedItems(data.items);
       setEditingItems(data.items.map((item: ScannedItem) => ({ ...item })));
       setStep("review");
     } catch (e) {
       console.error("Scan error:", e);
-      setErrorMsg(e instanceof Error ? e.message : "Failed to analyze image");
+      setErrorMsg(e instanceof Error ? e.message : "Failed to analyze images");
       setStep("error");
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processImage(file);
+    const files = e.target.files;
+    if (files && files.length > 0) processImages(Array.from(files));
     e.target.value = "";
   };
 
@@ -197,6 +195,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleFileChange}
             />
@@ -205,15 +204,15 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
         {step === "analyzing" && (
           <div className="flex flex-col items-center gap-4 py-8">
-            {preview && (
-              <img
-                src={preview}
-                alt="Meal"
-                className="w-40 h-40 object-cover rounded-2xl"
-              />
+            {previews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto w-full justify-center">
+                {previews.map((src, i) => (
+                  <img key={i} src={src} alt={`Meal ${i + 1}`} className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
+                ))}
+              </div>
             )}
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Identifying food items...</p>
+            <p className="text-sm text-muted-foreground">Identifying food items from {previews.length} photo{previews.length !== 1 ? "s" : ""}...</p>
           </div>
         )}
 
@@ -229,12 +228,12 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
         {step === "review" && (
           <div className="space-y-4 pt-2">
-            {preview && (
-              <img
-                src={preview}
-                alt="Meal"
-                className="w-full h-32 object-cover rounded-xl"
-              />
+            {previews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {previews.map((src, i) => (
+                  <img key={i} src={src} alt={`Meal ${i + 1}`} className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
+                ))}
+              </div>
             )}
             <p className="text-xs text-muted-foreground">
               Review and edit the AI estimates before adding to {mealTitle}.
