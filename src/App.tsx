@@ -130,7 +130,7 @@ const AppContent = () => {
 
   const saveOnboardingToDB = async (userId: string, data: OnboardingData) => {
     const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
-    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
+    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals, data.goalTimeline, data.age, data.height, data.gender, data.activityLevel);
 
     await ensureProfileRow(userId);
 
