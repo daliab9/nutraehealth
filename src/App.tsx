@@ -227,8 +227,8 @@ const AppContent = () => {
     return (
       <Onboarding
         onComplete={(data) => {
-          const calories = calculateCalories(data);
-          const goalDate = calculateGoalDate(data);
+          const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
+          const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
           setPendingOnboardingData(data);
           setProfile({ ...data, dailyCalorieTarget: calories, goalDate });
           setSummaryData({ calories, goalDate, goals: data.goals });
