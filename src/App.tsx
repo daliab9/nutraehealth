@@ -129,8 +129,8 @@ const AppContent = () => {
   };
 
   const saveOnboardingToDB = async (userId: string, data: OnboardingData) => {
-    const calories = calculateCalories(data);
-    const goalDate = calculateGoalDate(data);
+    const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
+    const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals);
 
     await ensureProfileRow(userId);
 
@@ -148,6 +148,8 @@ const AppContent = () => {
         dietary_preferences: data.dietaryPreferences,
         dietary_restrictions: data.dietaryRestrictions,
         health_concerns: data.healthConcerns,
+        activity_level: data.activityLevel,
+        goal_timeline: data.goalTimeline,
         daily_calorie_goal: calories,
         goal_date: goalDate,
         onboarding_complete: true,
