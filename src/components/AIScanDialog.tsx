@@ -228,12 +228,12 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
         {step === "review" && (
           <div className="space-y-4 pt-2">
-            {preview && (
-              <img
-                src={preview}
-                alt="Meal"
-                className="w-full h-32 object-cover rounded-xl"
-              />
+            {previews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {previews.map((src, i) => (
+                  <img key={i} src={src} alt={`Meal ${i + 1}`} className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
+                ))}
+              </div>
             )}
             <p className="text-xs text-muted-foreground">
               Review and edit the AI estimates before adding to {mealTitle}.
