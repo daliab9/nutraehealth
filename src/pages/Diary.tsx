@@ -479,7 +479,7 @@ const Diary = () => {
         )}
       </div>
 
-      {profile.gender === "Female" && profile.cycleStartDate && (
+      {profile.gender === "Female" && profile.cycleStartDate && activeSection !== "poop" && (
         <div className="px-5 mt-4">
           <CyclePhaseCard cycleStartDate={profile.cycleStartDate} context={activeSection === "exercise" ? "exercise" : "meals"} />
         </div>
