@@ -227,7 +227,7 @@ const Profile = () => {
 
   const saveGoalWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollGoalWeight) : scrollGoalWeight;
-    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(profile.currentWeight, kgVal, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({ targetWeight: kgVal, dailyCalorieTarget: newCalories });
     persistToDB({ target_weight: kgVal, daily_calorie_goal: newCalories });
     setEditField(null);
