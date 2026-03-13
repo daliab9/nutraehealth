@@ -204,15 +204,15 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
         {step === "analyzing" && (
           <div className="flex flex-col items-center gap-4 py-8">
-            {preview && (
-              <img
-                src={preview}
-                alt="Meal"
-                className="w-40 h-40 object-cover rounded-2xl"
-              />
+            {previews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto w-full justify-center">
+                {previews.map((src, i) => (
+                  <img key={i} src={src} alt={`Meal ${i + 1}`} className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
+                ))}
+              </div>
             )}
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Identifying food items...</p>
+            <p className="text-sm text-muted-foreground">Identifying food items from {previews.length} photo{previews.length !== 1 ? "s" : ""}...</p>
           </div>
         )}
 
