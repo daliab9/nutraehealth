@@ -57,7 +57,6 @@ export const CycleMentalBanner = ({ cycleStartDate, isFemale, onAddCycleDate, on
                 <span className="text-base">♀</span>
                 {info.subPhaseLabel} · Day {info.cycleDay}
               </DialogTitle>
-              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Mood</p>
