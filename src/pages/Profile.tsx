@@ -211,7 +211,7 @@ const Profile = () => {
   const saveWeight = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
-    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || []);
+    const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
     setProfile({
       currentWeight: kgVal,
       weightUnit,
