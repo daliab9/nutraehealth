@@ -41,25 +41,9 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[]): number {
-  const g = gender?.toLowerCase() || "";
-  const genderOffset = g === "female" ? -161 : 5;
-  const bmr = 10 * currentWeight + 6.25 * height - 5 * (age || 30) + genderOffset;
-  const tdee = bmr * 1.4;
-  const goal = getMainGoal(goals);
-  switch (goal) {
-    case "lose": return Math.round(tdee - 500);
-    case "gain": return Math.round(tdee + 300);
-    default: return Math.round(tdee);
-  }
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "moderate"): number {
+  return calculateCalories(currentWeight, targetWeight, age, height, gender, goals, activityLevel, goalTimeline);
 }
-
-// Weight ranges
-const KG_VALUES = Array.from({ length: 201 }, (_, i) => 30 + i); // 30-230
-const LBS_VALUES = Array.from({ length: 441 }, (_, i) => 66 + i); // 66-506
-// Height ranges
-const CM_VALUES = Array.from({ length: 121 }, (_, i) => 100 + i); // 100-220
-const FT_INCHES = (() => {
   const vals: string[] = [];
   for (let ft = 3; ft <= 7; ft++) {
     for (let inch = 0; inch < 12; inch++) {
