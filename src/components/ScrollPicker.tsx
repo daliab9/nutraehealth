@@ -127,7 +127,6 @@ export const ScrollPicker = ({
               )}
               style={{
                 height: itemHeight,
-                scrollSnapAlign: "start",
               }}
               onClick={() => handleItemClick(item, i)}
             >
