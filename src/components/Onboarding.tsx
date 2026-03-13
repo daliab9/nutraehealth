@@ -56,7 +56,7 @@ const HEALTH_CONCERNS = [
   "Other", "None",
 ];
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 11;
 
 const ages = Array.from({ length: 83 }, (_, i) => 18 + i);
 const weightsKg = Array.from({ length: 161 }, (_, i) => 30 + i);
