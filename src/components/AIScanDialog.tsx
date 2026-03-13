@@ -195,6 +195,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleFileChange}
             />
