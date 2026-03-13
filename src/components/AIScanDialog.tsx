@@ -62,50 +62,48 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     onOpenChange(isOpen);
   };
 
-  const processImage = async (file: File) => {
-    setPreview(URL.createObjectURL(file));
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processImages = async (files: File[]) => {
+    setPreviews(files.map((f) => URL.createObjectURL(f)));
     setStep("analyzing");
 
     try {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const images = await Promise.all(
+        files.map(async (file) => ({
+          base64: await fileToBase64(file),
+          mimeType: file.type,
+        }))
+      );
 
       const { data, error } = await supabase.functions.invoke("analyze-meal", {
-        body: { image: base64, mimeType: file.type },
+        body: { images },
       });
 
-      if (error) {
-        throw new Error(error.message || "Analysis failed");
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      if (!data?.items || data.items.length === 0) {
-        throw new Error("No food items detected in the image");
-      }
+      if (error) throw new Error(error.message || "Analysis failed");
+      if (data?.error) throw new Error(data.error);
+      if (!data?.items || data.items.length === 0) throw new Error("No food items detected in the images");
 
       setScannedItems(data.items);
       setEditingItems(data.items.map((item: ScannedItem) => ({ ...item })));
       setStep("review");
     } catch (e) {
       console.error("Scan error:", e);
-      setErrorMsg(e instanceof Error ? e.message : "Failed to analyze image");
+      setErrorMsg(e instanceof Error ? e.message : "Failed to analyze images");
       setStep("error");
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processImage(file);
+    const files = e.target.files;
+    if (files && files.length > 0) processImages(Array.from(files));
     e.target.value = "";
   };
 
