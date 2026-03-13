@@ -681,7 +681,7 @@ const Profile = () => {
               </div>
             </div>
             <Button onClick={() => {
-              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || []);
+              const newCalories = autoCalcCalories(profile.currentWeight, profile.targetWeight, editAge, profile.height, editGender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
               setProfile({ gender: editGender, age: editAge, dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns, dailyCalorieTarget: newCalories });
               setHealthInfoOpen(false);
             }} className="w-full rounded-xl h-12">Save</Button>
