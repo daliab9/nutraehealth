@@ -44,6 +44,13 @@ function getMainGoal(goals: string[]): string {
 function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "moderate"): number {
   return calculateCalories(currentWeight, targetWeight, age, height, gender, goals, activityLevel, goalTimeline);
 }
+
+// Weight ranges
+const KG_VALUES = Array.from({ length: 201 }, (_, i) => 30 + i);
+const LBS_VALUES = Array.from({ length: 441 }, (_, i) => 66 + i);
+// Height ranges
+const CM_VALUES = Array.from({ length: 121 }, (_, i) => 100 + i);
+const FT_INCHES = (() => {
   const vals: string[] = [];
   for (let ft = 3; ft <= 7; ft++) {
     for (let inch = 0; inch < 12; inch++) {
@@ -53,7 +60,7 @@ function autoCalcCalories(currentWeight: number, targetWeight: number, age: numb
   return vals;
 })();
 // Calorie range
-const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10); // 1000-4000
+const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10);
 
 function kgToLbs(kg: number) { return Math.round(kg * 2.20462); }
 function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462); }
