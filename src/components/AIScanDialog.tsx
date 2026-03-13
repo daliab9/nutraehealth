@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Check, X, AlertTriangle, Plus } from "lucide-react";
+import { Camera, Upload, Loader2, Check, X, AlertTriangle, Plus, ImagePlus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ interface AIScanDialogProps {
 }
 
 export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AIScanDialogProps) => {
-  const [step, setStep] = useState<"capture" | "analyzing" | "review" | "error">("capture");
+  const [step, setStep] = useState<"capture" | "preview" | "analyzing" | "review" | "error">("capture");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [editingItems, setEditingItems] = useState<ScannedItem[]>([]);
@@ -37,9 +38,12 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
   const [manualQuantity, setManualQuantity] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const addMoreInputRef = useRef<HTMLInputElement>(null);
+  const addMoreCameraRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setStep("capture");
+    setSelectedFiles([]);
     setPreviews([]);
     setScannedItems([]);
     setEditingItems([]);
@@ -71,13 +75,25 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     });
   };
 
-  const processImages = async (files: File[]) => {
-    setPreviews(files.map((f) => URL.createObjectURL(f)));
-    setStep("analyzing");
+  const addFiles = (files: File[]) => {
+    const newFiles = [...selectedFiles, ...files];
+    setSelectedFiles(newFiles);
+    setPreviews(newFiles.map((f) => URL.createObjectURL(f)));
+    setStep("preview");
+  };
 
+  const removePhoto = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    setPreviews(newFiles.map((f) => URL.createObjectURL(f)));
+    if (newFiles.length === 0) setStep("capture");
+  };
+
+  const handleAnalyze = async () => {
+    setStep("analyzing");
     try {
       const images = await Promise.all(
-        files.map(async (file) => ({
+        selectedFiles.map(async (file) => ({
           base64: await fileToBase64(file),
           mimeType: file.type,
         }))
@@ -103,7 +119,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) processImages(Array.from(files));
+    if (files && files.length > 0) addFiles(Array.from(files));
     e.target.value = "";
   };
 
@@ -154,6 +170,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
         <DialogHeader>
           <DialogTitle>
             {step === "capture" && "Scan your meal"}
+            {step === "preview" && "Your photos"}
             {step === "analyzing" && "Analyzing..."}
             {step === "review" && "Review items"}
             {step === "error" && "Scan failed"}
@@ -193,6 +210,75 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
             />
             <input
               ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+        )}
+
+        {step === "preview" && (
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Review your photo{previews.length !== 1 ? "s" : ""}. Add more or proceed to analyze.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {previews.map((src, i) => (
+                <div key={i} className="relative group">
+                  <img
+                    src={src}
+                    alt={`Photo ${i + 1}`}
+                    className="w-full aspect-square object-cover rounded-xl border border-border"
+                  />
+                  <button
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => addMoreCameraRef.current?.click()}
+                variant="outline"
+                className="flex-1 rounded-xl gap-2 text-sm"
+              >
+                <Camera className="h-4 w-4" />
+                Add photo
+              </Button>
+              <Button
+                onClick={() => addMoreInputRef.current?.click()}
+                variant="outline"
+                className="flex-1 rounded-xl gap-2 text-sm"
+              >
+                <ImagePlus className="h-4 w-4" />
+                Upload more
+              </Button>
+            </div>
+
+            <Button
+              onClick={handleAnalyze}
+              className="w-full rounded-xl h-12"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Analyze {previews.length} photo{previews.length !== 1 ? "s" : ""}
+            </Button>
+
+            <input
+              ref={addMoreCameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <input
+              ref={addMoreInputRef}
               type="file"
               accept="image/*"
               multiple
@@ -294,7 +380,6 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
               ))}
             </div>
 
-            {/* Manual add item */}
             {showManualAdd ? (
               <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/30">
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add item manually</p>
