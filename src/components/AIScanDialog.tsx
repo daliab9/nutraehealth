@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Check, X, AlertTriangle } from "lucide-react";
+import { Camera, Upload, Loader2, Check, X, AlertTriangle, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,13 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [editingItems, setEditingItems] = useState<ScannedItem[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showManualAdd, setShowManualAdd] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualCalories, setManualCalories] = useState("");
+  const [manualProtein, setManualProtein] = useState("");
+  const [manualCarbs, setManualCarbs] = useState("");
+  const [manualFat, setManualFat] = useState("");
+  const [manualQuantity, setManualQuantity] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +44,17 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     setScannedItems([]);
     setEditingItems([]);
     setErrorMsg("");
+    setShowManualAdd(false);
+    resetManualForm();
+  };
+
+  const resetManualForm = () => {
+    setManualName("");
+    setManualCalories("");
+    setManualProtein("");
+    setManualCarbs("");
+    setManualFat("");
+    setManualQuantity("");
   };
 
   const handleClose = (isOpen: boolean) => {
@@ -101,6 +119,21 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
   const removeItem = (index: number) => {
     setEditingItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddManualItem = () => {
+    if (!manualName.trim()) return;
+    const newItem: ScannedItem = {
+      name: manualName.trim(),
+      calories: Number(manualCalories) || 0,
+      protein: Number(manualProtein) || 0,
+      carbs: Number(manualCarbs) || 0,
+      fat: Number(manualFat) || 0,
+      quantity: manualQuantity.trim() || "1 serving",
+    };
+    setEditingItems((prev) => [...prev, newItem]);
+    resetManualForm();
+    setShowManualAdd(false);
   };
 
   const handleConfirm = () => {
@@ -261,6 +294,62 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
                 </div>
               ))}
             </div>
+
+            {/* Manual add item */}
+            {showManualAdd ? (
+              <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/30">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add item manually</p>
+                <Input
+                  placeholder="Food name"
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  className="rounded-lg text-sm"
+                  autoFocus
+                />
+                <Input
+                  placeholder="Quantity (e.g. 1 slice)"
+                  value={manualQuantity}
+                  onChange={(e) => setManualQuantity(e.target.value)}
+                  className="rounded-lg text-sm"
+                />
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Calories</label>
+                    <Input type="number" value={manualCalories} onChange={(e) => setManualCalories(e.target.value)} className="rounded-lg h-8 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Protein</label>
+                    <Input type="number" value={manualProtein} onChange={(e) => setManualProtein(e.target.value)} className="rounded-lg h-8 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Carbs</label>
+                    <Input type="number" value={manualCarbs} onChange={(e) => setManualCarbs(e.target.value)} className="rounded-lg h-8 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Fat</label>
+                    <Input type="number" value={manualFat} onChange={(e) => setManualFat(e.target.value)} className="rounded-lg h-8 text-xs" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="rounded-lg flex-1" onClick={() => { setShowManualAdd(false); resetManualForm(); }}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" className="rounded-lg flex-1" onClick={handleAddManualItem} disabled={!manualName.trim()}>
+                    Add
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full rounded-xl h-10 text-sm gap-2"
+                onClick={() => setShowManualAdd(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add item manually
+              </Button>
+            )}
+
             {editingItems.length > 0 && (
               <div className="rounded-xl bg-muted/50 p-3">
                 <div className="flex justify-between text-sm font-medium">
