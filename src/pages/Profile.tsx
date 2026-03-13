@@ -41,7 +41,7 @@ function getMainGoal(goals: string[]): string {
   return "health";
 }
 
-function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "moderate"): number {
+function autoCalcCalories(currentWeight: number, targetWeight: number, age: number, height: number, gender: string, goals: string[], activityLevel: ActivityLevel = "sedentary", goalTimeline: GoalTimeline = "3_4_months"): number {
   return calculateCalories(currentWeight, targetWeight, age, height, gender, goals, activityLevel, goalTimeline);
 }
 
