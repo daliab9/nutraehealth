@@ -383,6 +383,38 @@ export function useUserStore() {
     setHealthState((prev) => ({ ...prev, [date]: entry }));
   }, []);
 
+  const addFoodToGroup = useCallback(
+    (date: string, mealType: MealEntry["type"], groupId: string, groupName: string, item: FoodItem) => {
+      setDiaryState((prev) => {
+        const day = prev[date];
+        if (!day) return prev;
+        const meals = day.meals.map((m) =>
+          m.type === mealType
+            ? { ...m, items: [...m.items, { ...item, groupId, groupName }] }
+            : m
+        );
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
+  const removeFoodFromGroup = useCallback(
+    (date: string, mealType: MealEntry["type"], itemId: string) => {
+      setDiaryState((prev) => {
+        const day = prev[date];
+        if (!day) return prev;
+        const meals = day.meals.map((m) =>
+          m.type === mealType
+            ? { ...m, items: m.items.map((i) => i.id === itemId ? { ...i, groupId: undefined, groupName: undefined } : i) }
+            : m
+        );
+        return { ...prev, [date]: { ...day, meals } };
+      });
+    },
+    []
+  );
+
   return {
     profile,
     setProfile,
@@ -398,6 +430,8 @@ export function useUserStore() {
     getDayTotals,
     moveFoodBetweenMeals,
     mergeItemsIntoGroup,
+    addFoodToGroup,
+    removeFoodFromGroup,
     health,
     getHealthEntry,
     setHealthEntry,
