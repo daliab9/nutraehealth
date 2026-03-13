@@ -40,7 +40,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
   const reset = () => {
     setStep("capture");
-    setPreview(null);
+    setPreviews([]);
     setScannedItems([]);
     setEditingItems([]);
     setErrorMsg("");
