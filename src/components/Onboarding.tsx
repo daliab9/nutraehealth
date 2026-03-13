@@ -121,11 +121,11 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     switch (step) {
       case 0: return data.goals.length > 0;
       case 1: return data.gender !== "";
-      case 2: case 3: case 4: case 5: return true;
-      case 6: return data.dietaryPreferences.length > 0;
-      case 7: return data.dietaryRestrictions.length > 0 &&
+      case 2: case 3: case 4: case 5: case 6: case 7: return true;
+      case 8: return data.dietaryPreferences.length > 0;
+      case 9: return data.dietaryRestrictions.length > 0 &&
         (!data.dietaryRestrictions.includes("Other") || data.dietaryRestrictionsOther?.trim());
-      case 8: return data.healthConcerns.length > 0 &&
+      case 10: return data.healthConcerns.length > 0 &&
         (!data.healthConcerns.includes("Other") || data.healthConcernsOther?.trim());
       default: return false;
     }

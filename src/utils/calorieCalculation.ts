@@ -89,9 +89,9 @@ export function calculateGoalDate(
   if (diff === 0 || goal === "maintain" || goal === "health") {
     return "Ongoing";
   }
-  const { addWeeks } = require("date-fns");
-  const { format } = require("date-fns");
   const weeks = Math.round(diff / 0.5);
-  const date = addWeeks(new Date(), weeks);
-  return format(date, "MMMM yyyy");
+  const now = new Date();
+  const date = new Date(now.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return `${months[date.getMonth()]} ${date.getFullYear()}`;
 }
