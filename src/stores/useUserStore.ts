@@ -85,6 +85,8 @@ export interface UserProfile {
   dietaryRestrictionsOther?: string;
   healthConcerns: string[];
   healthConcernsOther?: string;
+  activityLevel: "sedentary" | "lightly_active" | "active";
+  goalTimeline: "slow" | "moderate" | "fast";
   dailyCalorieTarget: number;
   goalDate: string;
   weightHistory: { date: string; weight: number }[];
