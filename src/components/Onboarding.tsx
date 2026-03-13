@@ -107,7 +107,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     heightUnit: "cm",
     targetWeight: 65,
     activityLevel: "sedentary",
-    goalTimeline: "moderate",
+    goalTimeline: "3_4_months",
     dietaryPreferences: [],
     dietaryRestrictions: [],
     dietaryRestrictionsOther: "",
