@@ -12,6 +12,12 @@ interface FoodSuggestion {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  iron?: number;
+  vitamin_d?: number;
+  magnesium?: number;
+  omega3?: number;
+  b12?: number;
   default_portion_amount: number;
   default_portion_unit: string;
   default_portion_g?: number;
