@@ -324,7 +324,25 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+        {/* Tracked Nutrients */}
+        <div className="relative rounded-2xl bg-card border border-border p-4 mb-6">
+          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setNutrientModalOpen(true); }} />
+          <div className="flex items-center gap-2 mb-2">
+            <SlidersHorizontal className="h-4 w-4 text-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Tracked Nutrients</h3>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(profile.trackedNutrients || DEFAULT_TRACKED).map((key) => {
+              const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
+              return config ? (
+                <span key={key} className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
+                  {config.label}
+                </span>
+              ) : null;
+            })}
+          </div>
+        </div>
+
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
             <div className="flex items-center gap-2">
