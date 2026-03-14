@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS, ACTIVITY_OPTIONS, TIMELINE_OPTIONS } from "@/utils/calorieCalculation";
 import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
+import { AVAILABLE_NUTRIENTS, DEFAULT_TRACKED } from "@/utils/nutrientDefaults";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
 } from "recharts";
