@@ -9,12 +9,11 @@ export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   active: 1.5,
 };
 
-// Average weeks for each timeline option
 export const TIMELINE_WEEKS: Record<GoalTimeline, number> = {
   "1_2_months": 6,
   "3_4_months": 14,
   "5_6_months": 22,
-  "7_plus_months": 32,
+  "7_plus_months": 30,
 };
 
 export const ACTIVITY_LABELS: Record<ActivityLevel, { label: string; description: string }> = {
@@ -59,30 +58,36 @@ export function calculateCalories(
   const bmr = calculateBMR(weight, height, age, gender);
   const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || 1.2;
   const maintenance = bmr * multiplier;
-  const goal = getMainGoal(goals);
 
-  if (goal === "maintain" || goal === "health") {
+  // Determine direction from actual weights, not goals array
+  const weightDiff = targetWeight - weight; // negative = loss, positive = gain, zero = maintain
+
+  if (Math.abs(weightDiff) < 0.5) {
+    // Essentially maintenance
     return Math.round(maintenance);
   }
 
-  if (goal === "gain") {
-    return Math.round(maintenance + 300);
-  }
-
-  // Losing weight — dynamic deficit based on weight diff and timeline
-  const totalToLose = Math.abs(weight - targetWeight);
   const weeks = TIMELINE_WEEKS[goalTimeline] || 14;
-  const weeklyLoss = totalToLose / weeks;
-  // 1 kg of fat ≈ 7700 kcal
-  let deficit = (weeklyLoss * 7700) / 7;
+  const weeklyChange = weightDiff / weeks; // negative for loss, positive for gain
+  // 1 kg ≈ 7700 kcal
+  let dailyAdjustment = (weeklyChange * 7700) / 7;
 
-  // Cap deficit at 25% of maintenance
-  const maxDeficit = maintenance * 0.25;
-  if (deficit > maxDeficit) {
-    deficit = maxDeficit;
+  // Apply safety caps
+  if (dailyAdjustment < 0) {
+    // Weight loss: cap deficit at 25% of maintenance
+    const maxDeficit = maintenance * 0.25;
+    if (Math.abs(dailyAdjustment) > maxDeficit) {
+      dailyAdjustment = -maxDeficit;
+    }
+  } else {
+    // Weight gain: cap surplus at 20% of maintenance
+    const maxSurplus = maintenance * 0.20;
+    if (dailyAdjustment > maxSurplus) {
+      dailyAdjustment = maxSurplus;
+    }
   }
 
-  const target = Math.round(maintenance - deficit);
+  const target = Math.round(maintenance + dailyAdjustment);
 
   // Minimum calorie floor
   return Math.max(1200, target);
@@ -98,26 +103,35 @@ export function calculateGoalDate(
   gender: string = "",
   activityLevel: ActivityLevel = "sedentary",
 ): string {
-  const goal = getMainGoal(goals);
-  const diff = Math.abs(currentWeight - targetWeight);
-  if (diff === 0 || goal === "maintain" || goal === "health") {
+  const weightDiff = targetWeight - currentWeight;
+  const absDiff = Math.abs(weightDiff);
+
+  if (absDiff < 0.5) {
     return "Ongoing";
   }
 
-  // Check if the deficit gets capped — if so, extend the timeline
   const bmr = calculateBMR(currentWeight, height, age, gender);
   const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || 1.2;
   const maintenance = bmr * multiplier;
   const weeks = TIMELINE_WEEKS[goalTimeline] || 14;
-  const weeklyLoss = diff / weeks;
-  let dailyDeficit = (weeklyLoss * 7700) / 7;
-  const maxDeficit = maintenance * 0.25;
+  const weeklyChange = weightDiff / weeks;
+  let dailyAdjustment = (weeklyChange * 7700) / 7;
 
+  // Check if capped
   let actualWeeks = weeks;
-  if (dailyDeficit > maxDeficit) {
-    // Deficit was capped, so actual time will be longer
-    const actualWeeklyLoss = (maxDeficit * 7) / 7700;
-    actualWeeks = Math.ceil(diff / actualWeeklyLoss);
+  if (dailyAdjustment < 0) {
+    const maxDeficit = maintenance * 0.25;
+    if (Math.abs(dailyAdjustment) > maxDeficit) {
+      // Deficit capped — extend timeline
+      const actualWeeklyLoss = (maxDeficit * 7) / 7700;
+      actualWeeks = Math.ceil(absDiff / actualWeeklyLoss);
+    }
+  } else {
+    const maxSurplus = maintenance * 0.20;
+    if (dailyAdjustment > maxSurplus) {
+      const actualWeeklyGain = (maxSurplus * 7) / 7700;
+      actualWeeks = Math.ceil(absDiff / actualWeeklyGain);
+    }
   }
 
   const now = new Date();
