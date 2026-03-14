@@ -120,6 +120,8 @@ const Profile = () => {
   const [pendingActivity, setPendingActivity] = useState<ActivityLevel>(profile.activityLevel || "sedentary");
   const [timelineModalOpen, setTimelineModalOpen] = useState(false);
   const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
+  const [nutrientModalOpen, setNutrientModalOpen] = useState(false);
+  const [pendingNutrients, setPendingNutrients] = useState<string[]>(profile.trackedNutrients || DEFAULT_TRACKED);
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
