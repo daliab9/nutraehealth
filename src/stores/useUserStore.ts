@@ -121,6 +121,7 @@ const DEFAULT_PROFILE: UserProfile = {
   savedExercises: [],
   subscription: "free",
   aiScansUsed: 0,
+  trackedNutrients: ["calories", "protein", "fiber"],
 };
 
 function loadProfile(): UserProfile {
