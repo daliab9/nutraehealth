@@ -7,6 +7,12 @@ export interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  iron?: number;
+  vitamin_d?: number;
+  magnesium?: number;
+  omega3?: number;
+  b12?: number;
   quantity?: string;
   groupId?: string;
   groupName?: string;
