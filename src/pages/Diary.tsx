@@ -242,6 +242,26 @@ const Diary = () => {
   const netCalories = totals.calories - totals.exerciseCals;
   const totalFoodCals = totals.calories;
 
+  const trackedNutrients: TrackedNutrient[] = useMemo(() => {
+    const tracked = profile.trackedNutrients || ["calories", "protein", "fiber"];
+    return tracked.map((key) => {
+      const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
+      if (!config) return null;
+      let value = 0;
+      let target = config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
+      if (key === "calories") {
+        value = netCalories;
+        target = profile.dailyCalorieTarget;
+      } else if (key === "protein") {
+        value = totals.protein;
+      } else if (key === "fiber") {
+        // Fiber isn't tracked in current food items — show 0 for now
+        value = 0;
+      }
+      return { key, label: config.label, value, target, unit: config.unit };
+    }).filter(Boolean) as TrackedNutrient[];
+  }, [profile, netCalories, totals]);
+
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Calendar at top */}
@@ -249,9 +269,9 @@ const Diary = () => {
         <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       </div>
 
-      {/* Calorie ring */}
+      {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
-        <CircularProgress value={Math.max(0, netCalories)} max={profile.dailyCalorieTarget} />
+        <NutrientRingCarousel nutrients={trackedNutrients} />
       </div>
 
       {/* Category pills */}
