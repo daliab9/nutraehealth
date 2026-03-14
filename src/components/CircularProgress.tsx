@@ -5,13 +5,17 @@ interface CircularProgressProps {
   max: number;
   size?: number;
   strokeWidth?: number;
+  label?: string;
+  unit?: string;
 }
 
 export const CircularProgress = ({
   value,
   max,
   size = 200,
-  strokeWidth = 14
+  strokeWidth = 14,
+  label,
+  unit,
 }: CircularProgressProps) => {
   const [showTarget, setShowTarget] = useState(false);
   const radius = (size - strokeWidth) / 2;
@@ -27,6 +31,9 @@ export const CircularProgress = ({
   const displayValue = showTarget ? max : value;
   const formatted = displayValue.toLocaleString();
   const remaining = max - value;
+
+  const displayLabel = label || "Net Cals";
+  const isCalories = !label || label === "NET CALS";
 
   return (
     <div
@@ -82,8 +89,10 @@ export const CircularProgress = ({
           </>
         ) : (
           <>
-            <span className={`font-bold tracking-tight text-6xl ${isOver ? "text-[hsl(var(--chart-negative-dark))]" : "text-foreground"}`}>{formatted}</span>
-            <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">Net Cals</span>
+            <span className={`font-bold tracking-tight ${isCalories ? "text-6xl" : "text-5xl"} ${isOver ? "text-[hsl(var(--chart-negative-dark))]" : "text-foreground"}`}>
+              {formatted}{!isCalories && unit ? <span className="text-2xl font-semibold text-muted-foreground ml-0.5">{unit}</span> : null}
+            </span>
+            <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">{displayLabel}</span>
           </>
         )}
       </div>

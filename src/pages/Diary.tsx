@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { CalendarStrip } from "@/components/CalendarStrip";
-import { CircularProgress } from "@/components/CircularProgress";
+import { NutrientRingCarousel, type TrackedNutrient } from "@/components/NutrientRingCarousel";
 import { MealSection } from "@/components/MealSection";
 import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
@@ -13,6 +13,7 @@ import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon,
 import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
+import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -241,6 +242,26 @@ const Diary = () => {
   const netCalories = totals.calories - totals.exerciseCals;
   const totalFoodCals = totals.calories;
 
+  const trackedNutrients: TrackedNutrient[] = useMemo(() => {
+    const tracked = profile.trackedNutrients || ["calories", "protein", "fiber"];
+    return tracked.map((key) => {
+      const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
+      if (!config) return null;
+      let value = 0;
+      let target = config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
+      if (key === "calories") {
+        value = netCalories;
+        target = profile.dailyCalorieTarget;
+      } else if (key === "protein") {
+        value = totals.protein;
+      } else if (key === "fiber") {
+        // Fiber isn't tracked in current food items — show 0 for now
+        value = 0;
+      }
+      return { key, label: config.label, value, target, unit: config.unit };
+    }).filter(Boolean) as TrackedNutrient[];
+  }, [profile, netCalories, totals]);
+
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Calendar at top */}
@@ -248,9 +269,9 @@ const Diary = () => {
         <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       </div>
 
-      {/* Calorie ring */}
+      {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
-        <CircularProgress value={Math.max(0, netCalories)} max={profile.dailyCalorieTarget} />
+        <NutrientRingCarousel nutrients={trackedNutrients} />
       </div>
 
       {/* Category pills */}

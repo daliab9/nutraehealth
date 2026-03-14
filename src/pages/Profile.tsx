@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS, ACTIVITY_OPTIONS, TIMELINE_OPTIONS } from "@/utils/calorieCalculation";
 import type { ActivityLevel, GoalTimeline } from "@/utils/calorieCalculation";
+import { AVAILABLE_NUTRIENTS, DEFAULT_TRACKED } from "@/utils/nutrientDefaults";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -15,7 +16,7 @@ import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
-import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw } from "lucide-react";
+import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
@@ -119,6 +120,8 @@ const Profile = () => {
   const [pendingActivity, setPendingActivity] = useState<ActivityLevel>(profile.activityLevel || "sedentary");
   const [timelineModalOpen, setTimelineModalOpen] = useState(false);
   const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
+  const [nutrientModalOpen, setNutrientModalOpen] = useState(false);
+  const [pendingNutrients, setPendingNutrients] = useState<string[]>(profile.trackedNutrients || DEFAULT_TRACKED);
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
@@ -318,6 +321,25 @@ const Profile = () => {
             <EditButton onClick={() => setTimelineModalOpen(true)} />
             <p className="text-sm font-bold text-foreground">{TIMELINE_LABELS[(profile.goalTimeline as GoalTimeline) || "3_4_months"]?.label}</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Goal Pace</p>
+          </div>
+        </div>
+
+        {/* Tracked Nutrients */}
+        <div className="relative rounded-2xl bg-card border border-border p-4 mb-6">
+          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setNutrientModalOpen(true); }} />
+          <div className="flex items-center gap-2 mb-2">
+            <SlidersHorizontal className="h-4 w-4 text-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Tracked Nutrients</h3>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(profile.trackedNutrients || DEFAULT_TRACKED).map((key) => {
+              const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
+              return config ? (
+                <span key={key} className="px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
+                  {config.label}
+                </span>
+              ) : null;
+            })}
           </div>
         </div>
 
@@ -1012,6 +1034,57 @@ const Profile = () => {
               setProfile({ goalTimeline: pendingTimeline, dailyCalorieTarget: newCalories });
               persistToDB({ goal_timeline: pendingTimeline, daily_calorie_goal: newCalories });
               setTimelineModalOpen(false);
+            }}
+            className="w-full rounded-xl h-12 mt-2"
+          >
+            Save
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tracked Nutrients Modal */}
+      <Dialog open={nutrientModalOpen} onOpenChange={setNutrientModalOpen}>
+        <DialogContent className="max-w-sm rounded-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tracked Nutrients</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Choose which nutrients to display on your homepage ring.</p>
+          <div className="space-y-2 mt-3">
+            {AVAILABLE_NUTRIENTS.map((nutrient) => {
+              const isEnabled = pendingNutrients.includes(nutrient.key);
+              const isAlwaysOn = nutrient.alwaysOn;
+              return (
+                <button
+                  key={nutrient.key}
+                  onClick={() => {
+                    if (isAlwaysOn) return;
+                    setPendingNutrients((prev) =>
+                      prev.includes(nutrient.key)
+                        ? prev.filter((k) => k !== nutrient.key)
+                        : [...prev, nutrient.key]
+                    );
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border-2 text-left transition-all ${
+                    isEnabled ? "border-foreground bg-secondary" : "border-border bg-card"
+                  } ${isAlwaysOn ? "opacity-70" : ""}`}
+                >
+                  <div>
+                    <span className="font-medium text-foreground text-sm">{nutrient.label}</span>
+                    {isAlwaysOn && <span className="text-xs text-muted-foreground ml-2">(always on)</span>}
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    isEnabled ? "border-foreground bg-foreground" : "border-muted-foreground"
+                  }`}>
+                    {isEnabled && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <Button
+            onClick={() => {
+              setProfile({ trackedNutrients: pendingNutrients });
+              setNutrientModalOpen(false);
             }}
             className="w-full rounded-xl h-12 mt-2"
           >
