@@ -343,6 +343,7 @@ const Profile = () => {
           </div>
         </div>
 
+        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Weight Progress</h3>
             <div className="flex items-center gap-2">
