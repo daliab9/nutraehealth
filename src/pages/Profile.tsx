@@ -1042,6 +1042,57 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Tracked Nutrients Modal */}
+      <Dialog open={nutrientModalOpen} onOpenChange={setNutrientModalOpen}>
+        <DialogContent className="max-w-sm rounded-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tracked Nutrients</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Choose which nutrients to display on your homepage ring.</p>
+          <div className="space-y-2 mt-3">
+            {AVAILABLE_NUTRIENTS.map((nutrient) => {
+              const isEnabled = pendingNutrients.includes(nutrient.key);
+              const isAlwaysOn = nutrient.alwaysOn;
+              return (
+                <button
+                  key={nutrient.key}
+                  onClick={() => {
+                    if (isAlwaysOn) return;
+                    setPendingNutrients((prev) =>
+                      prev.includes(nutrient.key)
+                        ? prev.filter((k) => k !== nutrient.key)
+                        : [...prev, nutrient.key]
+                    );
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border-2 text-left transition-all ${
+                    isEnabled ? "border-foreground bg-secondary" : "border-border bg-card"
+                  } ${isAlwaysOn ? "opacity-70" : ""}`}
+                >
+                  <div>
+                    <span className="font-medium text-foreground text-sm">{nutrient.label}</span>
+                    {isAlwaysOn && <span className="text-xs text-muted-foreground ml-2">(always on)</span>}
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    isEnabled ? "border-foreground bg-foreground" : "border-muted-foreground"
+                  }`}>
+                    {isEnabled && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <Button
+            onClick={() => {
+              setProfile({ trackedNutrients: pendingNutrients });
+              setNutrientModalOpen(false);
+            }}
+            className="w-full rounded-xl h-12 mt-2"
+          >
+            Save
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
