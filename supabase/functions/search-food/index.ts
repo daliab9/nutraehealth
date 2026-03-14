@@ -43,7 +43,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "suggest_foods",
-              description: "Return food suggestions with nutritional data per 100g. Use appropriate default_portion_unit for each food.",
+              description: "Return food suggestions with nutritional data per 100g including micronutrients. Use appropriate default_portion_unit for each food.",
               parameters: {
                 type: "object",
                 properties: {
