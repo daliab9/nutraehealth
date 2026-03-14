@@ -41,7 +41,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition analysis AI. Analyze food images and identify all food items with their estimated nutritional information. Be accurate and realistic with portions visible in the images.`,
+            content: `You are a nutrition analysis AI. Analyze food images and identify all food items with their estimated nutritional information including micronutrients. Be accurate and realistic with portions visible in the images.`,
           },
           {
             role: "user",
