@@ -13,6 +13,7 @@ import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon,
 import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
+import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
