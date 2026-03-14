@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { CalendarStrip } from "@/components/CalendarStrip";
-import { CircularProgress } from "@/components/CircularProgress";
+import { NutrientRingCarousel, type TrackedNutrient } from "@/components/NutrientRingCarousel";
 import { MealSection } from "@/components/MealSection";
 import { BottomNav } from "@/components/BottomNav";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
