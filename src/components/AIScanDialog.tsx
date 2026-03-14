@@ -164,6 +164,12 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
       protein: Number(item.protein),
       carbs: Number(item.carbs),
       fat: Number(item.fat),
+      fiber: item.fiber,
+      iron: item.iron,
+      vitamin_d: item.vitamin_d,
+      magnesium: item.magnesium,
+      omega3: item.omega3,
+      b12: item.b12,
       quantity: item.quantity,
     }));
     onAddItems(foodItems);
