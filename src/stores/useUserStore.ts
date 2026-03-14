@@ -95,6 +95,7 @@ export interface UserProfile {
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
+  trackedNutrients: string[];
 }
 
 const DEFAULT_PROFILE: UserProfile = {
