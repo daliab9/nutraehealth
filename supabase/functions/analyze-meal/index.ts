@@ -49,7 +49,7 @@ serve(async (req) => {
               ...imageContent,
               {
                 type: "text",
-                text: `Identify all food items in ${photoWord}. For each item, estimate calories, protein (g), carbs (g), and fat (g). Also suggest a meal name.`,
+                text: `Identify all food items in ${photoWord}. For each item, estimate calories, protein (g), carbs (g), fat (g), fiber (g), iron (mg), vitamin_d (IU), magnesium (mg), omega3 (g), b12 (mcg). Also suggest a meal name.`,
               },
             ],
           },
