@@ -69,7 +69,7 @@ serve(async (req) => {
                         available_units: { type: "array", items: { type: "string" }, description: "Only the units that make sense for this food. Include 'whole' for countable items. E.g. blueberries=['g','cup','whole'], eggplant=['g','cup','whole'], avocado toast=['slice'], milk=['ml','cup','tbsp']" },
                         portion_label: { type: "string", description: "Human readable description e.g. '1 glass', '1 medium apple', '1 capsule', '1 whole eggplant'" },
                       },
-                      required: ["name", "calories", "protein", "carbs", "fat", "default_portion_amount", "default_portion_unit", "available_units", "portion_label"],
+                      required: ["name", "calories", "protein", "carbs", "fat", "fiber", "iron", "vitamin_d", "magnesium", "omega3", "b12", "default_portion_amount", "default_portion_unit", "available_units", "portion_label"],
                       additionalProperties: false,
                     },
                   },
