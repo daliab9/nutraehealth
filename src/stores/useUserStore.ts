@@ -7,6 +7,12 @@ export interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  iron?: number;
+  vitamin_d?: number;
+  magnesium?: number;
+  omega3?: number;
+  b12?: number;
   quantity?: string;
   groupId?: string;
   groupName?: string;
@@ -364,16 +370,23 @@ export function useUserStore() {
     (date: string) => {
       const day = getDayEntry(date);
       let calories = 0, protein = 0, carbs = 0, fat = 0, exerciseCals = 0;
+      let fiber = 0, iron = 0, vitamin_d = 0, magnesium = 0, omega3 = 0, b12 = 0;
       day.meals.forEach((m) =>
         m.items.forEach((i) => {
           calories += i.calories;
           protein += i.protein;
           carbs += i.carbs;
           fat += i.fat;
+          fiber += i.fiber || 0;
+          iron += i.iron || 0;
+          vitamin_d += i.vitamin_d || 0;
+          magnesium += i.magnesium || 0;
+          omega3 += i.omega3 || 0;
+          b12 += i.b12 || 0;
         })
       );
       day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));
-      return { calories, protein, carbs, fat, exerciseCals };
+      return { calories, protein, carbs, fat, exerciseCals, fiber, iron, vitamin_d, magnesium, omega3, b12 };
     },
     [getDayEntry]
   );

@@ -244,6 +244,15 @@ const Diary = () => {
 
   const trackedNutrients: TrackedNutrient[] = useMemo(() => {
     const tracked = profile.trackedNutrients || ["calories", "protein", "fiber"];
+    const microMap: Record<string, number> = {
+      protein: totals.protein,
+      fiber: totals.fiber,
+      iron: totals.iron,
+      vitamin_d: totals.vitamin_d,
+      magnesium: totals.magnesium,
+      omega3: totals.omega3,
+      b12: totals.b12,
+    };
     return tracked.map((key) => {
       const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
       if (!config) return null;
@@ -252,11 +261,8 @@ const Diary = () => {
       if (key === "calories") {
         value = netCalories;
         target = profile.dailyCalorieTarget;
-      } else if (key === "protein") {
-        value = totals.protein;
-      } else if (key === "fiber") {
-        // Fiber isn't tracked in current food items — show 0 for now
-        value = 0;
+      } else {
+        value = Math.round((microMap[key] || 0) * 10) / 10;
       }
       return { key, label: config.label, value, target, unit: config.unit };
     }).filter(Boolean) as TrackedNutrient[];

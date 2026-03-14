@@ -41,7 +41,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition analysis AI. Analyze food images and identify all food items with their estimated nutritional information. Be accurate and realistic with portions visible in the images.`,
+            content: `You are a nutrition analysis AI. Analyze food images and identify all food items with their estimated nutritional information including micronutrients. Be accurate and realistic with portions visible in the images.`,
           },
           {
             role: "user",
@@ -49,7 +49,7 @@ serve(async (req) => {
               ...imageContent,
               {
                 type: "text",
-                text: `Identify all food items in ${photoWord}. For each item, estimate calories, protein (g), carbs (g), and fat (g). Also suggest a meal name.`,
+                text: `Identify all food items in ${photoWord}. For each item, estimate calories, protein (g), carbs (g), fat (g), fiber (g), iron (mg), vitamin_d (IU), magnesium (mg), omega3 (g), b12 (mcg). Also suggest a meal name.`,
               },
             ],
           },
@@ -74,9 +74,15 @@ serve(async (req) => {
                         protein: { type: "number" },
                         carbs: { type: "number" },
                         fat: { type: "number" },
+                        fiber: { type: "number" },
+                        iron: { type: "number" },
+                        vitamin_d: { type: "number" },
+                        magnesium: { type: "number" },
+                        omega3: { type: "number" },
+                        b12: { type: "number" },
                         quantity: { type: "string" },
                       },
-                      required: ["name", "calories", "protein", "carbs", "fat", "quantity"],
+                      required: ["name", "calories", "protein", "carbs", "fat", "fiber", "iron", "vitamin_d", "magnesium", "omega3", "b12", "quantity"],
                       additionalProperties: false,
                     },
                   },

@@ -12,6 +12,12 @@ interface FoodSuggestion {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  iron?: number;
+  vitamin_d?: number;
+  magnesium?: number;
+  omega3?: number;
+  b12?: number;
   default_portion_amount: number;
   default_portion_unit: string;
   default_portion_g?: number;
@@ -132,6 +138,12 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
       protein: scale(selected.protein),
       carbs: scale(selected.carbs),
       fat: scale(selected.fat),
+      fiber: selected.fiber ? Math.round(scale(selected.fiber) * 10) / 10 : undefined,
+      iron: selected.iron ? Math.round(scale(selected.iron) * 100) / 100 : undefined,
+      vitamin_d: selected.vitamin_d ? Math.round(scale(selected.vitamin_d) * 10) / 10 : undefined,
+      magnesium: selected.magnesium ? Math.round(scale(selected.magnesium) * 10) / 10 : undefined,
+      omega3: selected.omega3 ? Math.round(scale(selected.omega3) * 100) / 100 : undefined,
+      b12: selected.b12 ? Math.round(scale(selected.b12) * 100) / 100 : undefined,
       quantity: `${portionAmount}${portionUnit === "whole" ? " whole" : portionUnit}`,
       availableUnits: selected.available_units || [portionUnit],
       wholeItemGrams: wholeGrams,
