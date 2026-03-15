@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface CycleCalendarViewProps {
   cycleStartDate: string;
-  cycleDuration: number;
+  periodDuration: number;
   currentMonth: Date;
 }
 
