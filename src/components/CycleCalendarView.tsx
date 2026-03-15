@@ -38,7 +38,7 @@ export const PHASE_LABELS: { phase: CyclePhase; label: string; colorClass: strin
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export const CycleCalendarView = ({ cycleStartDate, cycleDuration, currentMonth }: CycleCalendarViewProps) => {
+export const CycleCalendarView = ({ cycleStartDate, periodDuration, currentMonth }: CycleCalendarViewProps) => {
   const cycleStart = new Date(cycleStartDate);
 
   const weeks = useMemo(() => {
