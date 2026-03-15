@@ -107,7 +107,7 @@ const Profile = () => {
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
   const [cycleCalendarMonth, setCycleCalendarMonth] = useState(new Date());
   const [cycleDurationOpen, setCycleDurationOpen] = useState(false);
-  const [pendingCycleDuration, setPendingCycleDuration] = useState(profile.cycleDuration || 28);
+  const [pendingCycleDuration, setPendingCycleDuration] = useState(profile.cycleDuration || 5);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [addExerciseOpen, setAddExerciseOpen] = useState(false);
   const [createMealOpen, setCreateMealOpen] = useState(false);
