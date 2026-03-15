@@ -18,6 +18,8 @@ import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
+import { CycleCalendarView } from "@/components/CycleCalendarView";
+import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
