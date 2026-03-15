@@ -404,11 +404,11 @@ const Profile = () => {
 
             {/* Period Duration */}
             <button
-              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 28); setCycleDurationOpen(true); }}
+              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 5); setCycleDurationOpen(true); }}
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border mb-3 hover:bg-muted/30 transition-colors"
             >
               <span className="text-sm text-foreground">How many days does your period last?</span>
-              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 28} days</span>
+              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 5} days</span>
             </button>
 
             {profile.cycleStartDate ? (
