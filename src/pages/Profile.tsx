@@ -401,6 +401,16 @@ const Profile = () => {
                 </button>
               </div>
             </div>
+
+            {/* Cycle Duration */}
+            <button
+              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 28); setCycleDurationOpen(true); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border mb-3 hover:bg-muted/30 transition-colors"
+            >
+              <span className="text-sm text-foreground">Typical cycle length</span>
+              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 28} days</span>
+            </button>
+
             {profile.cycleStartDate ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 mb-3">
@@ -410,29 +420,24 @@ const Profile = () => {
                   </div>
                   {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
                 </div>
-                {(() => {
-                  const phases = getPhaseDates(profile.cycleStartDate);
-                  if (!phases) return null;
-                  return (
-                    <div className="space-y-1.5">
-                      {phases.map((p) => (
-                        <div
-                          key={p.phase}
-                          className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
-                            p.isCurrent
-                              ? "bg-[hsl(var(--accent))] border-[hsl(var(--accent))]"
-                              : "border-border"
-                          }`}
-                        >
-                          <span className={`text-sm font-medium ${p.isCurrent ? "text-accent-foreground" : "text-foreground"}`}>{p.label}</span>
-                          <span className={`text-xs ${p.isCurrent ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
-                            {p.startDate} – {p.endDate}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+
+                {/* Color-coded calendar */}
+                <div className="bg-background rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <button onClick={() => setCycleCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="h-7 w-7 rounded-full hover:bg-secondary flex items-center justify-center">
+                      <ChevronLeft className="h-4 w-4 text-foreground" />
+                    </button>
+                    <span className="text-sm font-semibold text-foreground">{format(cycleCalendarMonth, "MMMM yyyy")}</span>
+                    <button onClick={() => setCycleCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} className="h-7 w-7 rounded-full hover:bg-secondary flex items-center justify-center">
+                      <ChevRight2 className="h-4 w-4 text-foreground" />
+                    </button>
+                  </div>
+                  <CycleCalendarView
+                    cycleStartDate={profile.cycleStartDate}
+                    cycleDuration={profile.cycleDuration || 28}
+                    currentMonth={cycleCalendarMonth}
+                  />
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Log the first day of your cycle to start tracking</p>
