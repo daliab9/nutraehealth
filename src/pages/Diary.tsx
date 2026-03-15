@@ -349,7 +349,7 @@ const Diary = () => {
               {totalFoodCals > 0 && (
                 <div className="text-center">
                   <p className="text-lg font-bold text-foreground">{totalFoodCals}</p>
-                  <p className="text-muted-foreground uppercase tracking-widest text-xs">Total</p>
+                  <p className="text-muted-foreground uppercase tracking-widest text-xs">kcal</p>
                 </div>
               )}
             </div>

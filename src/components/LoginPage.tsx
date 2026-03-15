@@ -55,14 +55,23 @@ export const LoginPage = ({ onLogin, onBack, onForgotPassword }: LoginPageProps)
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-xl border border-border bg-card p-3 text-sm"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl border border-border bg-card p-3 pr-10 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         <button
