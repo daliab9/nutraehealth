@@ -761,12 +761,12 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Cycle Duration Dialog */}
+      {/* Period Duration Dialog */}
       <Dialog open={cycleDurationOpen} onOpenChange={setCycleDurationOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Period Duration</DialogTitle></DialogHeader>
           <ScrollPicker
-            items={Array.from({ length: 21 }, (_, i) => i + 20)}
+            items={Array.from({ length: 10 }, (_, i) => i + 1)}
             value={pendingCycleDuration}
             onChange={(v) => setPendingCycleDuration(Number(v))}
             suffix=" days"
