@@ -18,7 +18,7 @@ import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
-import { CycleCalendarView } from "@/components/CycleCalendarView";
+import { CycleCalendarView, getPhaseForDay, PHASE_LABELS } from "@/components/CycleCalendarView";
 import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
@@ -402,23 +402,34 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Cycle Duration */}
+            {/* Period Duration */}
             <button
               onClick={() => { setPendingCycleDuration(profile.cycleDuration || 28); setCycleDurationOpen(true); }}
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border mb-3 hover:bg-muted/30 transition-colors"
             >
-              <span className="text-sm text-foreground">Typical cycle length</span>
+              <span className="text-sm text-foreground">How many days does your period last?</span>
               <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 28} days</span>
             </button>
 
             {profile.cycleStartDate ? (
               <div className="space-y-2">
+                {/* Current phase badge */}
+                {cycleDay !== null && (() => {
+                  const currentPhase = getPhaseForDay(cycleDay, profile.cycleDuration || 28);
+                  const phaseLabel = PHASE_LABELS.find(p => p.phase === currentPhase);
+                  return phaseLabel ? (
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={cn("h-3 w-3 rounded-full", phaseLabel.colorClass)} />
+                      <span className="text-sm font-semibold text-foreground">{phaseLabel.label} Phase</span>
+                      <span className="text-xs text-muted-foreground">· Day {cycleDay}</span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Started {format(new Date(profile.cycleStartDate), "MMM d, yyyy")}</span>
                   </div>
-                  {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
                 </div>
 
                 {/* Color-coded calendar */}
@@ -753,7 +764,7 @@ const Profile = () => {
       {/* Cycle Duration Dialog */}
       <Dialog open={cycleDurationOpen} onOpenChange={setCycleDurationOpen}>
         <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle>Typical Cycle Length</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Period Duration</DialogTitle></DialogHeader>
           <ScrollPicker
             items={Array.from({ length: 21 }, (_, i) => i + 20)}
             value={pendingCycleDuration}

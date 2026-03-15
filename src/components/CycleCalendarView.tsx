@@ -10,7 +10,7 @@ interface CycleCalendarViewProps {
 
 type CyclePhase = "menstrual" | "follicular" | "ovulatory" | "luteal";
 
-function getPhaseForDay(cycleDay: number, cycleDuration: number): CyclePhase {
+export function getPhaseForDay(cycleDay: number, cycleDuration: number): CyclePhase {
   // Scale phases proportionally to cycle duration
   const menstrualEnd = 5;
   const follicularEnd = Math.round(cycleDuration * 0.46); // ~13 of 28
@@ -24,15 +24,15 @@ function getPhaseForDay(cycleDay: number, cycleDuration: number): CyclePhase {
 
 const PHASE_COLORS: Record<CyclePhase, string> = {
   menstrual: "bg-[#FF8FAB]",     // pink
-  ovulatory: "bg-[#FF3DA5]/30",  // light orange/pink per spec
+  ovulatory: "bg-[#FF3DA5]",     // orange-pink
   luteal: "bg-[hsl(var(--accent))]/40",  // light green (accent)
   follicular: "bg-[hsl(var(--action-button))]", // beige (same as + buttons)
 };
 
-const PHASE_LABELS: { phase: CyclePhase; label: string; colorClass: string }[] = [
+export const PHASE_LABELS: { phase: CyclePhase; label: string; colorClass: string }[] = [
   { phase: "menstrual", label: "Menstrual", colorClass: "bg-[#FF8FAB]" },
   { phase: "follicular", label: "Follicular", colorClass: "bg-[hsl(var(--action-button))]" },
-  { phase: "ovulatory", label: "Ovulation", colorClass: "bg-[#FF3DA5]/30" },
+  { phase: "ovulatory", label: "Ovulation", colorClass: "bg-[#FF3DA5]" },
   { phase: "luteal", label: "Luteal", colorClass: "bg-[hsl(var(--accent))]/40" },
 ];
 
