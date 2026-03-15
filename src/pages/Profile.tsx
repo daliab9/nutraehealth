@@ -19,7 +19,6 @@ import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserSto
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
 import { CycleCalendarView, getPhaseForDay, PHASE_LABELS } from "@/components/CycleCalendarView";
-import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
