@@ -445,7 +445,7 @@ const Profile = () => {
                   </div>
                   <CycleCalendarView
                     cycleStartDate={profile.cycleStartDate}
-                    cycleDuration={profile.cycleDuration || 28}
+                    periodDuration={profile.cycleDuration || 5}
                     currentMonth={cycleCalendarMonth}
                   />
                 </div>
