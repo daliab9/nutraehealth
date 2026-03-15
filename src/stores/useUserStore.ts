@@ -101,6 +101,7 @@ export interface UserProfile {
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
+  cycleDuration: number;
   trackedNutrients: string[];
 }
 
@@ -127,6 +128,7 @@ const DEFAULT_PROFILE: UserProfile = {
   savedExercises: [],
   subscription: "free",
   aiScansUsed: 0,
+  cycleDuration: 28,
   trackedNutrients: ["calories", "protein", "fiber"],
 };
 

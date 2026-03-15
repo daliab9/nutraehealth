@@ -49,9 +49,6 @@ export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps
             ref={isCurrentWeek ? currentWeekRef : undefined}
             className="flex-shrink-0 w-full snap-end flex flex-col"
           >
-            <p className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase text-center mb-1">
-              {monthLabel}
-            </p>
             <div className="flex items-center justify-between gap-1 px-1">
               {week.map((day) => {
                 const selected = isSameDay(day, selectedDate);

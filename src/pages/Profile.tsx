@@ -18,6 +18,8 @@ import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
+import { CycleCalendarView } from "@/components/CycleCalendarView";
+import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -103,6 +105,9 @@ const Profile = () => {
   const [editHealthConcerns, setEditHealthConcerns] = useState<string[]>(profile.healthConcerns || []);
   const [cycleOpen, setCycleOpen] = useState(false);
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
+  const [cycleCalendarMonth, setCycleCalendarMonth] = useState(new Date());
+  const [cycleDurationOpen, setCycleDurationOpen] = useState(false);
+  const [pendingCycleDuration, setPendingCycleDuration] = useState(profile.cycleDuration || 28);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [addExerciseOpen, setAddExerciseOpen] = useState(false);
   const [createMealOpen, setCreateMealOpen] = useState(false);
@@ -396,6 +401,16 @@ const Profile = () => {
                 </button>
               </div>
             </div>
+
+            {/* Cycle Duration */}
+            <button
+              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 28); setCycleDurationOpen(true); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border mb-3 hover:bg-muted/30 transition-colors"
+            >
+              <span className="text-sm text-foreground">Typical cycle length</span>
+              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 28} days</span>
+            </button>
+
             {profile.cycleStartDate ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 mb-3">
@@ -405,29 +420,24 @@ const Profile = () => {
                   </div>
                   {cycleDay !== null && <span className="text-sm font-semibold text-foreground">Day {cycleDay}</span>}
                 </div>
-                {(() => {
-                  const phases = getPhaseDates(profile.cycleStartDate);
-                  if (!phases) return null;
-                  return (
-                    <div className="space-y-1.5">
-                      {phases.map((p) => (
-                        <div
-                          key={p.phase}
-                          className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
-                            p.isCurrent
-                              ? "bg-[hsl(var(--accent))] border-[hsl(var(--accent))]"
-                              : "border-border"
-                          }`}
-                        >
-                          <span className={`text-sm font-medium ${p.isCurrent ? "text-accent-foreground" : "text-foreground"}`}>{p.label}</span>
-                          <span className={`text-xs ${p.isCurrent ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
-                            {p.startDate} – {p.endDate}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+
+                {/* Color-coded calendar */}
+                <div className="bg-background rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <button onClick={() => setCycleCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="h-7 w-7 rounded-full hover:bg-secondary flex items-center justify-center">
+                      <ChevronLeft className="h-4 w-4 text-foreground" />
+                    </button>
+                    <span className="text-sm font-semibold text-foreground">{format(cycleCalendarMonth, "MMMM yyyy")}</span>
+                    <button onClick={() => setCycleCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} className="h-7 w-7 rounded-full hover:bg-secondary flex items-center justify-center">
+                      <ChevRight2 className="h-4 w-4 text-foreground" />
+                    </button>
+                  </div>
+                  <CycleCalendarView
+                    cycleStartDate={profile.cycleStartDate}
+                    cycleDuration={profile.cycleDuration || 28}
+                    currentMonth={cycleCalendarMonth}
+                  />
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Log the first day of your cycle to start tracking</p>
@@ -740,7 +750,21 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Meal Dialog */}
+      {/* Cycle Duration Dialog */}
+      <Dialog open={cycleDurationOpen} onOpenChange={setCycleDurationOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Typical Cycle Length</DialogTitle></DialogHeader>
+          <ScrollPicker
+            items={Array.from({ length: 21 }, (_, i) => i + 20)}
+            value={pendingCycleDuration}
+            onChange={(v) => setPendingCycleDuration(Number(v))}
+            suffix=" days"
+          />
+          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+        </DialogContent>
+      </Dialog>
+
+
       <Dialog open={createMealOpen} onOpenChange={setCreateMealOpen}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
