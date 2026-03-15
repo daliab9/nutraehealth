@@ -63,7 +63,7 @@ export const CycleCalendarView = ({ cycleStartDate, periodDuration, currentMonth
   const getCycleDay = (date: Date): number | null => {
     const diff = Math.floor((date.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24));
     if (diff < 0) return null;
-    return (diff % cycleDuration) + 1;
+    return (diff % 28) + 1;
   };
 
   return (
