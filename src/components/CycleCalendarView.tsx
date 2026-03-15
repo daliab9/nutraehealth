@@ -23,17 +23,17 @@ export function getPhaseForDay(cycleDay: number, periodDuration: number): CycleP
 }
 
 const PHASE_COLORS: Record<CyclePhase, string> = {
-  menstrual: "bg-[#FF8FAB]",     // pink
-  ovulatory: "bg-[#FF3DA5]",     // orange-pink
-  luteal: "bg-[hsl(var(--accent))]/40",  // light green (accent)
-  follicular: "bg-[hsl(var(--action-button))]", // beige (same as + buttons)
+  menstrual: "bg-[#FF8FAB]",           // pink
+  follicular: "bg-[#FFD3A5]",          // light orange
+  ovulatory: "bg-[hsl(var(--accent))]/40",  // light green
+  luteal: "bg-[hsl(var(--action-button))]",  // light beige
 };
 
 export const PHASE_LABELS: { phase: CyclePhase; label: string; colorClass: string }[] = [
   { phase: "menstrual", label: "Menstrual", colorClass: "bg-[#FF8FAB]" },
-  { phase: "follicular", label: "Follicular", colorClass: "bg-[hsl(var(--action-button))]" },
-  { phase: "ovulatory", label: "Ovulation", colorClass: "bg-[#FF3DA5]" },
-  { phase: "luteal", label: "Luteal", colorClass: "bg-[hsl(var(--accent))]/40" },
+  { phase: "follicular", label: "Follicular", colorClass: "bg-[#FFD3A5]" },
+  { phase: "ovulatory", label: "Ovulation", colorClass: "bg-[hsl(var(--accent))]/40" },
+  { phase: "luteal", label: "Luteal", colorClass: "bg-[hsl(var(--action-button))]" },
 ];
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
