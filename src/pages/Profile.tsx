@@ -107,7 +107,7 @@ const Profile = () => {
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
   const [cycleCalendarMonth, setCycleCalendarMonth] = useState(new Date());
   const [cycleDurationOpen, setCycleDurationOpen] = useState(false);
-  const [pendingCycleDuration, setPendingCycleDuration] = useState(profile.cycleDuration || 28);
+  const [pendingCycleDuration, setPendingCycleDuration] = useState(profile.cycleDuration || 5);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [addExerciseOpen, setAddExerciseOpen] = useState(false);
   const [createMealOpen, setCreateMealOpen] = useState(false);
@@ -404,18 +404,18 @@ const Profile = () => {
 
             {/* Period Duration */}
             <button
-              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 28); setCycleDurationOpen(true); }}
+              onClick={() => { setPendingCycleDuration(profile.cycleDuration || 5); setCycleDurationOpen(true); }}
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border mb-3 hover:bg-muted/30 transition-colors"
             >
               <span className="text-sm text-foreground">How many days does your period last?</span>
-              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 28} days</span>
+              <span className="text-sm font-semibold text-foreground">{profile.cycleDuration || 5} days</span>
             </button>
 
             {profile.cycleStartDate ? (
               <div className="space-y-2">
                 {/* Current phase badge */}
                 {cycleDay !== null && (() => {
-                  const currentPhase = getPhaseForDay(cycleDay, profile.cycleDuration || 28);
+                  const currentPhase = getPhaseForDay(cycleDay, profile.cycleDuration || 5);
                   const phaseLabel = PHASE_LABELS.find(p => p.phase === currentPhase);
                   return phaseLabel ? (
                     <div className="flex items-center gap-2 mb-1">
@@ -445,7 +445,7 @@ const Profile = () => {
                   </div>
                   <CycleCalendarView
                     cycleStartDate={profile.cycleStartDate}
-                    cycleDuration={profile.cycleDuration || 28}
+                    periodDuration={profile.cycleDuration || 5}
                     currentMonth={cycleCalendarMonth}
                   />
                 </div>
@@ -761,12 +761,12 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Cycle Duration Dialog */}
+      {/* Period Duration Dialog */}
       <Dialog open={cycleDurationOpen} onOpenChange={setCycleDurationOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Period Duration</DialogTitle></DialogHeader>
           <ScrollPicker
-            items={Array.from({ length: 21 }, (_, i) => i + 20)}
+            items={Array.from({ length: 10 }, (_, i) => i + 1)}
             value={pendingCycleDuration}
             onChange={(v) => setPendingCycleDuration(Number(v))}
             suffix=" days"
