@@ -270,8 +270,11 @@ const Diary = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      {/* Calendar at top */}
+      {/* Date header + Calendar */}
       <div className="pt-12 px-5">
+        <h1 className="text-lg font-bold text-foreground mb-1">
+          {format(selectedDate, "EEEE, MMM d")}
+        </h1>
         <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       </div>
 
@@ -346,7 +349,7 @@ const Diary = () => {
               {totalFoodCals > 0 && (
                 <div className="text-center">
                   <p className="text-lg font-bold text-foreground">{totalFoodCals}</p>
-                  <p className="text-muted-foreground uppercase tracking-widest text-xs">Total</p>
+                  <p className="text-muted-foreground uppercase tracking-widest text-xs">kcal</p>
                 </div>
               )}
             </div>

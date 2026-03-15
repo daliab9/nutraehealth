@@ -15,7 +15,7 @@ export const AVAILABLE_NUTRIENTS: NutrientConfig[] = [
     label: "NET CALS",
     unit: "kcal",
     getTarget: () => 0, // Uses dailyCalorieTarget from profile
-    alwaysOn: true,
+    // Users can deselect calories if they don't want to see it
   },
   {
     key: "protein",

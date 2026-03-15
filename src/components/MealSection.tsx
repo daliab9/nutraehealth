@@ -427,7 +427,7 @@ export const MealSection = ({
             {savedMeals.length > 0 && (
               <div className="pt-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Saved meals</p>
-                <div className="space-y-1">
+                <div className="max-h-[132px] overflow-y-auto space-y-1">
                   {savedMeals.map((meal) => (
                     <button
                       key={meal.id}
@@ -445,7 +445,7 @@ export const MealSection = ({
             {uniquePast.length > 0 && (
               <div className="pt-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Recent items</p>
-                <div className="space-y-1">
+                <div className="max-h-[132px] overflow-y-auto space-y-1">
                   {uniquePast.map((item, i) => (
                     <button
                       key={i}
