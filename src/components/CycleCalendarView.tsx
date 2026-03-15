@@ -84,7 +84,7 @@ export const CycleCalendarView = ({ cycleStartDate, periodDuration, currentMonth
             {week.map((day) => {
               const inMonth = isSameMonth(day, currentMonth);
               const cycleDay = getCycleDay(day);
-              const phase = cycleDay !== null ? getPhaseForDay(cycleDay, cycleDuration) : null;
+              const phase = cycleDay !== null ? getPhaseForDay(cycleDay, periodDuration) : null;
               const today = isToday(day);
 
               return (
