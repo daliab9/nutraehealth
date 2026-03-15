@@ -128,7 +128,7 @@ const DEFAULT_PROFILE: UserProfile = {
   savedExercises: [],
   subscription: "free",
   aiScansUsed: 0,
-  cycleDuration: 28,
+  cycleDuration: 5,
   trackedNutrients: ["calories", "protein", "fiber"],
 };
 
