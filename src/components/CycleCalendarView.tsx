@@ -10,7 +10,7 @@ interface CycleCalendarViewProps {
 
 type CyclePhase = "menstrual" | "follicular" | "ovulatory" | "luteal";
 
-function getPhaseForDay(cycleDay: number, cycleDuration: number): CyclePhase {
+export function getPhaseForDay(cycleDay: number, cycleDuration: number): CyclePhase {
   // Scale phases proportionally to cycle duration
   const menstrualEnd = 5;
   const follicularEnd = Math.round(cycleDuration * 0.46); // ~13 of 28
