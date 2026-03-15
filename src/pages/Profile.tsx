@@ -415,7 +415,7 @@ const Profile = () => {
               <div className="space-y-2">
                 {/* Current phase badge */}
                 {cycleDay !== null && (() => {
-                  const currentPhase = getPhaseForDay(cycleDay, profile.cycleDuration || 28);
+                  const currentPhase = getPhaseForDay(cycleDay, profile.cycleDuration || 5);
                   const phaseLabel = PHASE_LABELS.find(p => p.phase === currentPhase);
                   return phaseLabel ? (
                     <div className="flex items-center gap-2 mb-1">
