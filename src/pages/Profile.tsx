@@ -750,7 +750,21 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Meal Dialog */}
+      {/* Cycle Duration Dialog */}
+      <Dialog open={cycleDurationOpen} onOpenChange={setCycleDurationOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle>Typical Cycle Length</DialogTitle></DialogHeader>
+          <ScrollPicker
+            items={Array.from({ length: 21 }, (_, i) => i + 20)}
+            value={pendingCycleDuration}
+            onChange={(v) => setPendingCycleDuration(Number(v))}
+            suffix=" days"
+          />
+          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+        </DialogContent>
+      </Dialog>
+
+
       <Dialog open={createMealOpen} onOpenChange={setCreateMealOpen}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
