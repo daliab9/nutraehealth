@@ -148,6 +148,8 @@ const DEFAULT_PROFILE: UserProfile = {
   weightHistory: [],
   savedMeals: [],
   savedExercises: [],
+  defaultMeals: [],
+  defaultMealOverrides: [],
   subscription: "free",
   aiScansUsed: 0,
   cycleDuration: 5,
