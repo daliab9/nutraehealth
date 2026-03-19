@@ -16,7 +16,7 @@ import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { useUserStore, type FoodItem, type SavedMeal, type DefaultMeal, type DefaultMealFrequency } from "@/stores/useUserStore";
-import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity } from "lucide-react";
+import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity, Star } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
 import { CycleCalendarView, getPhaseForDay, PHASE_LABELS } from "@/components/CycleCalendarView";
 import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
