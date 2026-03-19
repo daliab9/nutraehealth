@@ -88,15 +88,7 @@ function ftStrToCm(s: string) {
   return Math.round((parseInt(match[1]) * 12 + parseInt(match[2])) * 2.54);
 }
 
-// ====== SECTION HEADER ======
-const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-  <div className="flex items-center gap-2.5 mb-4 mt-8 first:mt-0">
-    <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-      {icon}
-    </div>
-    <h2 className="text-base font-bold text-foreground">{title}</h2>
-  </div>
-);
+// SectionHeader is now integrated into AccordionTrigger below
 
 const EditButton = ({ onClick }: { onClick: () => void }) => (
   <button
