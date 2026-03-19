@@ -256,7 +256,17 @@ const Diary = () => {
     };
     return tracked.map((key) => {
       const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
-      if (!config || config.qualitative) return null;
+      if (!config) return null;
+      if (config.qualitative) {
+        return {
+          key,
+          label: config.label,
+          value: 0,
+          target: 1,
+          unit: "",
+          qualitativeLevel: profile.cholesterolLevel || "",
+        };
+      }
       let value = 0;
       let target = overrides[key] ?? config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
       if (key === "calories") {
