@@ -7,6 +7,7 @@ export interface TrackedNutrient {
   value: number;
   target: number;
   unit: string;
+  qualitativeLevel?: "low" | "medium" | "high" | "";
 }
 
 interface NutrientRingCarouselProps {
