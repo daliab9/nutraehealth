@@ -333,7 +333,7 @@ const Profile = () => {
 
         {/* Tracked Nutrients */}
         <div className="relative rounded-2xl bg-card border border-border p-4 mb-6">
-          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setNutrientModalOpen(true); }} />
+          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setPendingOverrides(profile.nutrientTargetOverrides || {}); setPendingCholesterol(profile.cholesterolLevel || ""); setNutrientModalOpen(true); }} />
           <div className="flex items-center gap-2 mb-2">
             <SlidersHorizontal className="h-4 w-4 text-foreground" />
             <h3 className="text-sm font-semibold text-foreground">Tracked Nutrients</h3>
