@@ -103,6 +103,8 @@ export interface UserProfile {
   cycleStartDate?: string;
   cycleDuration: number;
   trackedNutrients: string[];
+  nutrientTargetOverrides: Record<string, number>;
+  cholesterolLevel: "low" | "medium" | "high" | "";
 }
 
 const DEFAULT_PROFILE: UserProfile = {
