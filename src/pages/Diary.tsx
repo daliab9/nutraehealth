@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
-import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
+import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry, type DefaultMealFrequency, type DefaultMeal } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
