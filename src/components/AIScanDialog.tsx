@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { FoodSearchInput } from "@/components/FoodSearchInput";
 import type { FoodItem } from "@/stores/useUserStore";
 
 interface ScannedItem {
