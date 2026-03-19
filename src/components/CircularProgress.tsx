@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 interface CircularProgressProps {
   value: number;
   max: number;
@@ -7,6 +5,12 @@ interface CircularProgressProps {
   strokeWidth?: number;
   label?: string;
   unit?: string;
+}
+
+function formatNum(n: number): string {
+  if (Number.isInteger(n)) return n.toLocaleString();
+  const rounded = Math.round(n * 10) / 10;
+  return rounded.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
 export const CircularProgress = ({
@@ -17,32 +21,25 @@ export const CircularProgress = ({
   label,
   unit,
 }: CircularProgressProps) => {
-  const [showTarget, setShowTarget] = useState(false);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const isOver = value > max;
   const progress = Math.min(value / max, 1);
   const strokeDashoffset = circumference * (1 - progress);
 
-  // For surplus: show full black ring + pink overlay for the surplus portion
   const surplusProgress = isOver ? Math.min((value - max) / max, 1) : 0;
   const surplusDashoffset = circumference * (1 - surplusProgress);
 
-  const displayValue = showTarget ? max : value;
-  const formatted = displayValue.toLocaleString();
-  const remaining = max - value;
-
+  const percent = max > 0 ? Math.round((value / max) * 100) : 0;
   const displayLabel = label || "Net Cals";
   const isCalories = !label || label === "NET CALS";
 
   return (
     <div
-      className="relative cursor-pointer select-none"
+      className="relative select-none"
       style={{ width: size, height: size }}
-      onClick={() => setShowTarget((prev) => !prev)}
     >
       <svg width={size} height={size} className="-rotate-90">
-        {/* Background track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -51,7 +48,6 @@ export const CircularProgress = ({
           stroke="hsl(var(--secondary))"
           strokeWidth={strokeWidth}
           strokeLinecap="round" />
-        {/* Main progress (black) */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -63,7 +59,6 @@ export const CircularProgress = ({
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           className="transition-all duration-700 ease-out" />
-        {/* Surplus overlay (pink) */}
         {isOver && (
           <circle
             cx={size / 2}
@@ -79,22 +74,13 @@ export const CircularProgress = ({
         )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {showTarget ? (
-          <>
-            <span className="font-semibold text-muted-foreground uppercase tracking-[0.15em] text-xs">Daily Target</span>
-            <span className="font-bold text-foreground tracking-tight text-5xl mt-1">{formatted}</span>
-            <span className="font-semibold text-muted-foreground mt-1 text-sm">
-              {remaining > 0 ? `${remaining} left` : "Target reached!"}
-            </span>
-          </>
-        ) : (
-          <>
-            <span className={`font-bold tracking-tight ${isCalories ? "text-6xl" : "text-5xl"} ${isOver ? "text-[hsl(var(--chart-negative-dark))]" : "text-foreground"}`}>
-              {formatted}{!isCalories && unit ? <span className="text-2xl font-semibold text-muted-foreground ml-0.5">{unit}</span> : null}
-            </span>
-            <span className="font-semibold text-muted-foreground uppercase tracking-[0.2em] mt-1 text-lg">{displayLabel}</span>
-          </>
-        )}
+        <span className={`font-bold tracking-tight ${isCalories ? "text-5xl" : "text-4xl"} ${isOver ? "text-[hsl(var(--chart-negative-dark))]" : "text-foreground"}`}>
+          {formatNum(value)}{!isCalories && unit ? <span className="text-xl font-semibold text-muted-foreground ml-0.5">{unit}</span> : null}
+        </span>
+        <span className="font-semibold text-muted-foreground uppercase tracking-[0.15em] mt-0.5 text-sm">{displayLabel}</span>
+        <span className="text-xs text-muted-foreground mt-1">
+          {percent}% of target ({formatNum(max)}{unit ? ` ${unit}` : ""})
+        </span>
       </div>
     </div>
   );

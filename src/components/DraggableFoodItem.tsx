@@ -44,18 +44,16 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
     return (
       <div
         ref={combinedRef}
+        {...attributes}
+        {...listeners}
         className={cn(
-          "flex items-center gap-1 transition-all",
+          "flex items-center gap-1 transition-all touch-none cursor-grab active:cursor-grabbing",
           className,
           isOver && "ring-2 ring-primary/50",
           isDragging && "opacity-40"
         )}
       >
-        <div
-          {...attributes}
-          {...listeners}
-          className="touch-none cursor-grab active:cursor-grabbing p-1 flex-shrink-0 self-center"
-        >
+        <div className="p-1 flex-shrink-0 self-center">
           <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
         </div>
         <div className="flex-1 min-w-0 flex items-center justify-between" {...longPressHandlers}>

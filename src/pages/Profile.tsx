@@ -127,6 +127,8 @@ const Profile = () => {
   const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
   const [nutrientModalOpen, setNutrientModalOpen] = useState(false);
   const [pendingNutrients, setPendingNutrients] = useState<string[]>(profile.trackedNutrients || DEFAULT_TRACKED);
+  const [pendingOverrides, setPendingOverrides] = useState<Record<string, number>>(profile.nutrientTargetOverrides || {});
+  const [pendingCholesterol, setPendingCholesterol] = useState<string>(profile.cholesterolLevel || "");
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
@@ -331,7 +333,7 @@ const Profile = () => {
 
         {/* Tracked Nutrients */}
         <div className="relative rounded-2xl bg-card border border-border p-4 mb-6">
-          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setNutrientModalOpen(true); }} />
+          <EditButton onClick={() => { setPendingNutrients(profile.trackedNutrients || DEFAULT_TRACKED); setPendingOverrides(profile.nutrientTargetOverrides || {}); setPendingCholesterol(profile.cholesterolLevel || ""); setNutrientModalOpen(true); }} />
           <div className="flex items-center gap-2 mb-2">
             <SlidersHorizontal className="h-4 w-4 text-foreground" />
             <h3 className="text-sm font-semibold text-foreground">Tracked Nutrients</h3>
@@ -1083,39 +1085,102 @@ const Profile = () => {
           <DialogHeader>
             <DialogTitle>Tracked Nutrients</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Choose which nutrients to display on your homepage ring.</p>
+          <p className="text-sm text-muted-foreground">Choose which nutrients to display on your homepage ring. Tap the target value to edit it.</p>
           <div className="space-y-2 mt-3">
             {AVAILABLE_NUTRIENTS.map((nutrient) => {
               const isEnabled = pendingNutrients.includes(nutrient.key);
+              const isQualitative = nutrient.qualitative;
+              const defaultTarget = nutrient.key === "calories"
+                ? profile.dailyCalorieTarget
+                : nutrient.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
+              const currentTarget = pendingOverrides[nutrient.key] ?? defaultTarget;
+
               return (
-                <button
-                  key={nutrient.key}
-                  onClick={() => {
-                    setPendingNutrients((prev) =>
-                      prev.includes(nutrient.key)
-                        ? prev.filter((k) => k !== nutrient.key)
-                        : [...prev, nutrient.key]
-                    );
-                  }}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border-2 text-left transition-all ${
-                    isEnabled ? "border-foreground bg-secondary" : "border-border bg-card"
-                  }`}
-                >
-                  <div>
-                    <span className="font-medium text-foreground text-sm">{nutrient.label}</span>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                    isEnabled ? "border-foreground bg-foreground" : "border-muted-foreground"
-                  }`}>
-                    {isEnabled && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
-                  </div>
-                </button>
+                <div key={nutrient.key}>
+                  <button
+                    onClick={() => {
+                      setPendingNutrients((prev) =>
+                        prev.includes(nutrient.key)
+                          ? prev.filter((k) => k !== nutrient.key)
+                          : [...prev, nutrient.key]
+                      );
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 text-left transition-all ${
+                      isEnabled ? "border-foreground bg-secondary" : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground text-sm">{nutrient.label}</span>
+                      {isEnabled && !isQualitative && nutrient.key !== "calories" && (
+                        <span className="text-xs text-muted-foreground mt-0.5">
+                          Target: {Math.round(currentTarget * 10) / 10} {nutrient.unit}
+                        </span>
+                      )}
+                      {isEnabled && isQualitative && (
+                        <span className="text-xs text-muted-foreground mt-0.5">Qualitative (Low / Medium / High)</span>
+                      )}
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isEnabled ? "border-foreground bg-foreground" : "border-muted-foreground"
+                    }`}>
+                      {isEnabled && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                    </div>
+                  </button>
+                  {/* Editable target for enabled non-qualitative non-calorie nutrients */}
+                  {isEnabled && !isQualitative && nutrient.key !== "calories" && (
+                    <div className="flex items-center gap-2 px-3 pt-1.5 pb-1">
+                      <span className="text-xs text-muted-foreground">Custom target:</span>
+                      <input
+                        type="number"
+                        value={pendingOverrides[nutrient.key] ?? ""}
+                        placeholder={String(Math.round(defaultTarget * 10) / 10)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            setPendingOverrides((prev) => {
+                              const next = { ...prev };
+                              delete next[nutrient.key];
+                              return next;
+                            });
+                          } else {
+                            setPendingOverrides((prev) => ({ ...prev, [nutrient.key]: parseFloat(val) || 0 }));
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-20 h-7 text-xs rounded-lg border border-border bg-background px-2 text-foreground"
+                      />
+                      <span className="text-xs text-muted-foreground">{nutrient.unit}</span>
+                    </div>
+                  )}
+                  {/* Cholesterol level selector */}
+                  {isEnabled && isQualitative && nutrient.key === "cholesterol" && (
+                    <div className="flex items-center gap-2 px-3 pt-1.5 pb-1">
+                      {(["low", "medium", "high"] as const).map((level) => (
+                        <button
+                          key={level}
+                          onClick={() => setPendingCholesterol(pendingCholesterol === level ? "" : level)}
+                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all capitalize ${
+                            pendingCholesterol === level
+                              ? "border-foreground bg-secondary text-secondary-foreground"
+                              : "border-border text-muted-foreground"
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
           <Button
             onClick={() => {
-              setProfile({ trackedNutrients: pendingNutrients });
+              setProfile({
+                trackedNutrients: pendingNutrients,
+                nutrientTargetOverrides: pendingOverrides,
+                cholesterolLevel: pendingCholesterol as "" | "low" | "medium" | "high",
+              });
               setNutrientModalOpen(false);
             }}
             className="w-full rounded-xl h-12 mt-2"
