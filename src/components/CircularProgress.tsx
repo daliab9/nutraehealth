@@ -5,6 +5,7 @@ interface CircularProgressProps {
   strokeWidth?: number;
   label?: string;
   unit?: string;
+  qualitativeLevel?: "low" | "medium" | "high" | "";
 }
 
 function formatNum(n: number): string {
@@ -13,6 +14,18 @@ function formatNum(n: number): string {
   return rounded.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
+const LEVEL_COLORS: Record<string, string> = {
+  low: "hsl(var(--accent))",
+  medium: "hsl(var(--action-button))",
+  high: "hsl(var(--destructive))",
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+
 export const CircularProgress = ({
   value,
   max,
@@ -20,9 +33,43 @@ export const CircularProgress = ({
   strokeWidth = 14,
   label,
   unit,
+  qualitativeLevel,
 }: CircularProgressProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+  const displayLabel = label || "Net Cals";
+
+  // Qualitative mode: full circle, color-coded
+  if (qualitativeLevel) {
+    const color = LEVEL_COLORS[qualitativeLevel] || "hsl(var(--secondary))";
+    const levelText = LEVEL_LABELS[qualitativeLevel] || "Not set";
+
+    return (
+      <div className="relative select-none" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-4xl font-bold tracking-tight" style={{ color }}>
+            {levelText}
+          </span>
+          <span className="font-semibold text-muted-foreground uppercase tracking-[0.15em] mt-0.5 text-sm">
+            {displayLabel}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Quantitative mode
   const isOver = value > max;
   const progress = Math.min(value / max, 1);
   const strokeDashoffset = circumference * (1 - progress);
@@ -31,7 +78,6 @@ export const CircularProgress = ({
   const surplusDashoffset = circumference * (1 - surplusProgress);
 
   const percent = max > 0 ? Math.round((value / max) * 100) : 0;
-  const displayLabel = label || "Net Cals";
   const isCalories = !label || label === "NET CALS";
 
   return (

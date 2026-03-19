@@ -256,7 +256,17 @@ const Diary = () => {
     };
     return tracked.map((key) => {
       const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
-      if (!config || config.qualitative) return null;
+      if (!config) return null;
+      if (config.qualitative) {
+        return {
+          key,
+          label: config.label,
+          value: 0,
+          target: 1,
+          unit: "",
+          qualitativeLevel: profile.cholesterolLevel || "",
+        };
+      }
       let value = 0;
       let target = overrides[key] ?? config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
       if (key === "calories") {
@@ -268,9 +278,6 @@ const Diary = () => {
       return { key, label: config.label, value, target: Math.round(target * 10) / 10, unit: config.unit };
     }).filter(Boolean) as TrackedNutrient[];
   }, [profile, netCalories, totals]);
-
-  const showCholesterol = (profile.trackedNutrients || []).includes("cholesterol");
-  const cholesterolLevel = profile.cholesterolLevel || "";
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -285,24 +292,6 @@ const Diary = () => {
       {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
         <NutrientRingCarousel nutrients={trackedNutrients} />
-        {showCholesterol && (
-          <div className="mt-3 text-center">
-            <span className="text-sm font-medium text-foreground">Cholesterol: </span>
-            {cholesterolLevel ? (
-              <span className={`text-sm font-bold capitalize ${
-                cholesterolLevel === "low" ? "text-accent-foreground" : cholesterolLevel === "high" ? "text-destructive" : "text-muted-foreground"
-              }`} style={
-                cholesterolLevel === "low" ? { color: "hsl(var(--accent))" } :
-                cholesterolLevel === "medium" ? { color: "hsl(var(--action-button))" } :
-                cholesterolLevel === "high" ? { color: "hsl(var(--destructive))" } : undefined
-              }>
-                {cholesterolLevel}
-              </span>
-            ) : (
-              <span className="text-sm text-muted-foreground">Not set</span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Category pills */}
