@@ -25,6 +25,7 @@ import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { useAppointmentStore, type Appointment } from "@/stores/useAppointmentStore";
 import { AppointmentForm } from "@/components/AppointmentForm";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 // ====== CONSTANTS ======
 
