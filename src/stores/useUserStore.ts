@@ -116,6 +116,8 @@ export interface UserProfile {
   weightHistory: { date: string; weight: number }[];
   savedMeals: SavedMeal[];
   savedExercises: SavedExercise[];
+  defaultMeals: DefaultMeal[];
+  defaultMealOverrides: DefaultMealOverride[];
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
