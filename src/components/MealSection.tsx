@@ -349,8 +349,12 @@ export const MealSection = ({
                       <Pencil className="h-4 w-4" />
                     </button>
                   )}
-                  <button onClick={() => setAddToMealItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
-                    <Bookmark className="h-4 w-4" />
+                  <button onClick={() => {
+                    setSaveMealModalItems([item]);
+                    setSaveMealModalName(item.name);
+                    setSaveMealModalOpen(true);
+                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                    <Star className="h-4 w-4" />
                   </button>
                   {onRemoveItem && (
                     <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
