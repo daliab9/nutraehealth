@@ -1148,6 +1148,57 @@ const Profile = () => {
         }}
       />
 
+      {/* Edit Default Meal Schedule */}
+      <Dialog open={!!editDefaultMealId} onOpenChange={(o) => { if (!o) setEditDefaultMealId(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>Edit Schedule</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setEditDefaultFrequency(f)}
+                className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${editDefaultFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+              >
+                {f === "everyday" && "Every day"}
+                {f === "weekdays" && "Weekdays only"}
+                {f === "weekends" && "Weekends only"}
+                {f === "specific" && "Specific days"}
+              </button>
+            ))}
+            {editDefaultFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5 pt-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setEditDefaultDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${editDefaultDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                if (!editDefaultMealId) return;
+                setProfile({
+                  defaultMeals: (profile.defaultMeals || []).map((dm) =>
+                    dm.id === editDefaultMealId
+                      ? { ...dm, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
+                      : dm
+                  ),
+                });
+                setEditDefaultMealId(null);
+              }}
+              className="w-full rounded-xl h-12 mt-2"
+              disabled={editDefaultFrequency === "specific" && editDefaultDays.length === 0}
+            >
+              Save Schedule
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
