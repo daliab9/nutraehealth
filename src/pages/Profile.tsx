@@ -618,12 +618,49 @@ const Profile = () => {
             <AccordionTrigger className="px-4 py-4 bg-secondary/40 hover:bg-secondary/60 hover:no-underline [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                  <Heart className="h-4 w-4 text-foreground" />
+                  <Star className="h-4 w-4 text-foreground" />
                 </div>
                 <span className="text-[15px] font-semibold text-foreground">Saved</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pt-4 pb-4">
+              {/* Default Meals */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Default Meals</h3>
+                {(profile.defaultMeals || []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No default meals yet. Star a meal in your diary and select "Set as Default Meal" to auto-log it on scheduled days.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(profile.defaultMeals || []).map((dm) => {
+                      const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
+                      const freqLabel = dm.frequency === "everyday" ? "Every day"
+                        : dm.frequency === "weekdays" ? "Weekdays"
+                        : dm.frequency === "weekends" ? "Weekends"
+                        : (dm.specificDays || []).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(" · ");
+                      const mealTypeLabel = dm.mealType.charAt(0).toUpperCase() + dm.mealType.slice(1);
+                      return (
+                        <div key={dm.id} className="rounded-xl border border-border/50 p-3 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">{dm.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{mealTypeLabel} · {totalCals} kcal</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                              <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{freqLabel}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Saved Meals */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
