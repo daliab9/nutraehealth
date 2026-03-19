@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { FoodSearchInput } from "@/components/FoodSearchInput";
 import type { FoodItem } from "@/stores/useUserStore";
 
 interface ScannedItem {
@@ -394,46 +395,34 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
 
             {showManualAdd ? (
               <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/30">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add item manually</p>
-                <Input
-                  placeholder="Food name"
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  className="rounded-lg text-sm"
-                  autoFocus
-                />
-                <Input
-                  placeholder="Quantity (e.g. 1 slice)"
-                  value={manualQuantity}
-                  onChange={(e) => setManualQuantity(e.target.value)}
-                  className="rounded-lg text-sm"
-                />
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Calories</label>
-                    <Input type="number" value={manualCalories} onChange={(e) => setManualCalories(e.target.value)} className="rounded-lg h-8 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Protein</label>
-                    <Input type="number" value={manualProtein} onChange={(e) => setManualProtein(e.target.value)} className="rounded-lg h-8 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Carbs</label>
-                    <Input type="number" value={manualCarbs} onChange={(e) => setManualCarbs(e.target.value)} className="rounded-lg h-8 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Fat</label>
-                    <Input type="number" value={manualFat} onChange={(e) => setManualFat(e.target.value)} className="rounded-lg h-8 text-xs" />
-                  </div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Search & add food</p>
+                  <button onClick={() => setShowManualAdd(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="rounded-lg flex-1" onClick={() => { setShowManualAdd(false); resetManualForm(); }}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" className="rounded-lg flex-1" onClick={handleAddManualItem} disabled={!manualName.trim()}>
-                    Add
-                  </Button>
-                </div>
+                <FoodSearchInput
+                  onAddItem={(item) => {
+                    const scannedItem: ScannedItem = {
+                      name: item.name,
+                      calories: item.calories,
+                      protein: item.protein,
+                      carbs: item.carbs,
+                      fat: item.fat,
+                      fiber: item.fiber,
+                      iron: item.iron,
+                      vitamin_d: item.vitamin_d,
+                      magnesium: item.magnesium,
+                      omega3: item.omega3,
+                      b12: item.b12,
+                      quantity: item.quantity || "1 serving",
+                    };
+                    setEditingItems((prev) => [...prev, scannedItem]);
+                    setShowManualAdd(false);
+                  }}
+                  onClose={() => setShowManualAdd(false)}
+                  keepOpenOnAdd
+                />
               </div>
             ) : (
               <Button
@@ -442,7 +431,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
                 onClick={() => setShowManualAdd(true)}
               >
                 <Plus className="h-4 w-4" />
-                Add item manually
+                Add item
               </Button>
             )}
 

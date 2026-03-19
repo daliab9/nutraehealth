@@ -269,6 +269,9 @@ const Diary = () => {
     }).filter(Boolean) as TrackedNutrient[];
   }, [profile, netCalories, totals]);
 
+  const showCholesterol = (profile.trackedNutrients || []).includes("cholesterol");
+  const cholesterolLevel = profile.cholesterolLevel || "";
+
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Date header + Calendar */}
@@ -282,6 +285,24 @@ const Diary = () => {
       {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
         <NutrientRingCarousel nutrients={trackedNutrients} />
+        {showCholesterol && (
+          <div className="mt-3 text-center">
+            <span className="text-sm font-medium text-foreground">Cholesterol: </span>
+            {cholesterolLevel ? (
+              <span className={`text-sm font-bold capitalize ${
+                cholesterolLevel === "low" ? "text-accent-foreground" : cholesterolLevel === "high" ? "text-destructive" : "text-muted-foreground"
+              }`} style={
+                cholesterolLevel === "low" ? { color: "hsl(var(--accent))" } :
+                cholesterolLevel === "medium" ? { color: "hsl(var(--action-button))" } :
+                cholesterolLevel === "high" ? { color: "hsl(var(--destructive))" } : undefined
+              }>
+                {cholesterolLevel}
+              </span>
+            ) : (
+              <span className="text-sm text-muted-foreground">Not set</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Category pills */}

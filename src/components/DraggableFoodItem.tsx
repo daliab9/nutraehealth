@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { GripVertical } from "lucide-react";
 import { useLongPress } from "@/hooks/useLongPress";
 import { cn } from "@/lib/utils";
 import type { FoodItem } from "@/stores/useUserStore";
@@ -46,17 +45,15 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
         ref={combinedRef}
         {...attributes}
         {...listeners}
+        {...longPressHandlers}
         className={cn(
-          "flex items-center gap-1 transition-all touch-none cursor-grab active:cursor-grabbing",
+          "flex items-center transition-all touch-none cursor-grab active:cursor-grabbing",
           className,
           isOver && "ring-2 ring-primary/50",
           isDragging && "opacity-40"
         )}
       >
-        <div className="p-1 flex-shrink-0 self-center">
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
-        </div>
-        <div className="flex-1 min-w-0 flex items-center justify-between" {...longPressHandlers}>
+        <div className="flex-1 min-w-0 flex items-center justify-between">
           {children}
         </div>
       </div>
