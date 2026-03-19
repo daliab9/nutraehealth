@@ -644,6 +644,46 @@ export const MealSection = ({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Save Meal Modal (Star icon) */}
+      <SaveMealModal
+        open={saveMealModalOpen}
+        onOpenChange={setSaveMealModalOpen}
+        items={saveMealModalItems}
+        mealType={mealType}
+        groupName={saveMealModalName}
+        onSaveAsMeal={(name, mealItems) => {
+          onSaveMeal?.({
+            id: Date.now().toString(),
+            name,
+            items: mealItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
+          });
+          toast.success(`"${name}" saved to your meals`);
+        }}
+        onSetAsDefault={(name, mealItems, mt, frequency, specificDays) => {
+          onSaveAsDefault?.(name, mealItems, mt, frequency, specificDays);
+          toast.success(`"${name}" set as default meal`);
+        }}
+      />
+
+      {/* Remove Default Meal Dialog */}
+      <RemoveDefaultMealDialog
+        open={!!removeDefaultDialog}
+        onOpenChange={(o) => { if (!o) setRemoveDefaultDialog(null); }}
+        mealName={removeDefaultDialog?.name || ""}
+        onRemoveToday={() => {
+          if (removeDefaultDialog) {
+            const dmId = defaultMealIdMap.get(removeDefaultDialog.groupId);
+            if (dmId) onRemoveDefaultToday?.(dmId);
+          }
+        }}
+        onRemovePermanently={() => {
+          if (removeDefaultDialog) {
+            const dmId = defaultMealIdMap.get(removeDefaultDialog.groupId);
+            if (dmId) onRemoveDefaultPermanently?.(dmId);
+          }
+        }}
+      />
     </div>
   );
 };
