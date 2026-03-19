@@ -142,6 +142,36 @@ const Diary = () => {
     });
   };
 
+  const handleSaveAsDefault = (name: string, items: FoodItem[], mt: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => {
+    const newDefault: DefaultMeal = {
+      id: Date.now().toString(),
+      name,
+      mealType: mt,
+      items: items.map(({ groupId: _, groupName: __, ...rest }) => rest),
+      frequency,
+      specificDays,
+    };
+    setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+  };
+
+  const handleRemoveDefaultToday = (defaultMealId: string) => {
+    setProfile({
+      defaultMealOverrides: [
+        ...(profile.defaultMealOverrides || []),
+        { defaultMealId, date: dateKey, removed: true },
+      ],
+    });
+    toast.success("Removed for today");
+  };
+
+  const handleRemoveDefaultPermanently = (defaultMealId: string) => {
+    setProfile({
+      defaultMeals: (profile.defaultMeals || []).filter((dm) => dm.id !== defaultMealId),
+      defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== defaultMealId),
+    });
+    toast.success("Default meal removed");
+  };
+
   const isExerciseSaved = (name: string) => {
     return (profile.savedExercises || []).some((e) => e.name.toLowerCase() === name.toLowerCase());
   };
