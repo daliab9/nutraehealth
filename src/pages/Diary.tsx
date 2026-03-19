@@ -244,6 +244,7 @@ const Diary = () => {
 
   const trackedNutrients: TrackedNutrient[] = useMemo(() => {
     const tracked = profile.trackedNutrients || ["calories", "protein", "fiber"];
+    const overrides = profile.nutrientTargetOverrides || {};
     const microMap: Record<string, number> = {
       protein: totals.protein,
       fiber: totals.fiber,
@@ -255,16 +256,16 @@ const Diary = () => {
     };
     return tracked.map((key) => {
       const config = AVAILABLE_NUTRIENTS.find((n) => n.key === key);
-      if (!config) return null;
+      if (!config || config.qualitative) return null;
       let value = 0;
-      let target = config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
+      let target = overrides[key] ?? config.getTarget({ currentWeight: profile.currentWeight, gender: profile.gender, age: profile.age, dietaryPreferences: profile.dietaryPreferences });
       if (key === "calories") {
         value = netCalories;
         target = profile.dailyCalorieTarget;
       } else {
         value = Math.round((microMap[key] || 0) * 10) / 10;
       }
-      return { key, label: config.label, value, target, unit: config.unit };
+      return { key, label: config.label, value, target: Math.round(target * 10) / 10, unit: config.unit };
     }).filter(Boolean) as TrackedNutrient[];
   }, [profile, netCalories, totals]);
 
