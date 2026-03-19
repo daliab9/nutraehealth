@@ -290,8 +290,12 @@ const Diary = () => {
             <span className="text-sm font-medium text-foreground">Cholesterol: </span>
             {cholesterolLevel ? (
               <span className={`text-sm font-bold capitalize ${
-                cholesterolLevel === "low" ? "text-accent" : cholesterolLevel === "high" ? "text-[hsl(var(--surplus-pink))]" : "text-[hsl(var(--action-button))]"
-              }`}>
+                cholesterolLevel === "low" ? "text-accent-foreground" : cholesterolLevel === "high" ? "text-destructive" : "text-muted-foreground"
+              }`} style={
+                cholesterolLevel === "low" ? { color: "hsl(var(--accent))" } :
+                cholesterolLevel === "medium" ? { color: "hsl(var(--action-button))" } :
+                cholesterolLevel === "high" ? { color: "hsl(var(--destructive))" } : undefined
+              }>
                 {cholesterolLevel}
               </span>
             ) : (
