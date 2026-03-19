@@ -1143,29 +1143,38 @@ const Profile = () => {
                   </button>
                   {/* Editable target for enabled non-qualitative non-calorie nutrients */}
                   {isEnabled && !isQualitative && nutrient.key !== "calories" && (
-                    <div className="flex items-center gap-2 px-3 pt-1.5 pb-1">
-                      <span className="text-xs text-muted-foreground">Custom target:</span>
-                      <input
-                        type="number"
-                        value={pendingOverrides[nutrient.key] ?? ""}
-                        placeholder={String(Math.round(defaultTarget * 10) / 10)}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "") {
-                            setPendingOverrides((prev) => {
-                              const next = { ...prev };
-                              delete next[nutrient.key];
-                              return next;
-                            });
-                          } else {
-                            setPendingOverrides((prev) => ({ ...prev, [nutrient.key]: parseFloat(val) || 0 }));
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-20 h-7 text-xs rounded-lg border border-border bg-background px-2 text-foreground"
-                      />
-                      <span className="text-xs text-muted-foreground">{nutrient.unit}</span>
-                    </div>
+                    editingNutrientKey === nutrient.key ? (
+                      <div className="px-3 pt-1.5 pb-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">Set daily target ({nutrient.unit})</p>
+                        <ScrollPicker
+                          items={getNutrientRange(nutrient.key)}
+                          value={pendingOverrides[nutrient.key] ?? Math.round(defaultTarget * 10) / 10}
+                          onChange={(v) => setPendingOverrides((prev) => ({ ...prev, [nutrient.key]: Number(v) }))}
+                          itemHeight={40}
+                          visibleItems={3}
+                          suffix={` ${nutrient.unit}`}
+                        />
+                        <Button
+                          size="sm"
+                          className="w-full rounded-lg h-8 text-xs"
+                          onClick={() => setEditingNutrientKey(null)}
+                        >
+                          Done
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between px-3 pt-1.5 pb-1">
+                        <span className="text-xs text-muted-foreground">
+                          Target: {Math.round((pendingOverrides[nutrient.key] ?? defaultTarget) * 10) / 10} {nutrient.unit}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingNutrientKey(nutrient.key); }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )
                   )}
                   {/* Cholesterol level selector */}
                   {isEnabled && isQualitative && nutrient.key === "cholesterol" && (
