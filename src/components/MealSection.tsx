@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Bookmark, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Star, type LucideIcon } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,9 @@ import { AIScanDialog } from "@/components/AIScanDialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { DraggableFoodItem } from "@/components/DraggableFoodItem";
-import type { FoodItem, SavedMeal } from "@/stores/useUserStore";
+import { SaveMealModal } from "@/components/SaveMealModal";
+import { RemoveDefaultMealDialog } from "@/components/RemoveDefaultMealDialog";
+import type { FoodItem, SavedMeal, DefaultMealFrequency, MealEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
 
 interface MealSectionProps {
