@@ -257,22 +257,28 @@ export const MealSection = ({
                           <Plus className="h-4 w-4" />
                         </button>
                       )}
-                      {(onSaveMeal || onUnsaveMeal) && (
+                      {(onSaveMeal || onSaveAsDefault) && !defaultMealGroupIds.has(groupId) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleSaveGroup(groupId, group.name, group.items);
+                            setSaveMealModalItems(group.items.map(({ groupId: _, groupName: __, ...rest }) => rest));
+                            setSaveMealModalName(group.name);
+                            setSaveMealModalOpen(true);
                           }}
                           className="h-7 w-7 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
                         >
-                          <Heart className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
+                          <Star className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
                       {onRemoveItem && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            group.items.forEach((i) => onRemoveItem(i.id));
+                            if (defaultMealGroupIds.has(groupId)) {
+                              setRemoveDefaultDialog({ groupId, name: group.name });
+                            } else {
+                              group.items.forEach((i) => onRemoveItem(i.id));
+                            }
                           }}
                           className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform"
                         >
