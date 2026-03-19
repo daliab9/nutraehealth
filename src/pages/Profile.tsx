@@ -179,6 +179,11 @@ const Profile = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(null);
 
+  // Default meals
+  const [editDefaultMealId, setEditDefaultMealId] = useState<string | null>(null);
+  const [editDefaultFrequency, setEditDefaultFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [editDefaultDays, setEditDefaultDays] = useState<number[]>([]);
+
   // Computed
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
   const displayWeight = weightUnit === "lbs" ? kgToLbs(profile.currentWeight) : profile.currentWeight;
