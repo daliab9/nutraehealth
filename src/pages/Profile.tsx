@@ -143,6 +143,7 @@ const Profile = () => {
   const [pendingNutrients, setPendingNutrients] = useState<string[]>(profile.trackedNutrients || DEFAULT_TRACKED);
   const [pendingOverrides, setPendingOverrides] = useState<Record<string, number>>(profile.nutrientTargetOverrides || {});
   const [pendingCholesterol, setPendingCholesterol] = useState<string>(profile.cholesterolLevel || "");
+  const [editingNutrientKey, setEditingNutrientKey] = useState<string | null>(null);
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
