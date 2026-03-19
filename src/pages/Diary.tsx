@@ -77,9 +77,25 @@ const Diary = () => {
     setHealthEntry(dateKey, { ...healthEntry, poopCount: updated.length, poopEntries: updated });
   };
 
+  // Default meals for today
+  const defaultMealsForDate = useMemo(() => getDefaultMealsForDate(dateKey), [getDefaultMealsForDate, dateKey]);
+  
+  // Track which groupIds are from default meals, and map groupId -> defaultMealId
+  const defaultMealGroupIds = useMemo(() => new Set(defaultMealsForDate.map((dm) => `default-${dm.defaultMealId}`)), [defaultMealsForDate]);
+  const defaultMealIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    defaultMealsForDate.forEach((dm) => map.set(`default-${dm.defaultMealId}`, dm.defaultMealId));
+    return map;
+  }, [defaultMealsForDate]);
+
   const getMealItems = (type: string) => {
     const meal = dayEntry.meals.find((m) => m.type === type);
-    return meal?.items || [];
+    const loggedItems = meal?.items || [];
+    // Merge default meal items for this meal type
+    const defaultItems = defaultMealsForDate
+      .filter((dm) => dm.mealType === type)
+      .flatMap((dm) => dm.items);
+    return [...defaultItems, ...loggedItems];
   };
 
   const getPastItemsForMealType = (mealType: string) => {
