@@ -66,6 +66,24 @@ export interface SavedMeal {
   items: FoodItem[];
 }
 
+export type DefaultMealFrequency = "everyday" | "weekdays" | "weekends" | "specific";
+
+export interface DefaultMeal {
+  id: string;
+  name: string;
+  mealType: MealEntry["type"];
+  items: FoodItem[];
+  frequency: DefaultMealFrequency;
+  specificDays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+}
+
+// Track which default meals have been removed for specific dates
+export interface DefaultMealOverride {
+  defaultMealId: string;
+  date: string; // YYYY-MM-DD
+  removed: boolean;
+}
+
 export interface SavedExercise {
   id: string;
   name: string;
@@ -98,6 +116,8 @@ export interface UserProfile {
   weightHistory: { date: string; weight: number }[];
   savedMeals: SavedMeal[];
   savedExercises: SavedExercise[];
+  defaultMeals: DefaultMeal[];
+  defaultMealOverrides: DefaultMealOverride[];
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
@@ -128,6 +148,8 @@ const DEFAULT_PROFILE: UserProfile = {
   weightHistory: [],
   savedMeals: [],
   savedExercises: [],
+  defaultMeals: [],
+  defaultMealOverrides: [],
   subscription: "free",
   aiScansUsed: 0,
   cycleDuration: 5,
@@ -440,6 +462,44 @@ export function useUserStore() {
     []
   );
 
+  const isDefaultMealActiveForDate = useCallback(
+    (defaultMeal: DefaultMeal, date: string): boolean => {
+      const d = new Date(date);
+      const dayOfWeek = d.getDay(); // 0=Sun, 6=Sat
+      switch (defaultMeal.frequency) {
+        case "everyday": return true;
+        case "weekdays": return dayOfWeek >= 1 && dayOfWeek <= 5;
+        case "weekends": return dayOfWeek === 0 || dayOfWeek === 6;
+        case "specific": return (defaultMeal.specificDays || []).includes(dayOfWeek);
+        default: return false;
+      }
+    },
+    []
+  );
+
+  const getDefaultMealsForDate = useCallback(
+    (date: string): { mealType: MealEntry["type"]; items: FoodItem[]; defaultMealId: string; name: string }[] => {
+      const overrides = profile.defaultMealOverrides || [];
+      return (profile.defaultMeals || [])
+        .filter((dm) => {
+          const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
+          return !isRemoved && isDefaultMealActiveForDate(dm, date);
+        })
+        .map((dm) => ({
+          mealType: dm.mealType,
+          items: dm.items.map((item) => ({
+            ...item,
+            id: `default-${dm.id}-${item.id}`,
+            groupId: `default-${dm.id}`,
+            groupName: dm.name,
+          })),
+          defaultMealId: dm.id,
+          name: dm.name,
+        }));
+    },
+    [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
+  );
+
   return {
     profile,
     setProfile,
@@ -460,5 +520,6 @@ export function useUserStore() {
     health,
     getHealthEntry,
     setHealthEntry,
+    getDefaultMealsForDate,
   };
 }

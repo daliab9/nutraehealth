@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
-import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry } from "@/stores/useUserStore";
+import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry, type DefaultMealFrequency, type DefaultMeal } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
@@ -35,7 +35,7 @@ const Diary = () => {
     profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal,
     updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
     getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
-    addFoodToGroup, removeFoodFromGroup,
+    addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate,
   } = useUserStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -77,9 +77,25 @@ const Diary = () => {
     setHealthEntry(dateKey, { ...healthEntry, poopCount: updated.length, poopEntries: updated });
   };
 
+  // Default meals for today
+  const defaultMealsForDate = useMemo(() => getDefaultMealsForDate(dateKey), [getDefaultMealsForDate, dateKey]);
+  
+  // Track which groupIds are from default meals, and map groupId -> defaultMealId
+  const defaultMealGroupIds = useMemo(() => new Set(defaultMealsForDate.map((dm) => `default-${dm.defaultMealId}`)), [defaultMealsForDate]);
+  const defaultMealIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    defaultMealsForDate.forEach((dm) => map.set(`default-${dm.defaultMealId}`, dm.defaultMealId));
+    return map;
+  }, [defaultMealsForDate]);
+
   const getMealItems = (type: string) => {
     const meal = dayEntry.meals.find((m) => m.type === type);
-    return meal?.items || [];
+    const loggedItems = meal?.items || [];
+    // Merge default meal items for this meal type
+    const defaultItems = defaultMealsForDate
+      .filter((dm) => dm.mealType === type)
+      .flatMap((dm) => dm.items);
+    return [...defaultItems, ...loggedItems];
   };
 
   const getPastItemsForMealType = (mealType: string) => {
@@ -124,6 +140,36 @@ const Diary = () => {
           : m
       ),
     });
+  };
+
+  const handleSaveAsDefault = (name: string, items: FoodItem[], mt: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => {
+    const newDefault: DefaultMeal = {
+      id: Date.now().toString(),
+      name,
+      mealType: mt,
+      items: items.map(({ groupId: _, groupName: __, ...rest }) => rest),
+      frequency,
+      specificDays,
+    };
+    setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+  };
+
+  const handleRemoveDefaultToday = (defaultMealId: string) => {
+    setProfile({
+      defaultMealOverrides: [
+        ...(profile.defaultMealOverrides || []),
+        { defaultMealId, date: dateKey, removed: true },
+      ],
+    });
+    toast.success("Removed for today");
+  };
+
+  const handleRemoveDefaultPermanently = (defaultMealId: string) => {
+    setProfile({
+      defaultMeals: (profile.defaultMeals || []).filter((dm) => dm.id !== defaultMealId),
+      defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== defaultMealId),
+    });
+    toast.success("Default meal removed");
   };
 
   const isExerciseSaved = (name: string) => {
@@ -386,6 +432,11 @@ const Diary = () => {
                       onAddToSavedMeal={handleAddToSavedMeal}
                       onAddToGroup={(groupId, groupName, item) => addFoodToGroup(dateKey, type as any, groupId, groupName, item)}
                       onRemoveFromGroup={(itemId) => removeFoodFromGroup(dateKey, type as any, itemId)}
+                      onSaveAsDefault={handleSaveAsDefault}
+                      onRemoveDefaultToday={handleRemoveDefaultToday}
+                      onRemoveDefaultPermanently={handleRemoveDefaultPermanently}
+                      defaultMealGroupIds={defaultMealGroupIds}
+                      defaultMealIdMap={defaultMealIdMap}
                     />
                   ))}
                 </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Bookmark, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Star, type LucideIcon } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,9 @@ import { AIScanDialog } from "@/components/AIScanDialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { DraggableFoodItem } from "@/components/DraggableFoodItem";
-import type { FoodItem, SavedMeal } from "@/stores/useUserStore";
+import { SaveMealModal } from "@/components/SaveMealModal";
+import { RemoveDefaultMealDialog } from "@/components/RemoveDefaultMealDialog";
+import type { FoodItem, SavedMeal, DefaultMealFrequency, MealEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
 
 interface MealSectionProps {
@@ -27,6 +29,11 @@ interface MealSectionProps {
   onAddToSavedMeal?: (mealId: string, item: FoodItem) => void;
   onAddToGroup?: (groupId: string, groupName: string, item: FoodItem) => void;
   onRemoveFromGroup?: (itemId: string) => void;
+  onSaveAsDefault?: (name: string, items: FoodItem[], mealType: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => void;
+  onRemoveDefaultToday?: (defaultMealId: string) => void;
+  onRemoveDefaultPermanently?: (defaultMealId: string) => void;
+  defaultMealGroupIds?: Set<string>; // groupIds that come from default meals
+  defaultMealIdMap?: Map<string, string>; // groupId -> defaultMealId
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
@@ -60,6 +67,11 @@ export const MealSection = ({
   onAddToSavedMeal,
   onAddToGroup,
   onRemoveFromGroup,
+  onSaveAsDefault,
+  onRemoveDefaultToday,
+  onRemoveDefaultPermanently,
+  defaultMealGroupIds = new Set(),
+  defaultMealIdMap = new Map(),
 }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -71,6 +83,10 @@ export const MealSection = ({
   const [longPressItem, setLongPressItem] = useState<FoodItem | null>(null);
   const [newSavedMealName, setNewSavedMealName] = useState("");
   const [addToGroupId, setAddToGroupId] = useState<{ groupId: string; groupName: string } | null>(null);
+  const [saveMealModalOpen, setSaveMealModalOpen] = useState(false);
+  const [saveMealModalItems, setSaveMealModalItems] = useState<FoodItem[]>([]);
+  const [saveMealModalName, setSaveMealModalName] = useState("");
+  const [removeDefaultDialog, setRemoveDefaultDialog] = useState<{ groupId: string; name: string } | null>(null);
 
   // Droppable zone for the entire meal section (for moving items between sections)
   const { setNodeRef: setDropZoneRef, isOver: isOverZone } = useDroppable({
@@ -241,22 +257,28 @@ export const MealSection = ({
                           <Plus className="h-4 w-4" />
                         </button>
                       )}
-                      {(onSaveMeal || onUnsaveMeal) && (
+                      {(onSaveMeal || onSaveAsDefault) && !defaultMealGroupIds.has(groupId) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleSaveGroup(groupId, group.name, group.items);
+                            setSaveMealModalItems(group.items.map(({ groupId: _, groupName: __, ...rest }) => rest));
+                            setSaveMealModalName(group.name);
+                            setSaveMealModalOpen(true);
                           }}
                           className="h-7 w-7 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
                         >
-                          <Heart className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
+                          <Star className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
                       {onRemoveItem && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            group.items.forEach((i) => onRemoveItem(i.id));
+                            if (defaultMealGroupIds.has(groupId)) {
+                              setRemoveDefaultDialog({ groupId, name: group.name });
+                            } else {
+                              group.items.forEach((i) => onRemoveItem(i.id));
+                            }
                           }}
                           className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform"
                         >
@@ -293,7 +315,7 @@ export const MealSection = ({
                                 className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
                                 title="Remove from meal"
                               >
-                                <Bookmark className="h-4 w-4 fill-foreground" />
+                                <Star className="h-4 w-4 fill-foreground" />
                               </button>
                             )}
                             {onRemoveItem && (
@@ -333,8 +355,12 @@ export const MealSection = ({
                       <Pencil className="h-4 w-4" />
                     </button>
                   )}
-                  <button onClick={() => setAddToMealItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
-                    <Bookmark className="h-4 w-4" />
+                  <button onClick={() => {
+                    setSaveMealModalItems([item]);
+                    setSaveMealModalName(item.name);
+                    setSaveMealModalOpen(true);
+                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                    <Star className="h-4 w-4" />
                   </button>
                   {onRemoveItem && (
                     <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
@@ -618,6 +644,46 @@ export const MealSection = ({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Save Meal Modal (Star icon) */}
+      <SaveMealModal
+        open={saveMealModalOpen}
+        onOpenChange={setSaveMealModalOpen}
+        items={saveMealModalItems}
+        mealType={mealType}
+        groupName={saveMealModalName}
+        onSaveAsMeal={(name, mealItems) => {
+          onSaveMeal?.({
+            id: Date.now().toString(),
+            name,
+            items: mealItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
+          });
+          toast.success(`"${name}" saved to your meals`);
+        }}
+        onSetAsDefault={(name, mealItems, mt, frequency, specificDays) => {
+          onSaveAsDefault?.(name, mealItems, mt, frequency, specificDays);
+          toast.success(`"${name}" set as default meal`);
+        }}
+      />
+
+      {/* Remove Default Meal Dialog */}
+      <RemoveDefaultMealDialog
+        open={!!removeDefaultDialog}
+        onOpenChange={(o) => { if (!o) setRemoveDefaultDialog(null); }}
+        mealName={removeDefaultDialog?.name || ""}
+        onRemoveToday={() => {
+          if (removeDefaultDialog) {
+            const dmId = defaultMealIdMap.get(removeDefaultDialog.groupId);
+            if (dmId) onRemoveDefaultToday?.(dmId);
+          }
+        }}
+        onRemovePermanently={() => {
+          if (removeDefaultDialog) {
+            const dmId = defaultMealIdMap.get(removeDefaultDialog.groupId);
+            if (dmId) onRemoveDefaultPermanently?.(dmId);
+          }
+        }}
+      />
     </div>
   );
 };

@@ -15,8 +15,8 @@ import { Calendar as CalendarWidget } from "@/components/ui/calendar";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
-import { useUserStore, type FoodItem, type SavedMeal } from "@/stores/useUserStore";
-import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity } from "lucide-react";
+import { useUserStore, type FoodItem, type SavedMeal, type DefaultMeal, type DefaultMealFrequency } from "@/stores/useUserStore";
+import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity, Star } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
 import { CycleCalendarView, getPhaseForDay, PHASE_LABELS } from "@/components/CycleCalendarView";
 import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
@@ -178,6 +178,11 @@ const Profile = () => {
   const [appointmentFormOpen, setAppointmentFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(null);
+
+  // Default meals
+  const [editDefaultMealId, setEditDefaultMealId] = useState<string | null>(null);
+  const [editDefaultFrequency, setEditDefaultFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [editDefaultDays, setEditDefaultDays] = useState<number[]>([]);
 
   // Computed
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
@@ -613,12 +618,49 @@ const Profile = () => {
             <AccordionTrigger className="px-4 py-4 bg-secondary/40 hover:bg-secondary/60 hover:no-underline [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                  <Heart className="h-4 w-4 text-foreground" />
+                  <Star className="h-4 w-4 text-foreground" />
                 </div>
                 <span className="text-[15px] font-semibold text-foreground">Saved</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pt-4 pb-4">
+              {/* Default Meals */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Default Meals</h3>
+                {(profile.defaultMeals || []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No default meals yet. Star a meal in your diary and select "Set as Default Meal" to auto-log it on scheduled days.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(profile.defaultMeals || []).map((dm) => {
+                      const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
+                      const freqLabel = dm.frequency === "everyday" ? "Every day"
+                        : dm.frequency === "weekdays" ? "Weekdays"
+                        : dm.frequency === "weekends" ? "Weekends"
+                        : (dm.specificDays || []).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(" · ");
+                      const mealTypeLabel = dm.mealType.charAt(0).toUpperCase() + dm.mealType.slice(1);
+                      return (
+                        <div key={dm.id} className="rounded-xl border border-border/50 p-3 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">{dm.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{mealTypeLabel} · {totalCals} kcal</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                              <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{freqLabel}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Saved Meals */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1105,6 +1147,57 @@ const Profile = () => {
           }
         }}
       />
+
+      {/* Edit Default Meal Schedule */}
+      <Dialog open={!!editDefaultMealId} onOpenChange={(o) => { if (!o) setEditDefaultMealId(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>Edit Schedule</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setEditDefaultFrequency(f)}
+                className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${editDefaultFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+              >
+                {f === "everyday" && "Every day"}
+                {f === "weekdays" && "Weekdays only"}
+                {f === "weekends" && "Weekends only"}
+                {f === "specific" && "Specific days"}
+              </button>
+            ))}
+            {editDefaultFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5 pt-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setEditDefaultDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${editDefaultDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                if (!editDefaultMealId) return;
+                setProfile({
+                  defaultMeals: (profile.defaultMeals || []).map((dm) =>
+                    dm.id === editDefaultMealId
+                      ? { ...dm, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
+                      : dm
+                  ),
+                });
+                setEditDefaultMealId(null);
+              }}
+              className="w-full rounded-xl h-12 mt-2"
+              disabled={editDefaultFrequency === "specific" && editDefaultDays.length === 0}
+            >
+              Save Schedule
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
