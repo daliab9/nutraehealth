@@ -66,6 +66,24 @@ export interface SavedMeal {
   items: FoodItem[];
 }
 
+export type DefaultMealFrequency = "everyday" | "weekdays" | "weekends" | "specific";
+
+export interface DefaultMeal {
+  id: string;
+  name: string;
+  mealType: MealEntry["type"];
+  items: FoodItem[];
+  frequency: DefaultMealFrequency;
+  specificDays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+}
+
+// Track which default meals have been removed for specific dates
+export interface DefaultMealOverride {
+  defaultMealId: string;
+  date: string; // YYYY-MM-DD
+  removed: boolean;
+}
+
 export interface SavedExercise {
   id: string;
   name: string;
