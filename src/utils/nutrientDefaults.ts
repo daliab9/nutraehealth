@@ -7,6 +7,7 @@ export interface NutrientConfig {
   getTarget: (profile: { currentWeight: number; gender: string; age: number; dietaryPreferences?: string[] }) => number;
   alwaysOn?: boolean; // Cannot be disabled
   autoSuggest?: (profile: { gender: string; dietaryPreferences?: string[] }) => boolean;
+  qualitative?: boolean; // If true, tracked as low/medium/high instead of numeric
 }
 
 export const AVAILABLE_NUTRIENTS: NutrientConfig[] = [
@@ -15,13 +16,12 @@ export const AVAILABLE_NUTRIENTS: NutrientConfig[] = [
     label: "NET CALS",
     unit: "kcal",
     getTarget: () => 0, // Uses dailyCalorieTarget from profile
-    // Users can deselect calories if they don't want to see it
   },
   {
     key: "protein",
     label: "PROTEIN",
     unit: "g",
-    getTarget: ({ currentWeight }) => Math.round(currentWeight * 1.8), // 1.6–2.2 g/kg, use 1.8 as default
+    getTarget: ({ currentWeight }) => Math.round(currentWeight * 1.8),
   },
   {
     key: "fiber",
@@ -66,6 +66,13 @@ export const AVAILABLE_NUTRIENTS: NutrientConfig[] = [
       (dietaryPreferences || []).some((p) =>
         ["Vegetarian", "Vegan"].includes(p)
       ),
+  },
+  {
+    key: "cholesterol",
+    label: "CHOLESTEROL",
+    unit: "",
+    getTarget: () => 0,
+    qualitative: true,
   },
 ];
 
