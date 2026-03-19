@@ -67,6 +67,11 @@ export const MealSection = ({
   onAddToSavedMeal,
   onAddToGroup,
   onRemoveFromGroup,
+  onSaveAsDefault,
+  onRemoveDefaultToday,
+  onRemoveDefaultPermanently,
+  defaultMealGroupIds = new Set(),
+  defaultMealIdMap = new Map(),
 }: MealSectionProps) => {
   const [mode, setMode] = useState<AddMode>(null);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -78,6 +83,10 @@ export const MealSection = ({
   const [longPressItem, setLongPressItem] = useState<FoodItem | null>(null);
   const [newSavedMealName, setNewSavedMealName] = useState("");
   const [addToGroupId, setAddToGroupId] = useState<{ groupId: string; groupName: string } | null>(null);
+  const [saveMealModalOpen, setSaveMealModalOpen] = useState(false);
+  const [saveMealModalItems, setSaveMealModalItems] = useState<FoodItem[]>([]);
+  const [saveMealModalName, setSaveMealModalName] = useState("");
+  const [removeDefaultDialog, setRemoveDefaultDialog] = useState<{ groupId: string; name: string } | null>(null);
 
   // Droppable zone for the entire meal section (for moving items between sections)
   const { setNodeRef: setDropZoneRef, isOver: isOverZone } = useDroppable({
