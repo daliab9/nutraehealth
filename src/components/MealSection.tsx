@@ -309,7 +309,7 @@ export const MealSection = ({
                                 className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
                                 title="Remove from meal"
                               >
-                                <Bookmark className="h-4 w-4 fill-foreground" />
+                                <Star className="h-4 w-4 fill-foreground" />
                               </button>
                             )}
                             {onRemoveItem && (
