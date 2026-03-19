@@ -127,6 +127,8 @@ const Profile = () => {
   const [pendingTimeline, setPendingTimeline] = useState<GoalTimeline>((profile.goalTimeline as GoalTimeline) || "3_4_months");
   const [nutrientModalOpen, setNutrientModalOpen] = useState(false);
   const [pendingNutrients, setPendingNutrients] = useState<string[]>(profile.trackedNutrients || DEFAULT_TRACKED);
+  const [pendingOverrides, setPendingOverrides] = useState<Record<string, number>>(profile.nutrientTargetOverrides || {});
+  const [pendingCholesterol, setPendingCholesterol] = useState<string>(profile.cholesterolLevel || "");
 
   // Weight history management
   const [weightHistoryOpen, setWeightHistoryOpen] = useState(false);
