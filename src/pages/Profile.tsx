@@ -65,6 +65,20 @@ const FT_INCHES = (() => {
 // Calorie range
 const CAL_VALUES = Array.from({ length: 301 }, (_, i) => 1000 + i * 10);
 
+// Nutrient target ranges for scroll pickers
+const getNutrientRange = (key: string): number[] => {
+  switch (key) {
+    case "protein": return Array.from({ length: 60 }, (_, i) => 20 + i * 5); // 20-315g
+    case "fiber": return Array.from({ length: 50 }, (_, i) => 5 + i); // 5-54g
+    case "iron": return Array.from({ length: 46 }, (_, i) => Math.round((2 + i * 0.5) * 10) / 10); // 2-24.5mg
+    case "vitamin_d": return Array.from({ length: 40 }, (_, i) => 200 + i * 50); // 200-2150 IU
+    case "magnesium": return Array.from({ length: 50 }, (_, i) => 100 + i * 10); // 100-590mg
+    case "omega3": return Array.from({ length: 30 }, (_, i) => Math.round((0.5 + i * 0.1) * 10) / 10); // 0.5-3.4g
+    case "b12": return Array.from({ length: 48 }, (_, i) => Math.round((0.5 + i * 0.1) * 10) / 10); // 0.5-5.2mcg
+    default: return Array.from({ length: 100 }, (_, i) => i + 1);
+  }
+};
+
 function kgToLbs(kg: number) { return Math.round(kg * 2.20462); }
 function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462); }
 function cmToFtStr(cm: number) {
