@@ -377,8 +377,13 @@ export const MealSection = ({
                   <span className="font-medium text-foreground text-sm break-words">{item.name}</span>
                   {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
+                  <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
+                    <button className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </QuickMultiplierPopover>
                   {onUpdateItem && (
                     <button onClick={() => setEditingItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
                       <Pencil className="h-4 w-4" />
@@ -388,8 +393,8 @@ export const MealSection = ({
                     setSaveMealModalItems([item]);
                     setSaveMealModalName(item.name);
                     setSaveMealModalOpen(true);
-                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
-                    <Star className="h-4 w-4" />
+                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-foreground transition-colors active:scale-95">
+                    <Star className={`h-4 w-4 ${isItemSavedOrDefault(item.name) ? "fill-foreground" : ""}`} />
                   </button>
                   {onRemoveItem && (
                     <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
