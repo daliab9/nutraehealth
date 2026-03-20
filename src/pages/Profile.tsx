@@ -713,19 +713,25 @@ const Profile = () => {
                                             <div className="flex items-center gap-1 flex-shrink-0">
                                               <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
                                               <QuickMultiplierPopover item={item} onDuplicate={(itm, mult) => {
+                                                // Always compute from base: strip any previous multiplier
+                                                const baseQuantity = itm.quantity?.replace(/^\d+(\.\d+)?×\s*/, "") || itm.quantity;
+                                                // Find original item from default meal to get base nutrition
+                                                const origDm = (profile.defaultMeals || []).find((d) => d.id === dm.id);
+                                                const origItem = origDm?.items[idx];
+                                                const base = origItem || itm;
                                                 const updated = {
                                                   ...itm,
-                                                  calories: Math.round(itm.calories * mult * 10) / 10,
-                                                  protein: Math.round(itm.protein * mult * 10) / 10,
-                                                  carbs: Math.round(itm.carbs * mult * 10) / 10,
-                                                  fat: Math.round(itm.fat * mult * 10) / 10,
-                                                  fiber: itm.fiber ? Math.round(itm.fiber * mult * 10) / 10 : undefined,
-                                                  iron: itm.iron ? Math.round(itm.iron * mult * 10) / 10 : undefined,
-                                                  vitamin_d: itm.vitamin_d ? Math.round(itm.vitamin_d * mult * 10) / 10 : undefined,
-                                                  magnesium: itm.magnesium ? Math.round(itm.magnesium * mult * 10) / 10 : undefined,
-                                                  omega3: itm.omega3 ? Math.round(itm.omega3 * mult * 10) / 10 : undefined,
-                                                  b12: itm.b12 ? Math.round(itm.b12 * mult * 10) / 10 : undefined,
-                                                  quantity: itm.quantity ? `${mult}× ${itm.quantity}` : `${mult}×`,
+                                                  calories: Math.round(base.calories * mult * 10) / 10,
+                                                  protein: Math.round(base.protein * mult * 10) / 10,
+                                                  carbs: Math.round(base.carbs * mult * 10) / 10,
+                                                  fat: Math.round(base.fat * mult * 10) / 10,
+                                                  fiber: base.fiber ? Math.round(base.fiber * mult * 10) / 10 : undefined,
+                                                  iron: base.iron ? Math.round(base.iron * mult * 10) / 10 : undefined,
+                                                  vitamin_d: base.vitamin_d ? Math.round(base.vitamin_d * mult * 10) / 10 : undefined,
+                                                  magnesium: base.magnesium ? Math.round(base.magnesium * mult * 10) / 10 : undefined,
+                                                  omega3: base.omega3 ? Math.round(base.omega3 * mult * 10) / 10 : undefined,
+                                                  b12: base.b12 ? Math.round(base.b12 * mult * 10) / 10 : undefined,
+                                                  quantity: mult === 1 ? (baseQuantity || "") : (baseQuantity ? `${mult}× ${baseQuantity}` : `${mult}×`),
                                                 };
                                                 setProfile({
                                                   defaultMeals: (profile.defaultMeals || []).map((d) =>

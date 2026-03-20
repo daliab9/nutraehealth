@@ -174,21 +174,34 @@ export const MealSection = ({
     return isMealSaved(name) || defaultMealGroupIds.has(groupId);
   };
 
+  // Store base nutrition for multiplier calculations (keyed by item id)
+  const [baseNutrition] = useState<Map<string, FoodItem>>(new Map());
+
+  const getBaseItem = (item: FoodItem): FoodItem => {
+    if (baseNutrition.has(item.id)) return baseNutrition.get(item.id)!;
+    // Strip any existing multiplier prefix from quantity to get base
+    const baseQuantity = item.quantity?.replace(/^\d+(\.\d+)?×\s*/, "") || item.quantity;
+    const base = { ...item, quantity: baseQuantity };
+    baseNutrition.set(item.id, base);
+    return base;
+  };
+
   const handleDuplicateItem = (item: FoodItem, multiplier: number) => {
     if (onUpdateItem) {
+      const base = getBaseItem(item);
       const updated: FoodItem = {
         ...item,
-        calories: Math.round(item.calories * multiplier * 10) / 10,
-        protein: Math.round(item.protein * multiplier * 10) / 10,
-        carbs: Math.round(item.carbs * multiplier * 10) / 10,
-        fat: Math.round(item.fat * multiplier * 10) / 10,
-        fiber: item.fiber ? Math.round(item.fiber * multiplier * 10) / 10 : undefined,
-        iron: item.iron ? Math.round(item.iron * multiplier * 10) / 10 : undefined,
-        vitamin_d: item.vitamin_d ? Math.round(item.vitamin_d * multiplier * 10) / 10 : undefined,
-        magnesium: item.magnesium ? Math.round(item.magnesium * multiplier * 10) / 10 : undefined,
-        omega3: item.omega3 ? Math.round(item.omega3 * multiplier * 10) / 10 : undefined,
-        b12: item.b12 ? Math.round(item.b12 * multiplier * 10) / 10 : undefined,
-        quantity: item.quantity ? `${multiplier}× ${item.quantity}` : `${multiplier}×`,
+        calories: Math.round(base.calories * multiplier * 10) / 10,
+        protein: Math.round(base.protein * multiplier * 10) / 10,
+        carbs: Math.round(base.carbs * multiplier * 10) / 10,
+        fat: Math.round(base.fat * multiplier * 10) / 10,
+        fiber: base.fiber ? Math.round(base.fiber * multiplier * 10) / 10 : undefined,
+        iron: base.iron ? Math.round(base.iron * multiplier * 10) / 10 : undefined,
+        vitamin_d: base.vitamin_d ? Math.round(base.vitamin_d * multiplier * 10) / 10 : undefined,
+        magnesium: base.magnesium ? Math.round(base.magnesium * multiplier * 10) / 10 : undefined,
+        omega3: base.omega3 ? Math.round(base.omega3 * multiplier * 10) / 10 : undefined,
+        b12: base.b12 ? Math.round(base.b12 * multiplier * 10) / 10 : undefined,
+        quantity: multiplier === 1 ? (base.quantity || "") : (base.quantity ? `${multiplier}× ${base.quantity}` : `${multiplier}×`),
       };
       onUpdateItem(updated);
       toast.success(`Updated to ${multiplier}× ${item.name}`);
@@ -304,13 +317,13 @@ export const MealSection = ({
                           <Star className={`h-4 w-4 ${isGroupSavedOrDefault(group.name, groupId) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
-                      {onRemoveItem && (
+                      {(onRemoveItem || defaultMealGroupIds.has(groupId)) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             if (defaultMealGroupIds.has(groupId)) {
                               setRemoveDefaultDialog({ groupId, name: group.name });
-                            } else {
+                            } else if (onRemoveItem) {
                               group.items.forEach((i) => onRemoveItem(i.id));
                             }
                           }}
@@ -348,8 +361,16 @@ export const MealSection = ({
                                 <Pencil className="h-4 w-4" />
                               </button>
                             )}
-                            {onRemoveItem && (
-                              <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                            {(onRemoveItem || defaultMealGroupIds.has(item.groupId || "")) && (
+                              <button onClick={() => {
+                                if (item.id.startsWith("default-") && item.groupId && defaultMealGroupIds.has(item.groupId)) {
+                                  // Remove ingredient from default meal for today by overriding
+                                  const dmId = defaultMealIdMap.get(item.groupId);
+                                  if (dmId) onRemoveDefaultToday?.(dmId);
+                                } else if (onRemoveItem) {
+                                  onRemoveItem(item.id);
+                                }
+                              }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
                                 <X className="h-4 w-4" />
                               </button>
                             )}

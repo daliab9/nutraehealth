@@ -54,7 +54,7 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
         )}
         style={{ touchAction: "none" }}
       >
-        <div className="flex-1 min-w-0 flex items-center justify-between pointer-events-auto">
+        <div className="flex-1 min-w-0 flex items-center justify-between">
           {children}
         </div>
       </div>
