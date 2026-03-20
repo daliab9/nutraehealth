@@ -317,13 +317,13 @@ export const MealSection = ({
                           <Star className={`h-4 w-4 ${isGroupSavedOrDefault(group.name, groupId) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
-                      {onRemoveItem && (
+                      {(onRemoveItem || defaultMealGroupIds.has(groupId)) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             if (defaultMealGroupIds.has(groupId)) {
                               setRemoveDefaultDialog({ groupId, name: group.name });
-                            } else {
+                            } else if (onRemoveItem) {
                               group.items.forEach((i) => onRemoveItem(i.id));
                             }
                           }}
