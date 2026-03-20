@@ -64,6 +64,7 @@ export const MealSection = ({
   onAddItems,
   pastItems = [],
   savedMeals = [],
+  defaultMeals = [],
   onSaveMeal,
   onUnsaveMeal,
   onAddToSavedMeal,
