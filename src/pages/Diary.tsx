@@ -32,7 +32,7 @@ const POOP_GROUPS = [
 
 const Diary = () => {
   const {
-    profile, setProfile, diary, getDayEntry, addFoodToMeal, removeFoodFromMeal,
+    profile, setProfile, diary, getDayEntry, setDayEntry, addFoodToMeal, removeFoodFromMeal,
     updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
     getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
     addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate,
@@ -46,6 +46,7 @@ const Diary = () => {
 
   // Drag and drop state
   const [activeDragItem, setActiveDragItem] = useState<FoodItem | null>(null);
+  const [activeDragGroup, setActiveDragGroup] = useState<{ name: string; calories: number; count: number } | null>(null);
   const [mergeData, setMergeData] = useState<{
     sourceItem: FoodItem;
     sourceMealType: string;
@@ -152,6 +153,77 @@ const Diary = () => {
       mealType: materializedMeal.mealType,
       item: materializedMeal.clonedItems[context.itemIndex],
     };
+  };
+
+  const moveGroupedItems = (
+    sourceMealType: MealEntry["type"],
+    sourceGroupId: string,
+    targetMealType: MealEntry["type"],
+    targetGroupId?: string,
+    targetGroupName?: string
+  ) => {
+    const currentDay = getDayEntry(dateKey);
+    const sourceMeal = currentDay.meals.find((meal) => meal.type === sourceMealType);
+    const sourceItems = sourceMeal?.items.filter((item) => item.groupId === sourceGroupId) || [];
+
+    if (sourceItems.length === 0) return false;
+
+    const nextGroupId = targetGroupId ?? sourceGroupId;
+    const nextGroupName = targetGroupName ?? sourceItems[0]?.groupName;
+
+    if (sourceMealType === targetMealType) {
+      setDayEntry(dateKey, {
+        ...currentDay,
+        meals: currentDay.meals.map((meal) =>
+          meal.type === sourceMealType
+            ? {
+                ...meal,
+                items: meal.items.map((item) =>
+                  item.groupId === sourceGroupId
+                    ? { ...item, groupId: nextGroupId, groupName: nextGroupName }
+                    : item
+                ),
+              }
+            : meal
+        ),
+      });
+      return true;
+    }
+
+    const movedItems = sourceItems.map((item) => ({
+      ...item,
+      groupId: nextGroupId,
+      groupName: nextGroupName,
+    }));
+
+    let targetFound = false;
+    const mealsWithoutSource = currentDay.meals.map((meal) => {
+      if (meal.type === sourceMealType) {
+        return {
+          ...meal,
+          items: meal.items.filter((item) => item.groupId !== sourceGroupId),
+        };
+      }
+
+      if (meal.type === targetMealType) {
+        targetFound = true;
+        return {
+          ...meal,
+          items: [...meal.items, ...movedItems],
+        };
+      }
+
+      return meal;
+    });
+
+    setDayEntry(dateKey, {
+      ...currentDay,
+      meals: targetFound
+        ? mealsWithoutSource
+        : [...mealsWithoutSource, { type: targetMealType, items: movedItems }],
+    });
+
+    return true;
   };
 
   const getMealItems = (type: string) => {
@@ -263,16 +335,47 @@ const Diary = () => {
   // Drag and drop handlers
   const handleDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current;
-    if (data?.item) setActiveDragItem(data.item as FoodItem);
+    if (data?.type === "meal-group") {
+      const items = (data.items as FoodItem[]) || [];
+      setActiveDragGroup({
+        name: String(data.groupName || "Meal"),
+        calories: items.reduce((sum, item) => sum + item.calories, 0),
+        count: items.length,
+      });
+      setActiveDragItem(null);
+      return;
+    }
+
+    if (data?.item) {
+      setActiveDragItem(data.item as FoodItem);
+      setActiveDragGroup(null);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveDragItem(null);
+    setActiveDragGroup(null);
     const { active, over } = event;
     if (!over) return;
 
-    const sourceData = active.data.current as { type: string; mealType: string; itemId: string; item: FoodItem };
-    const overData = over.data.current as { type: string; mealType: string; itemId?: string; item?: FoodItem; groupId?: string };
+    const sourceData = active.data.current as {
+      type: string;
+      mealType: string;
+      itemId?: string;
+      item?: FoodItem;
+      groupId?: string;
+      groupName?: string;
+      items?: FoodItem[];
+    };
+    const overData = over.data.current as {
+      type: string;
+      mealType: string;
+      itemId?: string;
+      item?: FoodItem;
+      groupId?: string;
+      groupName?: string;
+      items?: FoodItem[];
+    };
 
     if (!sourceData || !overData) return;
 
@@ -303,6 +406,7 @@ const Diary = () => {
     let overMealType = overData.mealType;
     let overItem = overData.item;
     let overGroupId = overData.groupId;
+    let overGroupName = overData.groupName;
 
     if (overData.type === "meal-group" && overGroupId && defaultMealGroupIds.has(overGroupId)) {
       const targetDefaultMealId = defaultMealIdMap.get(overGroupId);
@@ -311,6 +415,7 @@ const Diary = () => {
       if (!materializedTargetMeal) return;
       overMealType = materializedTargetMeal.mealType;
       overGroupId = materializedTargetMeal.groupId;
+      overGroupName = materializedTargetMeal.groupName;
     }
 
     if (overData.type === "food-item" && overItem?.id.startsWith("default-")) {
@@ -322,6 +427,81 @@ const Diary = () => {
       overMealType = materializedTargetMeal.mealType;
       overItem = materializedTargetItem;
       overGroupId = materializedTargetItem.groupId;
+      overGroupName = materializedTargetItem.groupName;
+    }
+
+    if (sourceData.type === "meal-group") {
+      let sourceGroupId = sourceData.groupId;
+      let sourceGroupName = sourceData.groupName;
+      let groupedMealType = sourceData.mealType;
+
+      if (!sourceGroupId) return;
+
+      if (defaultMealGroupIds.has(sourceGroupId)) {
+        const sourceDefaultMealId = defaultMealIdMap.get(sourceGroupId);
+        if (!sourceDefaultMealId) return;
+        const materializedSourceMeal = ensureMaterializedMeal(sourceDefaultMealId);
+        if (!materializedSourceMeal) return;
+        sourceGroupId = materializedSourceMeal.groupId;
+        sourceGroupName = materializedSourceMeal.groupName;
+        groupedMealType = materializedSourceMeal.mealType;
+      }
+
+      if (overData.type === "meal-section") {
+        if (groupedMealType !== overMealType) {
+          moveGroupedItems(
+            groupedMealType as MealEntry["type"],
+            sourceGroupId,
+            overMealType as MealEntry["type"]
+          );
+          toast.success(`Moved to ${MEAL_TYPES.find((meal) => meal.type === overMealType)?.title || overMealType}`);
+        }
+        return;
+      }
+
+      if (overData.type === "meal-group" && overGroupId && overGroupId !== sourceGroupId) {
+        moveGroupedItems(
+          groupedMealType as MealEntry["type"],
+          sourceGroupId,
+          overMealType as MealEntry["type"],
+          overGroupId,
+          overGroupName
+        );
+        toast.success(`Added to "${overGroupName || "Meal"}"`);
+        return;
+      }
+
+      if (overData.type === "food-item" && overItem) {
+        if (overItem.groupId) {
+          moveGroupedItems(
+            groupedMealType as MealEntry["type"],
+            sourceGroupId,
+            overMealType as MealEntry["type"],
+            overItem.groupId,
+            overItem.groupName
+          );
+          toast.success(`Added to "${overItem.groupName || "Meal"}"`);
+          return;
+        }
+
+        if (groupedMealType !== overMealType) {
+          moveGroupedItems(
+            groupedMealType as MealEntry["type"],
+            sourceGroupId,
+            overMealType as MealEntry["type"]
+          );
+          groupedMealType = overMealType;
+        }
+
+        updateFoodInMeal(dateKey, groupedMealType as MealEntry["type"], {
+          ...overItem,
+          groupId: sourceGroupId,
+          groupName: sourceGroupName,
+        });
+        toast.success(`Added to "${sourceGroupName || "Meal"}"`);
+      }
+
+      return;
     }
 
     // Dropped on a meal group header → add to that group
@@ -583,6 +763,12 @@ const Diary = () => {
                 </div>
               </div>
               <DragOverlay>
+                {activeDragGroup && (
+                  <div className="px-4 py-2.5 rounded-xl border border-border bg-secondary shadow-xl flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">{activeDragGroup.name}</span>
+                    <span className="text-xs text-muted-foreground">{activeDragGroup.count} items · {activeDragGroup.calories} kcal</span>
+                  </div>
+                )}
                 {activeDragItem && (
                   <div className="px-4 py-2.5 rounded-xl bg-card border border-border shadow-xl flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">{activeDragItem.name}</span>

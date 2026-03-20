@@ -8,6 +8,7 @@ import { AIScanDialog } from "@/components/AIScanDialog";
 import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { DraggableFoodItem } from "@/components/DraggableFoodItem";
+import { DraggableMealCard } from "@/components/DraggableMealCard";
 import { SaveMealModal } from "@/components/SaveMealModal";
 import { RemoveDefaultMealDialog } from "@/components/RemoveDefaultMealDialog";
 import { QuickMultiplierPopover } from "@/components/QuickMultiplierPopover";
@@ -39,19 +40,6 @@ interface MealSectionProps {
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
-
-// Droppable wrapper for group headers
-const DroppableGroupHeader = ({ groupId, mealType, children }: { groupId: string; mealType: string; children: React.ReactNode }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `group-${mealType}-${groupId}`,
-    data: { type: "meal-group", mealType, groupId },
-  });
-  return (
-    <div ref={setNodeRef} className={`transition-colors ${isOver ? "ring-2 ring-primary/50 rounded-xl" : ""}`}>
-      {children}
-    </div>
-  );
-};
 
 export const MealSection = ({
   title,
@@ -294,7 +282,14 @@ export const MealSection = ({
             const isExpanded = expandedGroups.has(groupId);
             const groupCals = group.items.reduce((s, i) => s + i.calories, 0);
             return (
-              <DroppableGroupHeader key={groupId} groupId={groupId} mealType={mealType}>
+              <DraggableMealCard
+                key={groupId}
+                dragId={`drag-group-${mealType}-${groupId}`}
+                dropId={`group-${mealType}-${groupId}`}
+                dragData={{ type: "meal-group", mealType, groupId, groupName: group.name, items: group.items }}
+                dropData={{ type: "meal-group", mealType, groupId, groupName: group.name, items: group.items }}
+                className="rounded-xl"
+              >
                 <div className="rounded-xl border border-border bg-secondary overflow-hidden">
                   <button onClick={() => toggleGroup(groupId)} className="w-full flex items-center justify-between px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -386,7 +381,7 @@ export const MealSection = ({
                     </div>
                   )}
                 </div>
-              </DroppableGroupHeader>
+              </DraggableMealCard>
             );
           })}
 
