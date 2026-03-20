@@ -35,7 +35,7 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
     const handleTouchStart = useCallback(
       (event: React.TouchEvent<HTMLDivElement>) => {
         listeners.onTouchStart?.(event);
-        longPressHandlers.onTouchStart?.(event);
+        longPressHandlers.onTouchStart?.();
       },
       [listeners, longPressHandlers]
     );
@@ -43,7 +43,7 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
     const handleTouchEnd = useCallback(
       (event: React.TouchEvent<HTMLDivElement>) => {
         listeners.onTouchEnd?.(event);
-        longPressHandlers.onTouchEnd?.(event);
+        longPressHandlers.onTouchEnd?.();
       },
       [listeners, longPressHandlers]
     );
@@ -51,7 +51,7 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
     const handleTouchMove = useCallback(
       (event: React.TouchEvent<HTMLDivElement>) => {
         listeners.onTouchMove?.(event);
-        longPressHandlers.onTouchMove?.(event);
+        longPressHandlers.onTouchMove?.();
       },
       [listeners, longPressHandlers]
     );
