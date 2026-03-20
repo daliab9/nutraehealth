@@ -1014,7 +1014,16 @@ const Profile = () => {
       {/* Create Meal */}
       <Dialog open={createMealOpen} onOpenChange={setCreateMealOpen}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{createMealStep === "name" ? "Name your meal" : createMealName}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {createMealStep === "add" && (
+                <button onClick={() => setCreateMealStep("name")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              {createMealStep === "name" ? "Name your meal" : createMealName}
+            </DialogTitle>
+          </DialogHeader>
           {createMealStep === "name" ? (
             <div className="space-y-3 pt-2">
               <Input placeholder="e.g. Greek Yogurt Bowl" value={createMealName} onChange={(e) => setCreateMealName(e.target.value)} className="rounded-xl" autoFocus />
