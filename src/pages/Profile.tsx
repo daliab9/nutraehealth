@@ -1167,25 +1167,32 @@ const Profile = () => {
         }}
       />
 
-      {/* Edit Default Meal Schedule */}
+      {/* Edit Default Meal Schedule + Rename */}
       <Dialog open={!!editDefaultMealId} onOpenChange={(o) => { if (!o) setEditDefaultMealId(null); }}>
         <DialogContent className="rounded-2xl max-w-sm">
-          <DialogHeader><DialogTitle>Edit Schedule</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Default Meal</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
-            {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setEditDefaultFrequency(f)}
-                className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${editDefaultFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
-              >
-                {f === "everyday" && "Every day"}
-                {f === "weekdays" && "Weekdays only"}
-                {f === "weekends" && "Weekends only"}
-                {f === "specific" && "Specific days"}
-              </button>
-            ))}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Name</p>
+              <Input value={editDefaultName} onChange={(e) => setEditDefaultName(e.target.value)} className="rounded-xl" placeholder="Meal name" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Schedule</p>
+              {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setEditDefaultFrequency(f)}
+                  className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all mb-2 ${editDefaultFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+                >
+                  {f === "everyday" && "Every day"}
+                  {f === "weekdays" && "Weekdays only"}
+                  {f === "weekends" && "Weekends only"}
+                  {f === "specific" && "Specific days"}
+                </button>
+              ))}
+            </div>
             {editDefaultFrequency === "specific" && (
-              <div className="flex justify-between gap-1.5 pt-2">
+              <div className="flex justify-between gap-1.5">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
                   <button
                     key={i}
@@ -1203,18 +1210,157 @@ const Profile = () => {
                 setProfile({
                   defaultMeals: (profile.defaultMeals || []).map((dm) =>
                     dm.id === editDefaultMealId
-                      ? { ...dm, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
+                      ? { ...dm, name: editDefaultName.trim() || dm.name, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
                       : dm
                   ),
                 });
                 setEditDefaultMealId(null);
               }}
               className="w-full rounded-xl h-12 mt-2"
-              disabled={editDefaultFrequency === "specific" && editDefaultDays.length === 0}
+              disabled={(editDefaultFrequency === "specific" && editDefaultDays.length === 0) || !editDefaultName.trim()}
             >
-              Save Schedule
+              Save
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Default Meal from Profile */}
+      <Dialog open={createDefaultMealOpen} onOpenChange={setCreateDefaultMealOpen}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          {createDefaultMealStep === "name" && (
+            <>
+              <DialogHeader><DialogTitle>Create Default Meal</DialogTitle></DialogHeader>
+              <div className="space-y-3 pt-2">
+                <Input placeholder="e.g. Weekday Breakfast" value={createDefaultMealName} onChange={(e) => setCreateDefaultMealName(e.target.value)} className="rounded-xl" autoFocus />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Meal type</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["breakfast", "lunch", "dinner", "snack", "supplements", "drinks"] as const).map((t) => (
+                      <button key={t} onClick={() => setCreateDefaultMealType(t)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${createDefaultMealType === t ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+                <Button onClick={() => { if (createDefaultMealName.trim()) setCreateDefaultMealStep("add"); }} className="w-full rounded-xl h-12" disabled={!createDefaultMealName.trim()}>Next — Add ingredients</Button>
+              </div>
+            </>
+          )}
+          {createDefaultMealStep === "add" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <button onClick={() => setCreateDefaultMealStep("name")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  {createDefaultMealName}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {createDefaultMealItems.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{createDefaultMealItems.length} items · {createDefaultMealItems.reduce((s, i) => s + i.calories, 0)} kcal</p>
+                    {createDefaultMealItems.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                        <span className="text-sm text-foreground">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                          <button onClick={() => setCreateDefaultMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <FoodSearchInput onAddItem={(item) => setCreateDefaultMealItems((prev) => [...prev, item])} onClose={() => {}} keepOpenOnAdd />
+                <Button onClick={() => { if (createDefaultMealItems.length > 0) setCreateDefaultMealStep("schedule"); }} className="w-full rounded-xl h-12" disabled={createDefaultMealItems.length === 0}>Next — Set Schedule</Button>
+              </div>
+            </>
+          )}
+          {createDefaultMealStep === "schedule" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <button onClick={() => setCreateDefaultMealStep("add")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  Set Schedule
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-2">
+                {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+                  <button key={f} onClick={() => setCreateDefaultFrequency(f)} className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${createDefaultFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}>
+                    {f === "everyday" && "Every day"}{f === "weekdays" && "Weekdays only"}{f === "weekends" && "Weekends only"}{f === "specific" && "Specific days"}
+                  </button>
+                ))}
+                {createDefaultFrequency === "specific" && (
+                  <div className="flex justify-between gap-1.5 pt-2">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                      <button key={i} onClick={() => setCreateDefaultDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])} className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${createDefaultDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{label}</button>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  onClick={() => {
+                    const newDefault: DefaultMeal = {
+                      id: Date.now().toString(),
+                      name: createDefaultMealName.trim(),
+                      mealType: createDefaultMealType,
+                      items: createDefaultMealItems,
+                      frequency: createDefaultFrequency,
+                      specificDays: createDefaultFrequency === "specific" ? createDefaultDays : undefined,
+                    };
+                    setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+                    setCreateDefaultMealOpen(false);
+                  }}
+                  className="w-full rounded-xl h-12 mt-2"
+                  disabled={createDefaultFrequency === "specific" && createDefaultDays.length === 0}
+                >
+                  Save Default Meal
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Default Meal Items + Rename */}
+      <Dialog open={!!editDefaultMealItemsId} onOpenChange={(o) => { if (!o) { setEditDefaultMealItemsId(null); setEditingDefaultMealItem(null); } }}>
+        <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Default Meal</DialogTitle></DialogHeader>
+          {editingDefaultMealItem ? (
+            <FoodEditInput item={editingDefaultMealItem} onSave={(updated) => { setEditDefaultMealItemsList((prev) => prev.map((it) => it.id === updated.id ? updated : it)); setEditingDefaultMealItem(null); }} onCancel={() => setEditingDefaultMealItem(null)} />
+          ) : (
+            <div className="space-y-3">
+              <Input value={editDefaultMealItemsName} onChange={(e) => setEditDefaultMealItemsName(e.target.value)} className="rounded-xl font-medium" placeholder="Meal name" />
+              {editDefaultMealItemsList.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{editDefaultMealItemsList.length} items · {editDefaultMealItemsList.reduce((s, i) => s + i.calories, 0)} kcal</p>
+                  {editDefaultMealItemsList.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-secondary/50">
+                      <div className="flex flex-col min-w-0 flex-1 mr-2">
+                        <span className="text-sm text-foreground break-words">{item.name}</span>
+                        {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <button onClick={() => setEditingDefaultMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => setEditDefaultMealItemsList((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {editDefaultMealAddingItem ? (
+                <FoodSearchInput onAddItem={(item) => { setEditDefaultMealItemsList((prev) => [...prev, item]); setEditDefaultMealAddingItem(false); }} onClose={() => setEditDefaultMealAddingItem(false)} />
+              ) : (
+                <Button variant="outline" className="w-full rounded-xl h-10" onClick={() => setEditDefaultMealAddingItem(true)}><Plus className="h-4 w-4 mr-2" /> Add ingredient</Button>
+              )}
+              <Button onClick={() => {
+                if (!editDefaultMealItemsId || editDefaultMealItemsList.length === 0) return;
+                setProfile({ defaultMeals: (profile.defaultMeals || []).map((dm) => dm.id === editDefaultMealItemsId ? { ...dm, name: editDefaultMealItemsName.trim() || dm.name, items: editDefaultMealItemsList } : dm) });
+                setEditDefaultMealItemsId(null);
+              }} className="w-full rounded-xl h-12" disabled={editDefaultMealItemsList.length === 0 || !editDefaultMealItemsName.trim()}>Save changes</Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
