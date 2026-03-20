@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { DndContext, DragOverlay, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { calculateCalories, calculateGoalDate, ACTIVITY_LABELS, TIMELINE_LABELS, ACTIVITY_OPTIONS, TIMELINE_OPTIONS } from "@/utils/calorieCalculation";
@@ -16,6 +17,7 @@ import { FoodSearchInput } from "@/components/FoodSearchInput";
 import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { QuickMultiplierPopover } from "@/components/QuickMultiplierPopover";
+import { DraggableMealCard } from "@/components/DraggableMealCard";
 import { useUserStore, type FoodItem, type SavedMeal, type DefaultMeal, type DefaultMealFrequency, type MealEntry } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity, Star, Copy } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
@@ -136,6 +138,35 @@ const EditButton = ({ onClick }: { onClick: () => void }) => (
   </button>
 );
 
+const ProfileDropZone = ({
+  dropId,
+  data,
+  className,
+  children,
+}: {
+  dropId: string;
+  data: Record<string, unknown>;
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: dropId, data });
+
+  return (
+    <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-primary/50")}>
+      {children}
+    </div>
+  );
+};
+
+const formatDefaultFrequency = (meal: DefaultMeal) => {
+  if (meal.frequency === "everyday") return "Every day";
+  if (meal.frequency === "weekdays") return "Weekdays";
+  if (meal.frequency === "weekends") return "Weekends";
+  return (meal.specificDays || [])
+    .map((day) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day])
+    .join(" · ");
+};
+
 // ====== MAIN COMPONENT ======
 const Profile = () => {
   const { profile, setProfile } = useUserStore();
@@ -235,6 +266,7 @@ const Profile = () => {
   const [editDefaultMealItemsName, setEditDefaultMealItemsName] = useState("");
   const [editDefaultMealAddingItem, setEditDefaultMealAddingItem] = useState(false);
   const [editingDefaultMealItem, setEditingDefaultMealItem] = useState<FoodItem | null>(null);
+  const [activeProfileDragLabel, setActiveProfileDragLabel] = useState<string | null>(null);
 
   // Computed
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
@@ -263,6 +295,10 @@ const Profile = () => {
 
   const savedMeals = profile.savedMeals || [];
   const savedExercises = profile.savedExercises || [];
+  const profileMealSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 8 } })
+  );
 
   // ====== DB PERSISTENCE ======
   const persistToDB = useCallback(async (updates: Record<string, unknown>) => {
@@ -318,6 +354,48 @@ const Profile = () => {
 
   const deleteSavedMeal = (mealId: string) => setProfile({ savedMeals: savedMeals.filter((m) => m.id !== mealId) });
   const openEditMeal = (meal: SavedMeal) => { setEditingSavedMeal(meal); setEditMealName(meal.name); setEditMealItems([...meal.items]); setEditMealAddingItem(false); setEditingMealItem(null); };
+  const handleProfileMealDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current as { type?: string; mealName?: string } | null;
+    if (!data?.mealName) return;
+    setActiveProfileDragLabel(data.mealName);
+  };
+
+  const handleProfileMealDragEnd = (event: DragEndEvent) => {
+    setActiveProfileDragLabel(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeData = active.data.current as { type?: string; mealId?: string; mealType?: string } | null;
+    const overData = over.data.current as { type?: string; mealId?: string; mealType?: string } | null;
+    if (!activeData?.type || !overData?.type) return;
+
+    if (activeData.type === "default-meal") {
+      const nextMealType = overData.type === "default-meal-section" || overData.type === "default-meal"
+        ? overData.mealType
+        : null;
+
+      if (!activeData.mealId || !nextMealType || nextMealType === activeData.mealType) return;
+
+      setProfile({
+        defaultMeals: (profile.defaultMeals || []).map((meal) =>
+          meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
+        ),
+      });
+      return;
+    }
+
+    if (activeData.type === "saved-meal" && overData.type === "saved-meal" && activeData.mealId && overData.mealId && activeData.mealId !== overData.mealId) {
+      const currentMeals = [...savedMeals];
+      const fromIndex = currentMeals.findIndex((meal) => meal.id === activeData.mealId);
+      const toIndex = currentMeals.findIndex((meal) => meal.id === overData.mealId);
+      if (fromIndex < 0 || toIndex < 0) return;
+
+      const reordered = [...currentMeals];
+      const [movedMeal] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, movedMeal);
+      setProfile({ savedMeals: reordered });
+    }
+  };
   const saveEditedMeal = () => {
     if (!editingSavedMeal || editMealItems.length === 0) return;
     setProfile({ savedMeals: savedMeals.map((m) => m.id === editingSavedMeal.id ? { ...m, name: editMealName.trim() || m.name, items: editMealItems } : m) });
@@ -676,151 +754,179 @@ const Profile = () => {
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pt-4 pb-4">
-              {/* Default Meals - Grouped by meal type */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground">Default Meals</h3>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateDefaultMealName(""); setCreateDefaultMealItems([]); setCreateDefaultMealStep("name"); setCreateDefaultMealType("breakfast"); setCreateDefaultFrequency("everyday"); setCreateDefaultDays([]); setCreateDefaultMealOpen(true); }}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {(profile.defaultMeals || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, or star a meal in your diary.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {(() => {
-                      const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack", "supplements", "drinks"];
-                      const grouped = MEAL_TYPE_ORDER.map((mt) => ({
-                        type: mt,
-                        label: mt.charAt(0).toUpperCase() + mt.slice(1),
-                        meals: (profile.defaultMeals || []).filter((dm) => dm.mealType === mt),
-                      })).filter((g) => g.meals.length > 0);
-                      return grouped.map((group) => (
-                        <div key={group.type} className="rounded-xl border border-border/50 overflow-hidden">
-                          <button
-                            onClick={() => setExpandedDefaultMealType((prev) => prev === group.type ? null : group.type)}
-                            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors"
+              <DndContext sensors={profileMealSensors} onDragStart={handleProfileMealDragStart} onDragEnd={handleProfileMealDragEnd}>
+                {/* Default Meals - Grouped by meal type */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">Default Meals</h3>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateDefaultMealName(""); setCreateDefaultMealItems([]); setCreateDefaultMealStep("name"); setCreateDefaultMealType("breakfast"); setCreateDefaultFrequency("everyday"); setCreateDefaultDays([]); setCreateDefaultMealOpen(true); }}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {(profile.defaultMeals || []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, or star a meal in your diary.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(() => {
+                        const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack", "supplements", "drinks"];
+                        const grouped = MEAL_TYPE_ORDER.map((mt) => ({
+                          type: mt,
+                          label: mt.charAt(0).toUpperCase() + mt.slice(1),
+                          meals: (profile.defaultMeals || []).filter((dm) => dm.mealType === mt),
+                        })).filter((g) => g.meals.length > 0);
+                        return grouped.map((group) => (
+                          <ProfileDropZone
+                            key={group.type}
+                            dropId={`default-meal-section-${group.type}`}
+                            data={{ type: "default-meal-section", mealType: group.type }}
+                            className="rounded-xl border border-border/50 overflow-hidden"
                           >
-                            <div className="flex items-center gap-2">
-                              {expandedDefaultMealType === group.type ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
-                              <span className="text-sm font-medium text-foreground">{group.label}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">{group.meals.length} meal{group.meals.length !== 1 ? "s" : ""}</span>
-                          </button>
-                          {expandedDefaultMealType === group.type && (
-                            <div className="px-3 pb-2 space-y-2 border-t border-border/30">
-                              {group.meals.map((dm) => {
-                                const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
-                                const freqLabel = dm.frequency === "everyday" ? "Every day"
-                                  : dm.frequency === "weekdays" ? "Weekdays"
-                                  : dm.frequency === "weekends" ? "Weekends"
-                                  : (dm.specificDays || []).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(" · ");
-                                const isItemsExpanded = expandedDefaultMealItems === dm.id;
-                                return (
-                                  <div key={dm.id} className="rounded-lg border border-border/30 p-2.5 space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-foreground">{dm.name}</span>
-                                        <span className="text-[10px] text-muted-foreground">{dm.items.length} items · {totalCals} kcal</span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
-                                        <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
-                                        <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <Calendar className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">{freqLabel}</span>
-                                    </div>
-                                    {/* Expandable ingredients */}
-                                    <button onClick={() => setExpandedDefaultMealItems(isItemsExpanded ? null : dm.id)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                                      {isItemsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                                      {dm.items.length} ingredient{dm.items.length !== 1 ? "s" : ""}
-                                    </button>
-                                    {isItemsExpanded && (
-                                      <div className="space-y-1 pl-1">
-                                        {dm.items.map((item, idx) => (
-                                          <div key={idx} className="flex items-center justify-between py-1 px-2 rounded-lg bg-secondary/50">
-                                            <div className="flex flex-col min-w-0 flex-1 mr-2">
-                                              <span className="text-xs text-foreground break-words">{item.name}</span>
-                                              {item.quantity && <span className="text-[9px] text-muted-foreground">{item.quantity}</span>}
-                                            </div>
-                                            <div className="flex items-center gap-1 flex-shrink-0">
-                                              <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
-                                              <QuickMultiplierPopover item={item} onDuplicate={(itm, mult) => {
-                                                const updated = applyMultiplierToItem(itm, mult);
-                                                setProfile({
-                                                  defaultMeals: (profile.defaultMeals || []).map((d) =>
-                                                    d.id === dm.id ? { ...d, items: d.items.map((it, j) => j === idx ? updated : it) } : d
-                                                  ),
-                                                });
-                                              }}>
-                                                <button className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
-                                                  <Copy className="h-3 w-3" />
-                                                </button>
-                                              </QuickMultiplierPopover>
-                                            </div>
+                            <button
+                              onClick={() => setExpandedDefaultMealType((prev) => prev === group.type ? null : group.type)}
+                              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                {expandedDefaultMealType === group.type ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
+                                <span className="text-sm font-medium text-foreground">{group.label}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{group.meals.length} meal{group.meals.length !== 1 ? "s" : ""}</span>
+                            </button>
+                            {expandedDefaultMealType === group.type && (
+                              <div className="px-3 pb-2 space-y-2 border-t border-border/30">
+                                {group.meals.map((dm) => {
+                                  const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
+                                  const isItemsExpanded = expandedDefaultMealItems === dm.id;
+                                  return (
+                                    <DraggableMealCard
+                                      key={dm.id}
+                                      dragId={`drag-default-meal-${dm.id}`}
+                                      dropId={`drop-default-meal-${dm.id}`}
+                                      dragData={{ type: "default-meal", mealId: dm.id, mealType: dm.mealType, mealName: dm.name }}
+                                      dropData={{ type: "default-meal", mealId: dm.id, mealType: dm.mealType, mealName: dm.name }}
+                                      className="rounded-lg"
+                                    >
+                                      <div className="rounded-lg border border-border/30 p-2.5 space-y-1.5 bg-card">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-foreground">{dm.name}</span>
+                                            <span className="text-[10px] text-muted-foreground">{dm.items.length} items · {totalCals} kcal</span>
                                           </div>
-                                        ))}
+                                          <div className="flex items-center gap-1">
+                                            <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                                            <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
+                                            <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-xs text-muted-foreground">{formatDefaultFrequency(dm)}</span>
+                                        </div>
+                                        <button onClick={() => setExpandedDefaultMealItems(isItemsExpanded ? null : dm.id)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                                          {isItemsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                          {dm.items.length} ingredient{dm.items.length !== 1 ? "s" : ""}
+                                        </button>
+                                        {isItemsExpanded && (
+                                          <div className="space-y-1 pl-1">
+                                            {dm.items.map((item, idx) => (
+                                              <div key={idx} className="flex items-center justify-between py-1 px-2 rounded-lg bg-secondary/50">
+                                                <div className="flex flex-col min-w-0 flex-1 mr-2">
+                                                  <span className="text-xs text-foreground break-words">{item.name}</span>
+                                                  {item.quantity && <span className="text-[9px] text-muted-foreground">{item.quantity}</span>}
+                                                </div>
+                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                  <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
+                                                  <QuickMultiplierPopover item={item} onDuplicate={(itm, mult) => {
+                                                    const updated = applyMultiplierToItem(itm, mult);
+                                                    setProfile({
+                                                      defaultMeals: (profile.defaultMeals || []).map((d) =>
+                                                        d.id === dm.id ? { ...d, items: d.items.map((it, j) => j === idx ? updated : it) } : d
+                                                      ),
+                                                    });
+                                                  }}>
+                                                    <button className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                                                      <Copy className="h-3 w-3" />
+                                                    </button>
+                                                  </QuickMultiplierPopover>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
-              </div>
-
-              {/* Saved Meals */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                                    </DraggableMealCard>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </ProfileDropZone>
+                        ));
+                      })()}
+                    </div>
+                  )}
                 </div>
-                {savedMeals.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No saved meals yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {savedMeals.map((meal) => {
-                      const isExpanded = expandedMeal === meal.id;
-                      const totalCals = meal.items.reduce((s, i) => s + i.calories, 0);
-                      return (
-                        <div key={meal.id} className="rounded-xl border border-border/50 overflow-hidden">
-                          <button onClick={() => setExpandedMeal(isExpanded ? null : meal.id)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors">
-                            <div className="flex items-center gap-2">
-                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
-                              <span className="text-sm font-medium text-foreground">{meal.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
-                              <button onClick={(e) => { e.stopPropagation(); openEditMeal(meal); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
-                              <button onClick={(e) => { e.stopPropagation(); deleteSavedMeal(meal.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
-                            </div>
-                          </button>
-                          {isExpanded && (
-                            <div className="px-3 pb-2 space-y-1 border-t border-border/30">
-                              {meal.items.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between py-1 pl-5 text-sm">
-                                  <span className="text-foreground">{item.name}</span>
-                                  <span className="text-xs text-muted-foreground">{item.quantity ? `${item.quantity} · ` : ""}{item.calories} kcal</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+
+                {/* Saved Meals */}
+                <ProfileDropZone dropId="saved-meals-list" data={{ type: "saved-meals-list" }} className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-foreground">Saved Meals</h3>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateMealName(""); setCreateMealItems([]); setCreateMealStep("name"); setCreateMealOpen(true); }}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
-              </div>
+                  {savedMeals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No saved meals yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedMeals.map((meal) => {
+                        const isExpanded = expandedMeal === meal.id;
+                        const totalCals = meal.items.reduce((s, i) => s + i.calories, 0);
+                        return (
+                          <DraggableMealCard
+                            key={meal.id}
+                            dragId={`drag-saved-meal-${meal.id}`}
+                            dropId={`drop-saved-meal-${meal.id}`}
+                            dragData={{ type: "saved-meal", mealId: meal.id, mealName: meal.name }}
+                            dropData={{ type: "saved-meal", mealId: meal.id, mealName: meal.name }}
+                            className="rounded-xl"
+                          >
+                            <div className="rounded-xl border border-border/50 overflow-hidden bg-card">
+                              <button onClick={() => setExpandedMeal(isExpanded ? null : meal.id)} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
+                                  <span className="text-sm font-medium text-foreground">{meal.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
+                                  <button onClick={(e) => { e.stopPropagation(); openEditMeal(meal); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                                  <button onClick={(e) => { e.stopPropagation(); deleteSavedMeal(meal.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                                </div>
+                              </button>
+                              {isExpanded && (
+                                <div className="px-3 pb-2 space-y-1 border-t border-border/30">
+                                  {meal.items.map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between py-1 pl-5 text-sm">
+                                      <span className="text-foreground">{item.name}</span>
+                                      <span className="text-xs text-muted-foreground">{item.quantity ? `${item.quantity} · ` : ""}{item.calories} kcal</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </DraggableMealCard>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ProfileDropZone>
+
+                <DragOverlay>
+                  {activeProfileDragLabel && (
+                    <div className="rounded-xl border border-border bg-secondary px-4 py-2.5 shadow-xl">
+                      <span className="text-sm font-medium text-foreground">{activeProfileDragLabel}</span>
+                    </div>
+                  )}
+                </DragOverlay>
+              </DndContext>
 
               {/* Saved Exercises */}
               <div>
