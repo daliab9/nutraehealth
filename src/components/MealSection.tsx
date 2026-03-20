@@ -527,7 +527,12 @@ export const MealSection = ({
       <Dialog open={mode === "create-meal-name"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle>Name your meal</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <button onClick={() => setMode("choose")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              Name your meal
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
             <Input
