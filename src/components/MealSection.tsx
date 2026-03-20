@@ -25,6 +25,7 @@ interface MealSectionProps {
   onAddItems?: (items: FoodItem[]) => void;
   pastItems?: FoodItem[];
   savedMeals?: SavedMeal[];
+  defaultMeals?: DefaultMeal[];
   onSaveMeal?: (meal: SavedMeal) => void;
   onUnsaveMeal?: (mealName: string) => void;
   onAddToSavedMeal?: (mealId: string, item: FoodItem) => void;
@@ -33,8 +34,8 @@ interface MealSectionProps {
   onSaveAsDefault?: (name: string, items: FoodItem[], mealType: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => void;
   onRemoveDefaultToday?: (defaultMealId: string) => void;
   onRemoveDefaultPermanently?: (defaultMealId: string) => void;
-  defaultMealGroupIds?: Set<string>; // groupIds that come from default meals
-  defaultMealIdMap?: Map<string, string>; // groupId -> defaultMealId
+  defaultMealGroupIds?: Set<string>;
+  defaultMealIdMap?: Map<string, string>;
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
