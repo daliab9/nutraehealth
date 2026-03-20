@@ -32,6 +32,30 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
 
     const longPressHandlers = useLongPress(onLongPress, 500);
 
+    const handleTouchStart = useCallback(
+      (event: React.TouchEvent<HTMLDivElement>) => {
+        listeners.onTouchStart?.(event);
+        longPressHandlers.onTouchStart?.();
+      },
+      [listeners, longPressHandlers]
+    );
+
+    const handleTouchEnd = useCallback(
+      (event: React.TouchEvent<HTMLDivElement>) => {
+        listeners.onTouchEnd?.(event);
+        longPressHandlers.onTouchEnd?.();
+      },
+      [listeners, longPressHandlers]
+    );
+
+    const handleTouchMove = useCallback(
+      (event: React.TouchEvent<HTMLDivElement>) => {
+        listeners.onTouchMove?.(event);
+        longPressHandlers.onTouchMove?.();
+      },
+      [listeners, longPressHandlers]
+    );
+
     const combinedRef = useCallback(
       (node: HTMLElement | null) => {
         setDragRef(node);
@@ -45,7 +69,9 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
         ref={combinedRef}
         {...attributes}
         {...listeners}
-        {...longPressHandlers}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
         className={cn(
           "flex w-full items-center transition-all touch-none cursor-grab active:cursor-grabbing",
           className,
