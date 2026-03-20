@@ -557,7 +557,12 @@ export const MealSection = ({
       <Dialog open={mode === "create-meal-add"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{creatingMealName}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <button onClick={() => setMode("create-meal-name")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              {creatingMealName}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             {creatingMealItems.length > 0 && (
