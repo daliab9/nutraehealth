@@ -174,35 +174,45 @@ export const MealSection = ({
     return isMealSaved(name) || defaultMealGroupIds.has(groupId);
   };
 
-  // Store base nutrition for multiplier calculations (keyed by item id)
-  const [baseNutrition] = useState<Map<string, FoodItem>>(new Map());
+  const roundToSingleDecimal = (value: number) => Math.round(value * 10) / 10;
 
-  const getBaseItem = (item: FoodItem): FoodItem => {
-    if (baseNutrition.has(item.id)) return baseNutrition.get(item.id)!;
-    // Strip any existing multiplier prefix from quantity to get base
-    const baseQuantity = item.quantity?.replace(/^\d+(\.\d+)?×\s*/, "") || item.quantity;
-    const base = { ...item, quantity: baseQuantity };
-    baseNutrition.set(item.id, base);
-    return base;
+  const getQuantityMeta = (quantity?: string) => {
+    const match = quantity?.match(/^(\d+(?:\.\d+)?)×\s*(.*)$/);
+    return {
+      multiplier: match ? Number(match[1]) || 1 : 1,
+      baseQuantity: match ? match[2] : (quantity || ""),
+    };
+  };
+
+  const scaleOptionalValue = (value: number | undefined, currentMultiplier: number, nextMultiplier: number) => {
+    if (value == null) return undefined;
+    const baseValue = currentMultiplier > 0 ? value / currentMultiplier : value;
+    return roundToSingleDecimal(baseValue * nextMultiplier);
+  };
+
+  const applyMultiplierToItem = (item: FoodItem, multiplier: number): FoodItem => {
+    const { multiplier: currentMultiplier, baseQuantity } = getQuantityMeta(item.quantity);
+    const normalizedCurrentMultiplier = currentMultiplier || 1;
+
+    return {
+      ...item,
+      calories: roundToSingleDecimal((item.calories / normalizedCurrentMultiplier) * multiplier),
+      protein: roundToSingleDecimal((item.protein / normalizedCurrentMultiplier) * multiplier),
+      carbs: roundToSingleDecimal((item.carbs / normalizedCurrentMultiplier) * multiplier),
+      fat: roundToSingleDecimal((item.fat / normalizedCurrentMultiplier) * multiplier),
+      fiber: scaleOptionalValue(item.fiber, normalizedCurrentMultiplier, multiplier),
+      iron: scaleOptionalValue(item.iron, normalizedCurrentMultiplier, multiplier),
+      vitamin_d: scaleOptionalValue(item.vitamin_d, normalizedCurrentMultiplier, multiplier),
+      magnesium: scaleOptionalValue(item.magnesium, normalizedCurrentMultiplier, multiplier),
+      omega3: scaleOptionalValue(item.omega3, normalizedCurrentMultiplier, multiplier),
+      b12: scaleOptionalValue(item.b12, normalizedCurrentMultiplier, multiplier),
+      quantity: multiplier === 1 ? baseQuantity : (baseQuantity ? `${multiplier}× ${baseQuantity}` : `${multiplier}×`),
+    };
   };
 
   const handleDuplicateItem = (item: FoodItem, multiplier: number) => {
     if (onUpdateItem) {
-      const base = getBaseItem(item);
-      const updated: FoodItem = {
-        ...item,
-        calories: Math.round(base.calories * multiplier * 10) / 10,
-        protein: Math.round(base.protein * multiplier * 10) / 10,
-        carbs: Math.round(base.carbs * multiplier * 10) / 10,
-        fat: Math.round(base.fat * multiplier * 10) / 10,
-        fiber: base.fiber ? Math.round(base.fiber * multiplier * 10) / 10 : undefined,
-        iron: base.iron ? Math.round(base.iron * multiplier * 10) / 10 : undefined,
-        vitamin_d: base.vitamin_d ? Math.round(base.vitamin_d * multiplier * 10) / 10 : undefined,
-        magnesium: base.magnesium ? Math.round(base.magnesium * multiplier * 10) / 10 : undefined,
-        omega3: base.omega3 ? Math.round(base.omega3 * multiplier * 10) / 10 : undefined,
-        b12: base.b12 ? Math.round(base.b12 * multiplier * 10) / 10 : undefined,
-        quantity: multiplier === 1 ? (base.quantity || "") : (base.quantity ? `${multiplier}× ${base.quantity}` : `${multiplier}×`),
-      };
+      const updated = applyMultiplierToItem(item, multiplier);
       onUpdateItem(updated);
       toast.success(`Updated to ${multiplier}× ${item.name}`);
     }
@@ -285,7 +295,7 @@ export const MealSection = ({
             const groupCals = group.items.reduce((s, i) => s + i.calories, 0);
             return (
               <DroppableGroupHeader key={groupId} groupId={groupId} mealType={mealType}>
-                <div className="rounded-xl border border-border bg-[#e4e7c6] overflow-hidden">
+                <div className="rounded-xl border border-border bg-secondary overflow-hidden">
                   <button onClick={() => toggleGroup(groupId)} className="w-full flex items-center justify-between px-3 py-2">
                     <div className="flex items-center gap-2">
                       {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
@@ -345,11 +355,11 @@ export const MealSection = ({
                           onLongPress={() => setLongPressItem(item)}
                           className="py-1.5 pl-3 text-sm"
                         >
-                          <div className="flex flex-col min-w-0 flex-1 mr-2">
+                          <div className="pointer-events-none flex flex-col min-w-0 flex-1 mr-2">
                             <span className="text-foreground break-words">{item.name}</span>
                             {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="pointer-events-auto flex items-center gap-1 flex-shrink-0">
                             <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
                             <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
                               <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
@@ -393,13 +403,13 @@ export const MealSection = ({
                 mealType={mealType}
                 item={item}
                 onLongPress={() => setLongPressItem(item)}
-                className="px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]"
+                className="px-3 py-2 rounded-xl border border-border bg-secondary"
               >
-                <div className="flex flex-col min-w-0 flex-1 mr-2">
+                <div className="pointer-events-none flex flex-col min-w-0 flex-1 mr-2">
                   <span className="font-medium text-foreground text-sm break-words">{item.name}</span>
                   {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="pointer-events-auto flex items-center gap-1 flex-shrink-0">
                   <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
                   <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
                     <button className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
