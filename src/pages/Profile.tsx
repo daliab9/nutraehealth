@@ -638,7 +638,7 @@ const Profile = () => {
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pt-4 pb-4">
-              {/* Default Meals */}
+              {/* Default Meals - Grouped by meal type */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground">Default Meals</h3>
@@ -650,33 +650,104 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, or star a meal in your diary.</p>
                 ) : (
                   <div className="space-y-2">
-                    {(profile.defaultMeals || []).map((dm) => {
-                      const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
-                      const freqLabel = dm.frequency === "everyday" ? "Every day"
-                        : dm.frequency === "weekdays" ? "Weekdays"
-                        : dm.frequency === "weekends" ? "Weekends"
-                        : (dm.specificDays || []).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(" · ");
-                      const mealTypeLabel = dm.mealType.charAt(0).toUpperCase() + dm.mealType.slice(1);
-                      return (
-                        <div key={dm.id} className="rounded-xl border border-border/50 p-3 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-foreground">{dm.name}</span>
-                              <span className="text-[10px] text-muted-foreground">{mealTypeLabel} · {dm.items.length} items · {totalCals} kcal</span>
+                    {(() => {
+                      const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack", "supplements", "drinks"];
+                      const grouped = MEAL_TYPE_ORDER.map((mt) => ({
+                        type: mt,
+                        label: mt.charAt(0).toUpperCase() + mt.slice(1),
+                        meals: (profile.defaultMeals || []).filter((dm) => dm.mealType === mt),
+                      })).filter((g) => g.meals.length > 0);
+                      return grouped.map((group) => (
+                        <div key={group.type} className="rounded-xl border border-border/50 overflow-hidden">
+                          <button
+                            onClick={() => setExpandedDefaultMealType((prev) => prev === group.type ? null : group.type)}
+                            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              {expandedDefaultMealType === group.type ? <ChevronDown className="h-3.5 w-3.5 text-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-foreground" />}
+                              <span className="text-sm font-medium text-foreground">{group.label}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
-                              <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
-                              <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                            <span className="text-xs text-muted-foreground">{group.meals.length} meal{group.meals.length !== 1 ? "s" : ""}</span>
+                          </button>
+                          {expandedDefaultMealType === group.type && (
+                            <div className="px-3 pb-2 space-y-2 border-t border-border/30">
+                              {group.meals.map((dm) => {
+                                const totalCals = dm.items.reduce((s, i) => s + i.calories, 0);
+                                const freqLabel = dm.frequency === "everyday" ? "Every day"
+                                  : dm.frequency === "weekdays" ? "Weekdays"
+                                  : dm.frequency === "weekends" ? "Weekends"
+                                  : (dm.specificDays || []).map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]).join(" · ");
+                                const isItemsExpanded = expandedDefaultMealItems === dm.id;
+                                return (
+                                  <div key={dm.id} className="rounded-lg border border-border/30 p-2.5 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">{dm.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">{dm.items.length} items · {totalCals} kcal</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                                        <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
+                                        <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs text-muted-foreground">{freqLabel}</span>
+                                    </div>
+                                    {/* Expandable ingredients */}
+                                    <button onClick={() => setExpandedDefaultMealItems(isItemsExpanded ? null : dm.id)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                                      {isItemsExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                      {dm.items.length} ingredient{dm.items.length !== 1 ? "s" : ""}
+                                    </button>
+                                    {isItemsExpanded && (
+                                      <div className="space-y-1 pl-1">
+                                        {dm.items.map((item, idx) => (
+                                          <div key={idx} className="flex items-center justify-between py-1 px-2 rounded-lg bg-secondary/50">
+                                            <div className="flex flex-col min-w-0 flex-1 mr-2">
+                                              <span className="text-xs text-foreground break-words">{item.name}</span>
+                                              {item.quantity && <span className="text-[9px] text-muted-foreground">{item.quantity}</span>}
+                                            </div>
+                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                              <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
+                                              <QuickMultiplierPopover item={item} onDuplicate={(itm, mult) => {
+                                                const updated = {
+                                                  ...itm,
+                                                  calories: Math.round(itm.calories * mult * 10) / 10,
+                                                  protein: Math.round(itm.protein * mult * 10) / 10,
+                                                  carbs: Math.round(itm.carbs * mult * 10) / 10,
+                                                  fat: Math.round(itm.fat * mult * 10) / 10,
+                                                  fiber: itm.fiber ? Math.round(itm.fiber * mult * 10) / 10 : undefined,
+                                                  iron: itm.iron ? Math.round(itm.iron * mult * 10) / 10 : undefined,
+                                                  vitamin_d: itm.vitamin_d ? Math.round(itm.vitamin_d * mult * 10) / 10 : undefined,
+                                                  magnesium: itm.magnesium ? Math.round(itm.magnesium * mult * 10) / 10 : undefined,
+                                                  omega3: itm.omega3 ? Math.round(itm.omega3 * mult * 10) / 10 : undefined,
+                                                  b12: itm.b12 ? Math.round(itm.b12 * mult * 10) / 10 : undefined,
+                                                  quantity: itm.quantity ? `${mult}× ${itm.quantity}` : `${mult}×`,
+                                                };
+                                                setProfile({
+                                                  defaultMeals: (profile.defaultMeals || []).map((d) =>
+                                                    d.id === dm.id ? { ...d, items: d.items.map((it, j) => j === idx ? updated : it) } : d
+                                                  ),
+                                                });
+                                              }}>
+                                                <button className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                                                  <Copy className="h-3 w-3" />
+                                                </button>
+                                              </QuickMultiplierPopover>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">{freqLabel}</span>
-                          </div>
+                          )}
                         </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 )}
               </div>
