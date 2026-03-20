@@ -52,8 +52,9 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
           isOver && "ring-2 ring-primary/50",
           isDragging && "opacity-40"
         )}
+        style={{ touchAction: "none" }}
       >
-        <div className="flex-1 min-w-0 flex items-center justify-between">
+        <div className="flex-1 min-w-0 flex items-center justify-between pointer-events-auto">
           {children}
         </div>
       </div>
