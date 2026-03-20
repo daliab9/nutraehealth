@@ -88,6 +88,72 @@ const Diary = () => {
     return map;
   }, [defaultMealsForDate]);
 
+  const findDefaultItemContext = (itemId: string) => {
+    for (const defaultMeal of defaultMealsForDate) {
+      const itemIndex = defaultMeal.items.findIndex((item) => item.id === itemId);
+      if (itemIndex >= 0) {
+        return {
+          defaultMealId: defaultMeal.defaultMealId,
+          mealType: defaultMeal.mealType,
+          itemIndex,
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const materializeDefaultMealForToday = (defaultMealId: string) => {
+    const defaultMeal = (profile.defaultMeals || []).find((meal) => meal.id === defaultMealId);
+    if (!defaultMeal) return null;
+
+    const overrideExists = (profile.defaultMealOverrides || []).some(
+      (override) => override.defaultMealId === defaultMealId && override.date === dateKey && override.removed
+    );
+
+    const createdAt = Date.now();
+    const groupId = `logged-default-${defaultMealId}-${createdAt}`;
+    const clonedItems = defaultMeal.items.map((item, index) => ({
+      ...item,
+      id: `${groupId}-${index}`,
+      groupId,
+      groupName: defaultMeal.name,
+    }));
+
+    clonedItems.forEach((item) => addFoodToMeal(dateKey, defaultMeal.mealType, item));
+
+    if (!overrideExists) {
+      setProfile({
+        defaultMealOverrides: [
+          ...(profile.defaultMealOverrides || []).filter(
+            (override) => !(override.defaultMealId === defaultMealId && override.date === dateKey)
+          ),
+          { defaultMealId, date: dateKey, removed: true },
+        ],
+      });
+    }
+
+    return {
+      clonedItems,
+      mealType: defaultMeal.mealType,
+      groupId,
+      groupName: defaultMeal.name,
+    };
+  };
+
+  const materializeDefaultItemForToday = (itemId: string) => {
+    const context = findDefaultItemContext(itemId);
+    if (!context) return null;
+
+    const materializedMeal = materializeDefaultMealForToday(context.defaultMealId);
+    if (!materializedMeal) return null;
+
+    return {
+      mealType: materializedMeal.mealType,
+      item: materializedMeal.clonedItems[context.itemIndex],
+    };
+  };
+
   const getMealItems = (type: string) => {
     const meal = dayEntry.meals.find((m) => m.type === type);
     const loggedItems = meal?.items || [];
@@ -210,30 +276,79 @@ const Diary = () => {
 
     if (!sourceData || !overData) return;
 
+    const materializedMeals = new Map<string, ReturnType<typeof materializeDefaultMealForToday>>();
+
+    const ensureMaterializedMeal = (defaultMealId: string) => {
+      if (materializedMeals.has(defaultMealId)) return materializedMeals.get(defaultMealId) || null;
+      const materialized = materializeDefaultMealForToday(defaultMealId);
+      materializedMeals.set(defaultMealId, materialized);
+      return materialized;
+    };
+
+    let sourceMealType = sourceData.mealType;
+    let sourceItem = sourceData.item;
+    let sourceItemId = sourceData.itemId;
+
+    if (sourceItem.id.startsWith("default-")) {
+      const sourceContext = findDefaultItemContext(sourceItem.id);
+      if (!sourceContext) return;
+      const materializedSourceMeal = ensureMaterializedMeal(sourceContext.defaultMealId);
+      const materializedSourceItem = materializedSourceMeal?.clonedItems[sourceContext.itemIndex];
+      if (!materializedSourceMeal || !materializedSourceItem) return;
+      sourceMealType = materializedSourceMeal.mealType;
+      sourceItem = materializedSourceItem;
+      sourceItemId = materializedSourceItem.id;
+    }
+
+    let overMealType = overData.mealType;
+    let overItem = overData.item;
+    let overGroupId = overData.groupId;
+
+    if (overData.type === "meal-group" && overGroupId && defaultMealGroupIds.has(overGroupId)) {
+      const targetDefaultMealId = defaultMealIdMap.get(overGroupId);
+      if (!targetDefaultMealId) return;
+      const materializedTargetMeal = ensureMaterializedMeal(targetDefaultMealId);
+      if (!materializedTargetMeal) return;
+      overMealType = materializedTargetMeal.mealType;
+      overGroupId = materializedTargetMeal.groupId;
+    }
+
+    if (overData.type === "food-item" && overItem?.id.startsWith("default-")) {
+      const targetContext = findDefaultItemContext(overItem.id);
+      if (!targetContext) return;
+      const materializedTargetMeal = ensureMaterializedMeal(targetContext.defaultMealId);
+      const materializedTargetItem = materializedTargetMeal?.clonedItems[targetContext.itemIndex];
+      if (!materializedTargetMeal || !materializedTargetItem) return;
+      overMealType = materializedTargetMeal.mealType;
+      overItem = materializedTargetItem;
+      overGroupId = materializedTargetItem.groupId;
+    }
+
     // Dropped on a meal group header → add to that group
-    if (overData.type === "meal-group" && overData.groupId) {
-      const sourceItem = sourceData.item;
+    if (overData.type === "meal-group" && overGroupId) {
       // Find the group name from current items
-      const mealItems = getMealItems(overData.mealType);
-      const groupItem = mealItems.find((i) => i.groupId === overData.groupId);
+      const mealItems = getMealItems(overMealType);
+      const groupItem = mealItems.find((i) => i.groupId === overGroupId) || overItem;
       const groupName = groupItem?.groupName || "Meal";
 
-      if (sourceData.mealType !== overData.mealType) {
+      if (sourceMealType !== overMealType) {
         // Move between sections first, then add to group
-        moveFoodBetweenMeals(dateKey, sourceData.mealType as MealEntry["type"], overData.mealType as MealEntry["type"], sourceData.itemId);
+        moveFoodBetweenMeals(dateKey, sourceMealType as MealEntry["type"], overMealType as MealEntry["type"], sourceItemId);
         // After moving, update the item to be in the group
         setTimeout(() => {
-          updateFoodInMeal(dateKey, overData.mealType as MealEntry["type"], {
+          updateFoodInMeal(dateKey, overMealType as MealEntry["type"], {
             ...sourceItem,
-            groupId: overData.groupId,
+            id: sourceItemId,
+            groupId: overGroupId,
             groupName,
           });
         }, 0);
-      } else if (sourceItem.groupId !== overData.groupId) {
+      } else if (sourceItem.groupId !== overGroupId) {
         // Same section, just update group
-        updateFoodInMeal(dateKey, sourceData.mealType as MealEntry["type"], {
+        updateFoodInMeal(dateKey, sourceMealType as MealEntry["type"], {
           ...sourceItem,
-          groupId: overData.groupId,
+          id: sourceItemId,
+          groupId: overGroupId,
           groupName,
         });
       }
@@ -241,30 +356,31 @@ const Diary = () => {
       return;
     }
 
-    if (overData.type === "meal-section" && sourceData.mealType !== overData.mealType) {
+    if (overData.type === "meal-section" && sourceMealType !== overMealType) {
       // Move item to a different meal section (strips group info)
-      moveFoodBetweenMeals(dateKey, sourceData.mealType as MealEntry["type"], overData.mealType as MealEntry["type"], sourceData.itemId);
-      toast.success(`Moved to ${MEAL_TYPES.find(m => m.type === overData.mealType)?.title || overData.mealType}`);
-    } else if (overData.type === "meal-section" && sourceData.mealType === overData.mealType && sourceData.item.groupId) {
+      moveFoodBetweenMeals(dateKey, sourceMealType as MealEntry["type"], overMealType as MealEntry["type"], sourceItemId);
+      toast.success(`Moved to ${MEAL_TYPES.find(m => m.type === overMealType)?.title || overMealType}`);
+    } else if (overData.type === "meal-section" && sourceMealType === overMealType && sourceItem.groupId) {
       // Dropped on own section zone while in a group → remove from group
-      removeFoodFromGroup(dateKey, sourceData.mealType as MealEntry["type"], sourceData.itemId);
+      removeFoodFromGroup(dateKey, sourceMealType as MealEntry["type"], sourceItemId);
       toast.success("Removed from meal group");
-    } else if (overData.type === "food-item" && sourceData.itemId !== overData.itemId) {
+    } else if (overData.type === "food-item" && sourceItemId !== overItem?.id) {
       // If target has a groupId, add source to that group
-      if (overData.item?.groupId) {
-        updateFoodInMeal(dateKey, sourceData.mealType as MealEntry["type"], {
-          ...sourceData.item,
-          groupId: overData.item.groupId,
-          groupName: overData.item.groupName,
+      if (overItem?.groupId) {
+        updateFoodInMeal(dateKey, sourceMealType as MealEntry["type"], {
+          ...sourceItem,
+          id: sourceItemId,
+          groupId: overItem.groupId,
+          groupName: overItem.groupName,
         });
-        toast.success(`Added to "${overData.item.groupName}"`);
+        toast.success(`Added to "${overItem.groupName}"`);
       } else {
         // Dropped on another ungrouped food item → show merge dialog
         setMergeData({
-          sourceItem: sourceData.item,
-          sourceMealType: sourceData.mealType,
-          targetItem: overData.item!,
-          targetMealType: overData.mealType,
+          sourceItem,
+          sourceMealType,
+          targetItem: overItem!,
+          targetMealType: overMealType,
         });
         setMergeMealName("");
       }
@@ -422,8 +538,32 @@ const Diary = () => {
                       mealType={type}
                       items={getMealItems(type)}
                       onAddItem={(item) => addFoodToMeal(dateKey, type as any, item)}
-                      onRemoveItem={(itemId) => removeFoodFromMeal(dateKey, type as any, itemId)}
-                      onUpdateItem={(item) => updateFoodInMeal(dateKey, type as any, item)}
+                      onRemoveItem={(itemId) => {
+                        if (itemId.startsWith("default-")) {
+                          const materialized = materializeDefaultItemForToday(itemId);
+                          if (!materialized?.item) return;
+                          removeFoodFromMeal(dateKey, materialized.mealType as any, materialized.item.id);
+                          return;
+                        }
+
+                        removeFoodFromMeal(dateKey, type as any, itemId);
+                      }}
+                      onUpdateItem={(item) => {
+                        if (item.id.startsWith("default-")) {
+                          const materialized = materializeDefaultItemForToday(item.id);
+                          if (!materialized?.item) return;
+                          updateFoodInMeal(dateKey, materialized.mealType as any, {
+                            ...materialized.item,
+                            ...item,
+                            id: materialized.item.id,
+                            groupId: materialized.item.groupId,
+                            groupName: materialized.item.groupName,
+                          });
+                          return;
+                        }
+
+                        updateFoodInMeal(dateKey, type as any, item);
+                      }}
                       onAddItems={(items) => items.forEach(item => addFoodToMeal(dateKey, type as any, item))}
                       pastItems={getPastItemsForMealType(type)}
                       savedMeals={profile.savedMeals || []}

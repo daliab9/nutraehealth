@@ -47,7 +47,7 @@ export const DraggableFoodItem = React.forwardRef<HTMLDivElement, DraggableFoodI
         {...listeners}
         {...longPressHandlers}
         className={cn(
-          "flex items-center transition-all touch-none cursor-grab active:cursor-grabbing",
+          "flex w-full items-center transition-all touch-none cursor-grab active:cursor-grabbing",
           className,
           isOver && "ring-2 ring-primary/50",
           isDragging && "opacity-40"
