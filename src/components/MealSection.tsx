@@ -361,8 +361,16 @@ export const MealSection = ({
                                 <Pencil className="h-4 w-4" />
                               </button>
                             )}
-                            {onRemoveItem && (
-                              <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
+                            {(onRemoveItem || defaultMealGroupIds.has(item.groupId || "")) && (
+                              <button onClick={() => {
+                                if (item.id.startsWith("default-") && item.groupId && defaultMealGroupIds.has(item.groupId)) {
+                                  // Remove ingredient from default meal for today by overriding
+                                  const dmId = defaultMealIdMap.get(item.groupId);
+                                  if (dmId) onRemoveDefaultToday?.(dmId);
+                                } else if (onRemoveItem) {
+                                  onRemoveItem(item.id);
+                                }
+                              }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
                                 <X className="h-4 w-4" />
                               </button>
                             )}
