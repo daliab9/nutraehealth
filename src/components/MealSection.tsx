@@ -160,8 +160,38 @@ export const MealSection = ({
     setMode(null);
   };
 
+  const isItemSavedOrDefault = (name: string) => {
+    const savedMatch = savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+    const defaultMatch = defaultMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+    return savedMatch || defaultMatch;
+  };
+
   const isMealSaved = (name: string) => {
     return savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const isGroupSavedOrDefault = (name: string, groupId: string) => {
+    return isMealSaved(name) || defaultMealGroupIds.has(groupId);
+  };
+
+  const handleDuplicateItem = (item: FoodItem, multiplier: number) => {
+    const newItem: FoodItem = {
+      ...item,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      calories: Math.round(item.calories * multiplier * 10) / 10,
+      protein: Math.round(item.protein * multiplier * 10) / 10,
+      carbs: Math.round(item.carbs * multiplier * 10) / 10,
+      fat: Math.round(item.fat * multiplier * 10) / 10,
+      fiber: item.fiber ? Math.round(item.fiber * multiplier * 10) / 10 : undefined,
+      iron: item.iron ? Math.round(item.iron * multiplier * 10) / 10 : undefined,
+      vitamin_d: item.vitamin_d ? Math.round(item.vitamin_d * multiplier * 10) / 10 : undefined,
+      magnesium: item.magnesium ? Math.round(item.magnesium * multiplier * 10) / 10 : undefined,
+      omega3: item.omega3 ? Math.round(item.omega3 * multiplier * 10) / 10 : undefined,
+      b12: item.b12 ? Math.round(item.b12 * multiplier * 10) / 10 : undefined,
+      quantity: item.quantity ? `${multiplier}× ${item.quantity}` : `${multiplier}×`,
+    };
+    onAddItem(newItem);
+    toast.success(`Added ${multiplier}× ${item.name}`);
   };
 
   const handleToggleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
