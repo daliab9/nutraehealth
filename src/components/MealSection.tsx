@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Star, type LucideIcon } from "lucide-react";
+import { Plus, X, Pencil, ChevronDown, ChevronRight, Heart, Star, ArrowLeft, Copy, type LucideIcon } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { FoodEditInput } from "@/components/FoodEditInput";
 import { DraggableFoodItem } from "@/components/DraggableFoodItem";
 import { SaveMealModal } from "@/components/SaveMealModal";
 import { RemoveDefaultMealDialog } from "@/components/RemoveDefaultMealDialog";
-import type { FoodItem, SavedMeal, DefaultMealFrequency, MealEntry } from "@/stores/useUserStore";
+import { QuickMultiplierPopover } from "@/components/QuickMultiplierPopover";
+import type { FoodItem, SavedMeal, DefaultMeal, DefaultMealFrequency, MealEntry } from "@/stores/useUserStore";
 import { toast } from "sonner";
 
 interface MealSectionProps {
@@ -24,6 +25,7 @@ interface MealSectionProps {
   onAddItems?: (items: FoodItem[]) => void;
   pastItems?: FoodItem[];
   savedMeals?: SavedMeal[];
+  defaultMeals?: DefaultMeal[];
   onSaveMeal?: (meal: SavedMeal) => void;
   onUnsaveMeal?: (mealName: string) => void;
   onAddToSavedMeal?: (mealId: string, item: FoodItem) => void;
@@ -32,8 +34,8 @@ interface MealSectionProps {
   onSaveAsDefault?: (name: string, items: FoodItem[], mealType: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => void;
   onRemoveDefaultToday?: (defaultMealId: string) => void;
   onRemoveDefaultPermanently?: (defaultMealId: string) => void;
-  defaultMealGroupIds?: Set<string>; // groupIds that come from default meals
-  defaultMealIdMap?: Map<string, string>; // groupId -> defaultMealId
+  defaultMealGroupIds?: Set<string>;
+  defaultMealIdMap?: Map<string, string>;
 }
 
 type AddMode = null | "choose" | "search" | "scan" | "create-meal-name" | "create-meal-add";
@@ -62,6 +64,7 @@ export const MealSection = ({
   onAddItems,
   pastItems = [],
   savedMeals = [],
+  defaultMeals = [],
   onSaveMeal,
   onUnsaveMeal,
   onAddToSavedMeal,
@@ -157,8 +160,38 @@ export const MealSection = ({
     setMode(null);
   };
 
+  const isItemSavedOrDefault = (name: string) => {
+    const savedMatch = savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+    const defaultMatch = defaultMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+    return savedMatch || defaultMatch;
+  };
+
   const isMealSaved = (name: string) => {
     return savedMeals.some((m) => m.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const isGroupSavedOrDefault = (name: string, groupId: string) => {
+    return isMealSaved(name) || defaultMealGroupIds.has(groupId);
+  };
+
+  const handleDuplicateItem = (item: FoodItem, multiplier: number) => {
+    const newItem: FoodItem = {
+      ...item,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      calories: Math.round(item.calories * multiplier * 10) / 10,
+      protein: Math.round(item.protein * multiplier * 10) / 10,
+      carbs: Math.round(item.carbs * multiplier * 10) / 10,
+      fat: Math.round(item.fat * multiplier * 10) / 10,
+      fiber: item.fiber ? Math.round(item.fiber * multiplier * 10) / 10 : undefined,
+      iron: item.iron ? Math.round(item.iron * multiplier * 10) / 10 : undefined,
+      vitamin_d: item.vitamin_d ? Math.round(item.vitamin_d * multiplier * 10) / 10 : undefined,
+      magnesium: item.magnesium ? Math.round(item.magnesium * multiplier * 10) / 10 : undefined,
+      omega3: item.omega3 ? Math.round(item.omega3 * multiplier * 10) / 10 : undefined,
+      b12: item.b12 ? Math.round(item.b12 * multiplier * 10) / 10 : undefined,
+      quantity: item.quantity ? `${multiplier}× ${item.quantity}` : `${multiplier}×`,
+    };
+    onAddItem(newItem);
+    toast.success(`Added ${multiplier}× ${item.name}`);
   };
 
   const handleToggleSaveGroup = (groupId: string, name: string, groupItems: FoodItem[]) => {
@@ -257,7 +290,7 @@ export const MealSection = ({
                           <Plus className="h-4 w-4" />
                         </button>
                       )}
-                      {(onSaveMeal || onSaveAsDefault) && !defaultMealGroupIds.has(groupId) && (
+                      {(onSaveMeal || onSaveAsDefault) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -267,7 +300,7 @@ export const MealSection = ({
                           }}
                           className="h-7 w-7 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
                         >
-                          <Star className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
+                          <Star className={`h-4 w-4 ${isGroupSavedOrDefault(group.name, groupId) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
                       {onRemoveItem && (
@@ -302,20 +335,16 @@ export const MealSection = ({
                             <span className="text-foreground break-words">{item.name}</span>
                             {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
+                            <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
+                              <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                            </QuickMultiplierPopover>
                             {onUpdateItem && (
                               <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
                                 <Pencil className="h-4 w-4" />
-                              </button>
-                            )}
-                            {onRemoveFromGroup && (
-                              <button
-                                onClick={() => onRemoveFromGroup(item.id)}
-                                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
-                                title="Remove from meal"
-                              >
-                                <Star className="h-4 w-4 fill-foreground" />
                               </button>
                             )}
                             {onRemoveItem && (
@@ -348,8 +377,13 @@ export const MealSection = ({
                   <span className="font-medium text-foreground text-sm break-words">{item.name}</span>
                   {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <span className="text-muted-foreground text-xs font-bold">{item.calories} kcal</span>
+                  <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
+                    <button className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </QuickMultiplierPopover>
                   {onUpdateItem && (
                     <button onClick={() => setEditingItem(item)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
                       <Pencil className="h-4 w-4" />
@@ -359,8 +393,8 @@ export const MealSection = ({
                     setSaveMealModalItems([item]);
                     setSaveMealModalName(item.name);
                     setSaveMealModalOpen(true);
-                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95">
-                    <Star className="h-4 w-4" />
+                  }} className="h-8 w-8 rounded-full flex items-center justify-center text-foreground transition-colors active:scale-95">
+                    <Star className={`h-4 w-4 ${isItemSavedOrDefault(item.name) ? "fill-foreground" : ""}`} />
                   </button>
                   {onRemoveItem && (
                     <button onClick={() => onRemoveItem(item.id)} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95">
@@ -493,7 +527,12 @@ export const MealSection = ({
       <Dialog open={mode === "create-meal-name"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle>Name your meal</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <button onClick={() => setMode("choose")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              Name your meal
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
             <Input
@@ -518,7 +557,12 @@ export const MealSection = ({
       <Dialog open={mode === "create-meal-add"} onOpenChange={(o) => !o && setMode(null)}>
         <DialogContent className="rounded-2xl max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{creatingMealName}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <button onClick={() => setMode("create-meal-name")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              {creatingMealName}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             {creatingMealItems.length > 0 && (

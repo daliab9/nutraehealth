@@ -427,6 +427,7 @@ const Diary = () => {
                       onAddItems={(items) => items.forEach(item => addFoodToMeal(dateKey, type as any, item))}
                       pastItems={getPastItemsForMealType(type)}
                       savedMeals={profile.savedMeals || []}
+                      defaultMeals={profile.defaultMeals || []}
                       onSaveMeal={handleSaveMeal}
                       onUnsaveMeal={handleUnsaveMeal}
                       onAddToSavedMeal={handleAddToSavedMeal}
