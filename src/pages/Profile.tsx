@@ -639,9 +639,14 @@ const Profile = () => {
             <AccordionContent className="px-4 pt-4 pb-4">
               {/* Default Meals */}
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Default Meals</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Default Meals</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateDefaultMealName(""); setCreateDefaultMealItems([]); setCreateDefaultMealStep("name"); setCreateDefaultMealType("breakfast"); setCreateDefaultFrequency("everyday"); setCreateDefaultDays([]); setCreateDefaultMealOpen(true); }}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
                 {(profile.defaultMeals || []).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No default meals yet. Star a meal in your diary and select "Set as Default Meal" to auto-log it on scheduled days.</p>
+                  <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, or star a meal in your diary.</p>
                 ) : (
                   <div className="space-y-2">
                     {(profile.defaultMeals || []).map((dm) => {
@@ -656,10 +661,11 @@ const Profile = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-foreground">{dm.name}</span>
-                              <span className="text-[10px] text-muted-foreground">{mealTypeLabel} · {totalCals} kcal</span>
+                              <span className="text-[10px] text-muted-foreground">{mealTypeLabel} · {dm.items.length} items · {totalCals} kcal</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                              <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
+                              <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
                               <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
                             </div>
                           </div>
