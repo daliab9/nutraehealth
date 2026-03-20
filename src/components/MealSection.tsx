@@ -353,7 +353,7 @@ export const MealSection = ({
                           mealType={mealType}
                           item={item}
                           onLongPress={() => setLongPressItem(item)}
-                          className="py-1.5 pl-3 text-sm"
+                          className="px-3 py-2 rounded-xl border border-border bg-secondary text-sm"
                         >
                           <div className="pointer-events-none flex flex-col min-w-0 flex-1 mr-2">
                             <span className="text-foreground break-words">{item.name}</span>
@@ -373,11 +373,7 @@ export const MealSection = ({
                             )}
                             {(onRemoveItem || defaultMealGroupIds.has(item.groupId || "")) && (
                               <button onClick={() => {
-                                if (item.id.startsWith("default-") && item.groupId && defaultMealGroupIds.has(item.groupId)) {
-                                  // Remove ingredient from default meal for today by overriding
-                                  const dmId = defaultMealIdMap.get(item.groupId);
-                                  if (dmId) onRemoveDefaultToday?.(dmId);
-                                } else if (onRemoveItem) {
+                                if (onRemoveItem) {
                                   onRemoveItem(item.id);
                                 }
                               }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95 transition-transform">
