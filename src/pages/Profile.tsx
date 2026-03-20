@@ -89,6 +89,42 @@ function ftStrToCm(s: string) {
   return Math.round((parseInt(match[1]) * 12 + parseInt(match[2])) * 2.54);
 }
 
+const roundToSingleDecimal = (value: number) => Math.round(value * 10) / 10;
+
+const getQuantityMeta = (quantity?: string) => {
+  const match = quantity?.match(/^(\d+(?:\.\d+)?)×\s*(.*)$/);
+  return {
+    multiplier: match ? Number(match[1]) || 1 : 1,
+    baseQuantity: match ? match[2] : (quantity || ""),
+  };
+};
+
+const scaleOptionalValue = (value: number | undefined, currentMultiplier: number, nextMultiplier: number) => {
+  if (value == null) return undefined;
+  const baseValue = currentMultiplier > 0 ? value / currentMultiplier : value;
+  return roundToSingleDecimal(baseValue * nextMultiplier);
+};
+
+const applyMultiplierToItem = (item: FoodItem, multiplier: number): FoodItem => {
+  const { multiplier: currentMultiplier, baseQuantity } = getQuantityMeta(item.quantity);
+  const normalizedCurrentMultiplier = currentMultiplier || 1;
+
+  return {
+    ...item,
+    calories: roundToSingleDecimal((item.calories / normalizedCurrentMultiplier) * multiplier),
+    protein: roundToSingleDecimal((item.protein / normalizedCurrentMultiplier) * multiplier),
+    carbs: roundToSingleDecimal((item.carbs / normalizedCurrentMultiplier) * multiplier),
+    fat: roundToSingleDecimal((item.fat / normalizedCurrentMultiplier) * multiplier),
+    fiber: scaleOptionalValue(item.fiber, normalizedCurrentMultiplier, multiplier),
+    iron: scaleOptionalValue(item.iron, normalizedCurrentMultiplier, multiplier),
+    vitamin_d: scaleOptionalValue(item.vitamin_d, normalizedCurrentMultiplier, multiplier),
+    magnesium: scaleOptionalValue(item.magnesium, normalizedCurrentMultiplier, multiplier),
+    omega3: scaleOptionalValue(item.omega3, normalizedCurrentMultiplier, multiplier),
+    b12: scaleOptionalValue(item.b12, normalizedCurrentMultiplier, multiplier),
+    quantity: multiplier === 1 ? baseQuantity : (baseQuantity ? `${multiplier}× ${baseQuantity}` : `${multiplier}×`),
+  };
+};
+
 // SectionHeader is now integrated into AccordionTrigger below
 
 const EditButton = ({ onClick }: { onClick: () => void }) => (
@@ -713,26 +749,7 @@ const Profile = () => {
                                             <div className="flex items-center gap-1 flex-shrink-0">
                                               <span className="text-[10px] text-muted-foreground">{item.calories} kcal</span>
                                               <QuickMultiplierPopover item={item} onDuplicate={(itm, mult) => {
-                                                // Always compute from base: strip any previous multiplier
-                                                const baseQuantity = itm.quantity?.replace(/^\d+(\.\d+)?×\s*/, "") || itm.quantity;
-                                                // Find original item from default meal to get base nutrition
-                                                const origDm = (profile.defaultMeals || []).find((d) => d.id === dm.id);
-                                                const origItem = origDm?.items[idx];
-                                                const base = origItem || itm;
-                                                const updated = {
-                                                  ...itm,
-                                                  calories: Math.round(base.calories * mult * 10) / 10,
-                                                  protein: Math.round(base.protein * mult * 10) / 10,
-                                                  carbs: Math.round(base.carbs * mult * 10) / 10,
-                                                  fat: Math.round(base.fat * mult * 10) / 10,
-                                                  fiber: base.fiber ? Math.round(base.fiber * mult * 10) / 10 : undefined,
-                                                  iron: base.iron ? Math.round(base.iron * mult * 10) / 10 : undefined,
-                                                  vitamin_d: base.vitamin_d ? Math.round(base.vitamin_d * mult * 10) / 10 : undefined,
-                                                  magnesium: base.magnesium ? Math.round(base.magnesium * mult * 10) / 10 : undefined,
-                                                  omega3: base.omega3 ? Math.round(base.omega3 * mult * 10) / 10 : undefined,
-                                                  b12: base.b12 ? Math.round(base.b12 * mult * 10) / 10 : undefined,
-                                                  quantity: mult === 1 ? (baseQuantity || "") : (baseQuantity ? `${mult}× ${baseQuantity}` : `${mult}×`),
-                                                };
+                                                const updated = applyMultiplierToItem(itm, mult);
                                                 setProfile({
                                                   defaultMeals: (profile.defaultMeals || []).map((d) =>
                                                     d.id === dm.id ? { ...d, items: d.items.map((it, j) => j === idx ? updated : it) } : d
@@ -1152,6 +1169,16 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <QuickMultiplierPopover
+                          item={item}
+                          onDuplicate={(itm, mult) => {
+                            setEditMealItems((prev) => prev.map((it, idx) => idx === i ? applyMultiplierToItem(itm, mult) : it));
+                          }}
+                        >
+                          <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95">
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </QuickMultiplierPopover>
                         <button onClick={() => setEditingMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => setEditMealItems((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
                       </div>
@@ -1431,6 +1458,16 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs text-muted-foreground">{item.calories} kcal</span>
+                        <QuickMultiplierPopover
+                          item={item}
+                          onDuplicate={(itm, mult) => {
+                            setEditDefaultMealItemsList((prev) => prev.map((it, idx) => idx === i ? applyMultiplierToItem(itm, mult) : it));
+                          }}
+                        >
+                          <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95">
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </QuickMultiplierPopover>
                         <button onClick={() => setEditingDefaultMealItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => setEditDefaultMealItemsList((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
                       </div>
