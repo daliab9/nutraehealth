@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Star, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, Calendar, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,19 +29,23 @@ export const SaveMealModal = ({
   onSetAsDefault,
 }: SaveMealModalProps) => {
   const [step, setStep] = useState<Step>("choose");
-  const [name, setName] = useState(groupName || "");
+  const [name, setName] = useState("");
   const [frequency, setFrequency] = useState<DefaultMealFrequency>("everyday");
   const [specificDays, setSpecificDays] = useState<number[]>([]);
 
-  const reset = () => {
-    setStep("choose");
-    setName(groupName || "");
-    setFrequency("everyday");
-    setSpecificDays([]);
-  };
+  // Auto-suggest name: use groupName or single item name
+  const suggestedName = groupName || (items.length === 1 ? items[0].name : "");
+
+  useEffect(() => {
+    if (open) {
+      setStep("choose");
+      setName(suggestedName);
+      setFrequency("everyday");
+      setSpecificDays([]);
+    }
+  }, [open, suggestedName]);
 
   const handleOpenChange = (o: boolean) => {
-    if (!o) reset();
     onOpenChange(o);
   };
 
@@ -89,7 +93,7 @@ export const SaveMealModal = ({
               <Button
                 variant="outline"
                 className="w-full rounded-xl h-14 justify-start gap-3 text-left"
-                onClick={() => { setStep("name-save"); }}
+                onClick={() => setStep("name-save")}
               >
                 <div className="flex flex-col">
                   <span className="font-medium text-foreground">Save as Meal</span>
@@ -99,7 +103,7 @@ export const SaveMealModal = ({
               <Button
                 variant="outline"
                 className="w-full rounded-xl h-14 justify-start gap-3 text-left"
-                onClick={() => { setStep("name-default"); }}
+                onClick={() => setStep("name-default")}
               >
                 <div className="flex flex-col">
                   <span className="font-medium text-foreground flex items-center gap-1.5">
@@ -115,7 +119,12 @@ export const SaveMealModal = ({
         {step === "name-save" && (
           <>
             <DialogHeader>
-              <DialogTitle>Name your saved meal</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <button onClick={() => setStep("choose")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                Name your saved meal
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 pt-2">
               <Input
@@ -139,7 +148,12 @@ export const SaveMealModal = ({
         {step === "name-default" && (
           <>
             <DialogHeader>
-              <DialogTitle>Name your default meal</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <button onClick={() => setStep("choose")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                Name your default meal
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 pt-2">
               <Input
@@ -163,7 +177,12 @@ export const SaveMealModal = ({
         {step === "schedule" && (
           <>
             <DialogHeader>
-              <DialogTitle>How often should this appear?</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <button onClick={() => setStep("name-default")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                How often should this appear?
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3 pt-2">
               {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
