@@ -335,20 +335,16 @@ export const MealSection = ({
                             <span className="text-foreground break-words">{item.name}</span>
                             {item.quantity && <span className="text-[10px] text-muted-foreground">{item.quantity}</span>}
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <span className="text-muted-foreground text-xs">{item.calories} kcal</span>
+                            <QuickMultiplierPopover item={item} onDuplicate={handleDuplicateItem}>
+                              <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                            </QuickMultiplierPopover>
                             {onUpdateItem && (
                               <button onClick={() => setEditingItem(item)} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform">
                                 <Pencil className="h-4 w-4" />
-                              </button>
-                            )}
-                            {onRemoveFromGroup && (
-                              <button
-                                onClick={() => onRemoveFromGroup(item.id)}
-                                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
-                                title="Remove from meal"
-                              >
-                                <Star className="h-4 w-4 fill-foreground" />
                               </button>
                             )}
                             {onRemoveItem && (
