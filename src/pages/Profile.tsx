@@ -183,6 +183,19 @@ const Profile = () => {
   const [editDefaultMealId, setEditDefaultMealId] = useState<string | null>(null);
   const [editDefaultFrequency, setEditDefaultFrequency] = useState<DefaultMealFrequency>("everyday");
   const [editDefaultDays, setEditDefaultDays] = useState<number[]>([]);
+  const [editDefaultName, setEditDefaultName] = useState("");
+  const [createDefaultMealOpen, setCreateDefaultMealOpen] = useState(false);
+  const [createDefaultMealName, setCreateDefaultMealName] = useState("");
+  const [createDefaultMealItems, setCreateDefaultMealItems] = useState<FoodItem[]>([]);
+  const [createDefaultMealStep, setCreateDefaultMealStep] = useState<"name" | "add" | "schedule">("name");
+  const [createDefaultMealType, setCreateDefaultMealType] = useState<MealEntry["type"]>("breakfast");
+  const [createDefaultFrequency, setCreateDefaultFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [createDefaultDays, setCreateDefaultDays] = useState<number[]>([]);
+  const [editDefaultMealItemsId, setEditDefaultMealItemsId] = useState<string | null>(null);
+  const [editDefaultMealItemsList, setEditDefaultMealItemsList] = useState<FoodItem[]>([]);
+  const [editDefaultMealItemsName, setEditDefaultMealItemsName] = useState("");
+  const [editDefaultMealAddingItem, setEditDefaultMealAddingItem] = useState(false);
+  const [editingDefaultMealItem, setEditingDefaultMealItem] = useState<FoodItem | null>(null);
 
   // Computed
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
