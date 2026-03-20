@@ -290,7 +290,7 @@ export const MealSection = ({
                           <Plus className="h-4 w-4" />
                         </button>
                       )}
-                      {(onSaveMeal || onSaveAsDefault) && !defaultMealGroupIds.has(groupId) && (
+                      {(onSaveMeal || onSaveAsDefault) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -300,7 +300,7 @@ export const MealSection = ({
                           }}
                           className="h-7 w-7 flex items-center justify-center text-foreground rounded-full active:scale-95 transition-transform"
                         >
-                          <Star className={`h-4 w-4 ${isMealSaved(group.name) ? "fill-foreground" : ""}`} />
+                          <Star className={`h-4 w-4 ${isGroupSavedOrDefault(group.name, groupId) ? "fill-foreground" : ""}`} />
                         </button>
                       )}
                       {onRemoveItem && (
