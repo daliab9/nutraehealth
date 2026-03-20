@@ -141,6 +141,8 @@ const Profile = () => {
 
   // Saved meals
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [expandedDefaultMealType, setExpandedDefaultMealType] = useState<string | null>(null);
+  const [expandedDefaultMealItems, setExpandedDefaultMealItems] = useState<string | null>(null);
   const [createMealOpen, setCreateMealOpen] = useState(false);
   const [createMealName, setCreateMealName] = useState("");
   const [createMealItems, setCreateMealItems] = useState<FoodItem[]>([]);
