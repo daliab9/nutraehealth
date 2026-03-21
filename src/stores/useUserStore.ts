@@ -515,43 +515,6 @@ export function useUserStore() {
     []
   );
 
-  const isDefaultMealActiveForDate = useCallback(
-    (defaultMeal: DefaultMeal, date: string): boolean => {
-      const d = new Date(date);
-      const dayOfWeek = d.getDay(); // 0=Sun, 6=Sat
-      switch (defaultMeal.frequency) {
-        case "everyday": return true;
-        case "weekdays": return dayOfWeek >= 1 && dayOfWeek <= 5;
-        case "weekends": return dayOfWeek === 0 || dayOfWeek === 6;
-        case "specific": return (defaultMeal.specificDays || []).includes(dayOfWeek);
-        default: return false;
-      }
-    },
-    []
-  );
-
-  const getDefaultMealsForDate = useCallback(
-    (date: string): { mealType: MealEntry["type"]; items: FoodItem[]; defaultMealId: string; name: string }[] => {
-      const overrides = profile.defaultMealOverrides || [];
-      return (profile.defaultMeals || [])
-        .filter((dm) => {
-          const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
-          return !isRemoved && isDefaultMealActiveForDate(dm, date);
-        })
-        .map((dm) => ({
-          mealType: dm.mealType,
-          items: dm.items.map((item) => ({
-            ...item,
-            id: `default-${dm.id}-${item.id}`,
-            groupId: `default-${dm.id}`,
-            groupName: dm.name,
-          })),
-          defaultMealId: dm.id,
-          name: dm.name,
-        }));
-    },
-    [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
-  );
 
   return {
     profile,
