@@ -267,6 +267,10 @@ const Profile = () => {
   const [editDefaultMealAddingItem, setEditDefaultMealAddingItem] = useState(false);
   const [editingDefaultMealItem, setEditingDefaultMealItem] = useState<FoodItem | null>(null);
   const [activeProfileDragLabel, setActiveProfileDragLabel] = useState<string | null>(null);
+  const [dragToDefaultMeal, setDragToDefaultMeal] = useState<SavedMeal | null>(null);
+  const [dragToDefaultMealType, setDragToDefaultMealType] = useState<MealEntry["type"]>("breakfast");
+  const [dragToDefaultFrequency, setDragToDefaultFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [dragToDefaultDays, setDragToDefaultDays] = useState<number[]>([]);
 
   // Computed
   const bmi = profile.height > 0 ? (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1) : "—";
@@ -381,6 +385,17 @@ const Profile = () => {
           meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
         ),
       });
+      return;
+    }
+
+    if (activeData.type === "saved-meal" && activeData.mealId && (overData.type === "default-meals-root" || overData.type === "default-meal-section" || overData.type === "default-meal")) {
+      const draggedMeal = savedMeals.find((meal) => meal.id === activeData.mealId);
+      if (!draggedMeal) return;
+
+      setDragToDefaultMeal(draggedMeal);
+      setDragToDefaultMealType(((overData.mealType as MealEntry["type"] | undefined) || "breakfast"));
+      setDragToDefaultFrequency("everyday");
+      setDragToDefaultDays([]);
       return;
     }
 
@@ -756,7 +771,7 @@ const Profile = () => {
             <AccordionContent className="px-4 pt-4 pb-4">
               <DndContext sensors={profileMealSensors} onDragStart={handleProfileMealDragStart} onDragEnd={handleProfileMealDragEnd}>
                 {/* Default Meals - Grouped by meal type */}
-                <div className="mb-6">
+                <ProfileDropZone dropId="default-meals-root" data={{ type: "default-meals-root" }} className="mb-6 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-foreground">Default Meals</h3>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setCreateDefaultMealName(""); setCreateDefaultMealItems([]); setCreateDefaultMealStep("name"); setCreateDefaultMealType("breakfast"); setCreateDefaultFrequency("everyday"); setCreateDefaultDays([]); setCreateDefaultMealOpen(true); }}>
@@ -764,7 +779,9 @@ const Profile = () => {
                     </Button>
                   </div>
                   {(profile.defaultMeals || []).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, or star a meal in your diary.</p>
+                    <div className="rounded-xl border border-dashed border-border/70 bg-card/60 px-4 py-5">
+                      <p className="text-sm text-muted-foreground">No default meals yet. Tap + to create one, star a meal in your diary, or drag a saved meal here to schedule it.</p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {(() => {
@@ -863,7 +880,7 @@ const Profile = () => {
                       })()}
                     </div>
                   )}
-                </div>
+                </ProfileDropZone>
 
                 {/* Saved Meals */}
                 <ProfileDropZone dropId="saved-meals-list" data={{ type: "saved-meals-list" }} className="mb-4">
@@ -1593,6 +1610,83 @@ const Profile = () => {
               }} className="w-full rounded-xl h-12" disabled={editDefaultMealItemsList.length === 0 || !editDefaultMealItemsName.trim()}>Save changes</Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!dragToDefaultMeal} onOpenChange={(open) => { if (!open) setDragToDefaultMeal(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>Set as Default Meal</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Meal</p>
+              <p className="text-sm font-medium text-foreground">{dragToDefaultMeal?.name}</p>
+            </div>
+
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Meal type</p>
+              <div className="flex flex-wrap gap-2">
+                {(["breakfast", "lunch", "dinner", "snack", "supplements", "drinks"] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setDragToDefaultMealType(type)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${dragToDefaultMealType === type ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">How often would you like this meal to appear?</p>
+              {(["everyday", "weekdays", "weekends", "specific"] as const).map((frequency) => (
+                <button
+                  key={frequency}
+                  onClick={() => setDragToDefaultFrequency(frequency)}
+                  className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all mb-2 ${dragToDefaultFrequency === frequency ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+                >
+                  {frequency === "everyday" && "Every day"}
+                  {frequency === "weekdays" && "Weekdays only"}
+                  {frequency === "weekends" && "Weekends only"}
+                  {frequency === "specific" && "Specific days"}
+                </button>
+              ))}
+            </div>
+
+            {dragToDefaultFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button
+                    key={label}
+                    onClick={() => setDragToDefaultDays((prev) => prev.includes(i) ? prev.filter((day) => day !== i) : [...prev, i])}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${dragToDefaultDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <Button
+              onClick={() => {
+                if (!dragToDefaultMeal) return;
+                const newDefault: DefaultMeal = {
+                  id: Date.now().toString(),
+                  name: dragToDefaultMeal.name,
+                  mealType: dragToDefaultMealType,
+                  items: dragToDefaultMeal.items,
+                  frequency: dragToDefaultFrequency,
+                  specificDays: dragToDefaultFrequency === "specific" ? dragToDefaultDays : undefined,
+                };
+                setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+                setDragToDefaultMeal(null);
+              }}
+              className="w-full rounded-xl h-12"
+              disabled={dragToDefaultFrequency === "specific" && dragToDefaultDays.length === 0}
+            >
+              Save Default Meal
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

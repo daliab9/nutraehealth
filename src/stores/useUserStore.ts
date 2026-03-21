@@ -432,6 +432,7 @@ export function useUserStore() {
     [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
   );
 
+  const getDayTotals = useCallback(
     (date: string) => {
       const day = getDayEntry(date);
       let calories = 0, protein = 0, carbs = 0, fat = 0, exerciseCals = 0;
@@ -453,17 +454,21 @@ export function useUserStore() {
       // Sum logged meals
       day.meals.forEach((m) => m.items.forEach(addItem));
 
-      // Sum default meals that haven't been materialized into the diary
+      // Sum default meals that haven't already been materialized into the diary
       const defaultMeals = getDefaultMealsForDate(date);
-      const loggedItemIds = new Set<string>();
-      day.meals.forEach((m) => m.items.forEach((i) => loggedItemIds.add(i.id)));
-
-      defaultMeals.forEach((dm) => {
-        dm.items.forEach((item) => {
-          if (!loggedItemIds.has(item.id)) {
-            addItem(item);
+      const materializedDefaultMealIds = new Set<string>();
+      day.meals.forEach((meal) => {
+        meal.items.forEach((item) => {
+          const match = item.groupId?.match(/^logged-default-(.+)-\d+$/);
+          if (match?.[1]) {
+            materializedDefaultMealIds.add(match[1]);
           }
         });
+      });
+
+      defaultMeals.forEach((dm) => {
+        if (materializedDefaultMealIds.has(dm.defaultMealId)) return;
+        dm.items.forEach(addItem);
       });
 
       day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));

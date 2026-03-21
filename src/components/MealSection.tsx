@@ -729,14 +729,6 @@ export const MealSection = ({
         }}
         onSetAsDefault={(name, mealItems, mt, frequency, specificDays) => {
           onSaveAsDefault?.(name, mealItems, mt, frequency, specificDays);
-          // Remove the original logged items so they don't duplicate with the default
-          if (onRemoveItem) {
-            saveMealModalItems.forEach((item) => {
-              if (!item.id.startsWith("default-")) {
-                onRemoveItem(item.id);
-              }
-            });
-          }
           toast.success(`"${name}" set as default meal`);
         }}
       />
