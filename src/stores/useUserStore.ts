@@ -394,29 +394,82 @@ export function useUserStore() {
     []
   );
 
-  const getDayTotals = useCallback(
+  const isDefaultMealActiveForDate = useCallback(
+    (defaultMeal: DefaultMeal, date: string): boolean => {
+      const d = new Date(date);
+      const dayOfWeek = d.getDay();
+      switch (defaultMeal.frequency) {
+        case "everyday": return true;
+        case "weekdays": return dayOfWeek >= 1 && dayOfWeek <= 5;
+        case "weekends": return dayOfWeek === 0 || dayOfWeek === 6;
+        case "specific": return (defaultMeal.specificDays || []).includes(dayOfWeek);
+        default: return false;
+      }
+    },
+    []
+  );
+
+  const getDefaultMealsForDate = useCallback(
+    (date: string): { mealType: MealEntry["type"]; items: FoodItem[]; defaultMealId: string; name: string }[] => {
+      const overrides = profile.defaultMealOverrides || [];
+      return (profile.defaultMeals || [])
+        .filter((dm) => {
+          const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
+          return !isRemoved && isDefaultMealActiveForDate(dm, date);
+        })
+        .map((dm) => ({
+          mealType: dm.mealType,
+          items: dm.items.map((item) => ({
+            ...item,
+            id: `default-${dm.id}-${item.id}`,
+            groupId: `default-${dm.id}`,
+            groupName: dm.name,
+          })),
+          defaultMealId: dm.id,
+          name: dm.name,
+        }));
+    },
+    [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
+  );
+
     (date: string) => {
       const day = getDayEntry(date);
       let calories = 0, protein = 0, carbs = 0, fat = 0, exerciseCals = 0;
       let fiber = 0, iron = 0, vitamin_d = 0, magnesium = 0, omega3 = 0, b12 = 0;
-      day.meals.forEach((m) =>
-        m.items.forEach((i) => {
-          calories += i.calories;
-          protein += i.protein;
-          carbs += i.carbs;
-          fat += i.fat;
-          fiber += i.fiber || 0;
-          iron += i.iron || 0;
-          vitamin_d += i.vitamin_d || 0;
-          magnesium += i.magnesium || 0;
-          omega3 += i.omega3 || 0;
-          b12 += i.b12 || 0;
-        })
-      );
+
+      const addItem = (i: FoodItem) => {
+        calories += i.calories;
+        protein += i.protein;
+        carbs += i.carbs;
+        fat += i.fat;
+        fiber += i.fiber || 0;
+        iron += i.iron || 0;
+        vitamin_d += i.vitamin_d || 0;
+        magnesium += i.magnesium || 0;
+        omega3 += i.omega3 || 0;
+        b12 += i.b12 || 0;
+      };
+
+      // Sum logged meals
+      day.meals.forEach((m) => m.items.forEach(addItem));
+
+      // Sum default meals that haven't been materialized into the diary
+      const defaultMeals = getDefaultMealsForDate(date);
+      const loggedItemIds = new Set<string>();
+      day.meals.forEach((m) => m.items.forEach((i) => loggedItemIds.add(i.id)));
+
+      defaultMeals.forEach((dm) => {
+        dm.items.forEach((item) => {
+          if (!loggedItemIds.has(item.id)) {
+            addItem(item);
+          }
+        });
+      });
+
       day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));
       return { calories, protein, carbs, fat, exerciseCals, fiber, iron, vitamin_d, magnesium, omega3, b12 };
     },
-    [getDayEntry]
+    [getDayEntry, getDefaultMealsForDate]
   );
 
   const getHealthEntry = useCallback(
@@ -462,43 +515,6 @@ export function useUserStore() {
     []
   );
 
-  const isDefaultMealActiveForDate = useCallback(
-    (defaultMeal: DefaultMeal, date: string): boolean => {
-      const d = new Date(date);
-      const dayOfWeek = d.getDay(); // 0=Sun, 6=Sat
-      switch (defaultMeal.frequency) {
-        case "everyday": return true;
-        case "weekdays": return dayOfWeek >= 1 && dayOfWeek <= 5;
-        case "weekends": return dayOfWeek === 0 || dayOfWeek === 6;
-        case "specific": return (defaultMeal.specificDays || []).includes(dayOfWeek);
-        default: return false;
-      }
-    },
-    []
-  );
-
-  const getDefaultMealsForDate = useCallback(
-    (date: string): { mealType: MealEntry["type"]; items: FoodItem[]; defaultMealId: string; name: string }[] => {
-      const overrides = profile.defaultMealOverrides || [];
-      return (profile.defaultMeals || [])
-        .filter((dm) => {
-          const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
-          return !isRemoved && isDefaultMealActiveForDate(dm, date);
-        })
-        .map((dm) => ({
-          mealType: dm.mealType,
-          items: dm.items.map((item) => ({
-            ...item,
-            id: `default-${dm.id}-${item.id}`,
-            groupId: `default-${dm.id}`,
-            groupName: dm.name,
-          })),
-          defaultMealId: dm.id,
-          name: dm.name,
-        }));
-    },
-    [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
-  );
 
   return {
     profile,
