@@ -8,16 +8,17 @@ interface CalendarStripProps {
 }
 
 const WEEKS_BACK = 12;
+const WEEKS_FORWARD = 4;
 
 export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const currentWeekRef = useRef<HTMLDivElement>(null);
 
-  // Generate weeks: WEEKS_BACK past weeks + current week
+  // Generate weeks: WEEKS_BACK past weeks + current week + WEEKS_FORWARD future weeks
   const weeks = useMemo(() => {
     const today = new Date();
     const result: Date[][] = [];
-    for (let w = -WEEKS_BACK; w <= 0; w++) {
+    for (let w = -WEEKS_BACK; w <= WEEKS_FORWARD; w++) {
       const weekStart = startOfWeek(addDays(today, w * 7), { weekStartsOn: 1 });
       const week: Date[] = [];
       for (let d = 0; d < 7; d++) {
