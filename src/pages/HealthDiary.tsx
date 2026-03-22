@@ -254,18 +254,11 @@ const HealthDiary = () => {
             )}
           </div>
           {stressEditing ? (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {STRESS_OPTIONS.map((opt) => (
-                  <Chip key={opt.value} label={opt.label} selected={entry.stressLevel === opt.value} onClick={() => update("stressLevel", opt.value)} />
-                ))}
-              </div>
-              {entry.stressLevel > 0 && (
-                <button onClick={() => setStressEditing(false)} className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold active:scale-[0.98] transition-transform">
-                  Save
-                </button>
-              )}
-            </>
+            <div className="flex flex-wrap gap-2">
+              {STRESS_OPTIONS.map((opt) => (
+                <Chip key={opt.value} label={opt.label} selected={entry.stressLevel === opt.value} onClick={() => { update("stressLevel", opt.value); setStressEditing(false); }} />
+              ))}
+            </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">{stressLabel?.label}</span>

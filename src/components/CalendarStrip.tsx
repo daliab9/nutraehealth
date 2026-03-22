@@ -42,7 +42,7 @@ export const CalendarStrip = ({ selectedDate, onDateSelect }: CalendarStripProps
       className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory py-2"
     >
       {weeks.map((week, wi) => {
-        const isCurrentWeek = wi === weeks.length - 1;
+        const isCurrentWeek = wi === WEEKS_BACK;
         const monthLabel = format(week[0], "MMM dd");
         return (
           <div

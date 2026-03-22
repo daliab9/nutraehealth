@@ -414,6 +414,8 @@ export function useUserStore() {
       const overrides = profile.defaultMealOverrides || [];
       return (profile.defaultMeals || [])
         .filter((dm) => {
+          // Only show on current and future days from when it was created
+          if (dm.createdAt && date < dm.createdAt) return false;
           const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
           return !isRemoved && isDefaultMealActiveForDate(dm, date);
         })
