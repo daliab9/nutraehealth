@@ -75,6 +75,7 @@ export interface DefaultMeal {
   items: FoodItem[];
   frequency: DefaultMealFrequency;
   specificDays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+  createdAt?: string; // YYYY-MM-DD — only active from this date forward
 }
 
 // Track which default meals have been removed for specific dates

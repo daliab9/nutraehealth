@@ -288,6 +288,7 @@ const Diary = () => {
       items: items.map(({ groupId: _, groupName: __, ...rest }) => rest),
       frequency,
       specificDays,
+      createdAt: format(new Date(), "yyyy-MM-dd"),
     };
     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
   };

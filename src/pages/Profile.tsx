@@ -1678,6 +1678,7 @@ const Profile = () => {
                   items: dragToDefaultMeal.items,
                   frequency: dragToDefaultFrequency,
                   specificDays: dragToDefaultFrequency === "specific" ? dragToDefaultDays : undefined,
+                  createdAt: format(new Date(), "yyyy-MM-dd"),
                 };
                 setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
                 setDragToDefaultMeal(null);
