@@ -415,15 +415,29 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     }
   };
 
-  return (
-    <div className="flex min-h-screen flex-col bg-background px-6 pt-12 pb-8">
-      <div className="flex-1 overflow-y-auto">{renderStep()}</div>
+  const back = () => {
+    if (step > 0) {
+      setDirection(-1);
+      setStep((s) => s - 1);
+    }
+  };
 
-      <div className="pt-6 space-y-2">
-        <Button onClick={next} disabled={isMandatory && !canProceed()} className="w-full h-14 rounded-2xl text-base font-semibold">
-          {step === TOTAL_STEPS - 1 ? "Get started" : "Continue"}
-          <ChevronRight className="ml-1 h-5 w-5" />
-        </Button>
+  return (
+    <div className="flex min-h-screen flex-col bg-background px-6 pt-12 pb-0">
+      <div className="flex-1 overflow-y-auto pb-4">{renderStep()}</div>
+
+      <div className="sticky bottom-0 bg-background pt-3 pb-[env(safe-area-inset-bottom,24px)] space-y-2">
+        <div className="flex gap-3">
+          {step > 0 && (
+            <Button onClick={back} variant="outline" className="h-14 rounded-2xl px-4">
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <Button onClick={next} disabled={isMandatory && !canProceed()} className="w-full h-14 rounded-2xl text-base font-semibold">
+            {step === TOTAL_STEPS - 1 ? "Get started" : "Continue"}
+            <ChevronRight className="ml-1 h-5 w-5" />
+          </Button>
+        </div>
         {!isMandatory && (
           <button onClick={skip} className="w-full py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Skip

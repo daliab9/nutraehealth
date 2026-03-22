@@ -688,20 +688,20 @@ const Diary = () => {
             {/* Macros row */}
             <div className="flex items-center justify-between px-2 mb-2">
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{totals.protein}g</p>
+                <p className="text-lg font-bold text-foreground">{Math.round(totals.protein * 10) / 10}g</p>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs">Protein</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{totals.carbs}g</p>
+                <p className="text-lg font-bold text-foreground">{Math.round(totals.carbs * 10) / 10}g</p>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs">Carbs</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{totals.fat}g</p>
+                <p className="text-lg font-bold text-foreground">{Math.round(totals.fat * 10) / 10}g</p>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs">Fat</p>
               </div>
               {totalFoodCals > 0 && (
                 <div className="text-center">
-                  <p className="text-lg font-bold text-foreground">{totalFoodCals}</p>
+                  <p className="text-lg font-bold text-foreground">{Math.round(totalFoodCals)}</p>
                   <p className="text-muted-foreground uppercase tracking-widest text-xs">kcal</p>
                 </div>
               )}

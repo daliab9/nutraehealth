@@ -472,7 +472,19 @@ export function useUserStore() {
       });
 
       day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));
-      return { calories, protein, carbs, fat, exerciseCals, fiber, iron, vitamin_d, magnesium, omega3, b12 };
+      return {
+        calories: Math.round(calories),
+        protein: Math.round(protein * 10) / 10,
+        carbs: Math.round(carbs * 10) / 10,
+        fat: Math.round(fat * 10) / 10,
+        exerciseCals: Math.round(exerciseCals),
+        fiber: Math.round(fiber * 10) / 10,
+        iron: Math.round(iron),
+        vitamin_d: Math.round(vitamin_d),
+        magnesium: Math.round(magnesium),
+        omega3: Math.round(omega3),
+        b12: Math.round(b12),
+      };
     },
     [getDayEntry, getDefaultMealsForDate]
   );
