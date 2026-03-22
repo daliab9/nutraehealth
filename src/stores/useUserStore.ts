@@ -159,6 +159,11 @@ const DEFAULT_PROFILE: UserProfile = {
   cholesterolLevel: "",
 };
 
+function getLocalDayOfWeek(date: string): number {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1).getDay();
+}
+
 function loadProfile(): UserProfile {
   try {
     const stored = localStorage.getItem("nuria_profile");
@@ -397,8 +402,7 @@ export function useUserStore() {
 
   const isDefaultMealActiveForDate = useCallback(
     (defaultMeal: DefaultMeal, date: string): boolean => {
-      const d = new Date(date);
-      const dayOfWeek = d.getDay();
+      const dayOfWeek = getLocalDayOfWeek(date);
       switch (defaultMeal.frequency) {
         case "everyday": return true;
         case "weekdays": return dayOfWeek >= 1 && dayOfWeek <= 5;
