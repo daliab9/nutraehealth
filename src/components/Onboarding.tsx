@@ -166,7 +166,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const skip = () => {
     if (step < TOTAL_STEPS - 1) {
       setDirection(1);
-      setStep((s) => s + 1);
+      setStep(getNextStep(step));
     } else {
       // Skipping the last step — complete onboarding
       const normalized = { ...data };
