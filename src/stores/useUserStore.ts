@@ -75,6 +75,7 @@ export interface DefaultMeal {
   items: FoodItem[];
   frequency: DefaultMealFrequency;
   specificDays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+  createdAt?: string; // YYYY-MM-DD — only active from this date forward
 }
 
 // Track which default meals have been removed for specific dates
@@ -414,6 +415,8 @@ export function useUserStore() {
       const overrides = profile.defaultMealOverrides || [];
       return (profile.defaultMeals || [])
         .filter((dm) => {
+          // Only show on current and future days from when it was created
+          if (dm.createdAt && date < dm.createdAt) return false;
           const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
           return !isRemoved && isDefaultMealActiveForDate(dm, date);
         })

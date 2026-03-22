@@ -115,6 +115,8 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     healthConcernsOther: "",
   });
 
+  const isMaintainOnly = data.goals.length > 0 && data.goals.every((g) => g === "maintain_weight");
+
   const isMandatory = !SKIPPABLE_STEPS.includes(step);
 
   const canProceed = () => {
@@ -131,10 +133,22 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     }
   };
 
+  const getNextStep = (current: number) => {
+    let nextStep = current + 1;
+    if (nextStep === 7 && isMaintainOnly) nextStep = 8; // skip timeline
+    return nextStep;
+  };
+
+  const getPrevStep = (current: number) => {
+    let prevStep = current - 1;
+    if (prevStep === 7 && isMaintainOnly) prevStep = 6; // skip timeline
+    return prevStep;
+  };
+
   const next = () => {
     if (step < TOTAL_STEPS - 1) {
       setDirection(1);
-      setStep((s) => s + 1);
+      setStep(getNextStep(step));
     } else {
       // Normalize to kg/cm before completing
       const normalized = { ...data };
@@ -152,7 +166,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const skip = () => {
     if (step < TOTAL_STEPS - 1) {
       setDirection(1);
-      setStep((s) => s + 1);
+      setStep(getNextStep(step));
     } else {
       // Skipping the last step — complete onboarding
       const normalized = { ...data };
@@ -418,7 +432,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
   const back = () => {
     if (step > 0) {
       setDirection(-1);
-      setStep((s) => s - 1);
+      setStep(getPrevStep(step));
     }
   };
 
