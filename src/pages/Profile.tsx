@@ -1546,6 +1546,7 @@ const Profile = () => {
                       items: createDefaultMealItems,
                       frequency: createDefaultFrequency,
                       specificDays: createDefaultFrequency === "specific" ? createDefaultDays : undefined,
+                      createdAt: format(new Date(), "yyyy-MM-dd"),
                     };
                     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
                     setCreateDefaultMealOpen(false);
