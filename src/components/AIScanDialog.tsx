@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Check, X, AlertTriangle, Plus, ImagePlus, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Camera, Upload, Loader2, Check, X, AlertTriangle, Plus, ImagePlus, Trash2, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,13 +30,14 @@ interface AIScanDialogProps {
 }
 
 export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AIScanDialogProps) => {
-  const [step, setStep] = useState<"capture" | "preview" | "analyzing" | "review" | "error">("capture");
+  const [step, setStep] = useState<"capture" | "preview" | "analyzing" | "review" | "name" | "error">("capture");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const [editingItems, setEditingItems] = useState<ScannedItem[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [showManualAdd, setShowManualAdd] = useState(false);
+  const [mealName, setMealName] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualCalories, setManualCalories] = useState("");
   const [manualProtein, setManualProtein] = useState("");
@@ -67,6 +68,10 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     setManualFat("");
     setManualQuantity("");
   };
+
+  useEffect(() => {
+    if (open) setMealName("");
+  }, [open]);
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) reset();
@@ -157,7 +162,8 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
     setShowManualAdd(false);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = (groupName?: string) => {
+    const groupId = groupName ? Date.now().toString() : undefined;
     const foodItems: FoodItem[] = editingItems.map((item) => ({
       id: Date.now().toString() + Math.random().toString(36).slice(2),
       name: item.name,
@@ -172,6 +178,8 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
       omega3: item.omega3,
       b12: item.b12,
       quantity: item.quantity,
+      groupId,
+      groupName: groupName || undefined,
     }));
     onAddItems(foodItems);
     handleClose(false);
@@ -186,6 +194,7 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
             {step === "preview" && "Your photos"}
             {step === "analyzing" && "Analyzing..."}
             {step === "review" && "Review items"}
+            {step === "name" && "Name your meal"}
             {step === "error" && "Scan failed"}
           </DialogTitle>
         </DialogHeader>
@@ -444,12 +453,53 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
               </div>
             )}
             <Button
-              onClick={handleConfirm}
+              onClick={() => {
+                if (editingItems.length > 1) {
+                  setStep("name");
+                } else {
+                  handleConfirm();
+                  handleClose(false);
+                }
+              }}
               className="w-full rounded-xl h-12"
               disabled={editingItems.length === 0}
             >
               <Check className="h-4 w-4 mr-2" />
               Add {editingItems.length} item{editingItems.length !== 1 ? "s" : ""}
+            </Button>
+          </div>
+        )}
+
+        {step === "name" && (
+          <div className="space-y-4 pt-2">
+            <button onClick={() => setStep("review")} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-transform">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <p className="text-sm text-muted-foreground">
+              Give this meal a name so your {editingItems.length} items are grouped together.
+            </p>
+            <Input
+              placeholder="e.g. Chicken Salad Bowl"
+              value={mealName}
+              onChange={(e) => setMealName(e.target.value)}
+              className="rounded-xl"
+              autoFocus
+            />
+            <div className="rounded-xl bg-muted/50 p-3">
+              <div className="flex justify-between text-sm font-medium">
+                <span>{editingItems.length} items</span>
+                <span>{editingItems.reduce((s, i) => s + Number(i.calories), 0)} kcal</span>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                handleConfirm(mealName.trim() || "Scanned Meal");
+                handleClose(false);
+              }}
+              className="w-full rounded-xl h-12"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Save meal
             </Button>
           </div>
         )}
