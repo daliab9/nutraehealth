@@ -115,6 +115,8 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     healthConcernsOther: "",
   });
 
+  const isMaintainOnly = data.goals.length > 0 && data.goals.every((g) => g === "maintain_weight");
+
   const isMandatory = !SKIPPABLE_STEPS.includes(step);
 
   const canProceed = () => {
