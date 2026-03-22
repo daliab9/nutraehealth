@@ -458,7 +458,6 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
                   setStep("name");
                 } else {
                   handleConfirm();
-                  handleClose(false);
                 }
               }}
               className="w-full rounded-xl h-12"
@@ -494,7 +493,6 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
             <Button
               onClick={() => {
                 handleConfirm(mealName.trim() || "Scanned Meal");
-                handleClose(false);
               }}
               className="w-full rounded-xl h-12"
             >
