@@ -327,18 +327,20 @@ const Diary = () => {
   const handleToggleSaveExercise = (ex: Exercise) => {
     const saved = profile.savedExercises || [];
     if (isExerciseSaved(ex.name)) {
+      const toRemove = saved.find((e) => e.name.toLowerCase() === ex.name.toLowerCase());
       setProfile({ savedExercises: saved.filter((e) => e.name.toLowerCase() !== ex.name.toLowerCase()) });
+      if (toRemove) dbDeleteSavedExercise(toRemove.id);
     } else {
-      setProfile({
-        savedExercises: [...saved, {
-          id: Date.now().toString(),
-          name: ex.name,
-          duration: ex.duration,
-          caloriesBurned: ex.caloriesBurned,
-          secondaryMetric: ex.secondaryMetric,
-          secondaryUnit: ex.secondaryUnit,
-        }],
-      });
+      const newEx: SavedExercise = {
+        id: Date.now().toString(),
+        name: ex.name,
+        duration: ex.duration,
+        caloriesBurned: ex.caloriesBurned,
+        secondaryMetric: ex.secondaryMetric,
+        secondaryUnit: ex.secondaryUnit,
+      };
+      setProfile({ savedExercises: [...saved, newEx] });
+      dbInsertSavedExercise(newEx);
     }
   };
 
