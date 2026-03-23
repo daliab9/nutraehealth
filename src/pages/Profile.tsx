@@ -1691,6 +1691,7 @@ const Profile = () => {
                   createdAt: format(new Date(), "yyyy-MM-dd"),
                 };
                 setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+                dbInsertDefaultMeal(newDefault);
                 setDragToDefaultMeal(null);
               }}
               className="w-full rounded-xl h-12"
