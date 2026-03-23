@@ -45,6 +45,7 @@ const AppContent = () => {
         setScreen("reset-password");
       }
       if (!sess) {
+        resetStore();
         setScreen("landing");
       }
     });
