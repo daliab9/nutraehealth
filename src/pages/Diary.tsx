@@ -265,6 +265,7 @@ const Diary = () => {
 
   const handleSaveMeal = (meal: SavedMeal) => {
     setProfile({ savedMeals: [...(profile.savedMeals || []), meal] });
+    dbInsertSavedMeal(meal);
   };
 
   const handleUnsaveMeal = (mealName: string) => {
