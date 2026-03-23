@@ -212,7 +212,7 @@ export const MealSection = ({
       toast.success(`"${name}" removed from saved meals`);
     } else {
       onSaveMeal?.({
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name,
         items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
       });
