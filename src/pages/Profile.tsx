@@ -1394,7 +1394,7 @@ const Profile = () => {
 
       {/* Exercise */}
       <ExerciseEntry open={addExerciseOpen} onOpenChange={setAddExerciseOpen} onAdd={(exercise: Exercise) => {
-        const newEx: SavedExercise = { id: Date.now().toString(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit };
+        const newEx: SavedExercise = { id: crypto.randomUUID(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit };
         setProfile({ savedExercises: [...savedExercises, newEx] });
         dbInsertSavedExercise(newEx);
         setAddExerciseOpen(false);
