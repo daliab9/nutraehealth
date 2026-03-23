@@ -416,7 +416,9 @@ const Profile = () => {
   };
   const saveEditedMeal = () => {
     if (!editingSavedMeal || editMealItems.length === 0) return;
-    setProfile({ savedMeals: savedMeals.map((m) => m.id === editingSavedMeal.id ? { ...m, name: editMealName.trim() || m.name, items: editMealItems } : m) });
+    const updated: SavedMeal = { ...editingSavedMeal, name: editMealName.trim() || editingSavedMeal.name, items: editMealItems };
+    setProfile({ savedMeals: savedMeals.map((m) => m.id === editingSavedMeal.id ? updated : m) });
+    dbUpdateSavedMeal(updated);
     setEditingSavedMeal(null);
   };
   const deleteSavedExercise = (exerciseId: string) => setProfile({ savedExercises: savedExercises.filter((e) => e.id !== exerciseId) });
