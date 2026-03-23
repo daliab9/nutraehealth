@@ -26,6 +26,7 @@ import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
+import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbUpdateDefaultMeal, dbDeleteDefaultMeal, dbUpdateProfileExtended } from "@/utils/dbPersistence";
 import { useAppointmentStore, type Appointment } from "@/stores/useAppointmentStore";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -321,11 +322,12 @@ const Profile = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
     const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
+    const newHistory = [...profile.weightHistory.filter((h) => h.date !== today), { date: today, weight: kgVal }].sort((a, b) => a.date.localeCompare(b.date));
     setProfile({
       currentWeight: kgVal, weightUnit, dailyCalorieTarget: newCalories,
-      weightHistory: [...profile.weightHistory.filter((h) => h.date !== today), { date: today, weight: kgVal }].sort((a, b) => a.date.localeCompare(b.date)),
+      weightHistory: newHistory,
     });
-    persistToDB({ current_weight: kgVal, weight_unit: weightUnit, daily_calorie_goal: newCalories });
+    persistToDB({ current_weight: kgVal, weight_unit: weightUnit, daily_calorie_goal: newCalories, weight_history: newHistory });
     setEditField(null);
   };
 
@@ -356,7 +358,7 @@ const Profile = () => {
     setScrollCalories(Math.max(1000, Math.min(4000, Math.round(cal / 10) * 10)));
   };
 
-  const deleteSavedMeal = (mealId: string) => setProfile({ savedMeals: savedMeals.filter((m) => m.id !== mealId) });
+  const deleteSavedMeal = (mealId: string) => { setProfile({ savedMeals: savedMeals.filter((m) => m.id !== mealId) }); dbDeleteSavedMeal(mealId); };
   const openEditMeal = (meal: SavedMeal) => { setEditingSavedMeal(meal); setEditMealName(meal.name); setEditMealItems([...meal.items]); setEditMealAddingItem(false); setEditingMealItem(null); };
   const handleProfileMealDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current as { type?: string; mealName?: string } | null;
@@ -380,11 +382,12 @@ const Profile = () => {
 
       if (!activeData.mealId || !nextMealType || nextMealType === activeData.mealType) return;
 
-      setProfile({
-        defaultMeals: (profile.defaultMeals || []).map((meal) =>
-          meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
-        ),
-      });
+      const updatedDefaults = (profile.defaultMeals || []).map((meal) =>
+        meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
+      );
+      setProfile({ defaultMeals: updatedDefaults });
+      const updatedDM = updatedDefaults.find((m) => m.id === activeData.mealId);
+      if (updatedDM) dbUpdateDefaultMeal(updatedDM);
       return;
     }
 
@@ -413,10 +416,12 @@ const Profile = () => {
   };
   const saveEditedMeal = () => {
     if (!editingSavedMeal || editMealItems.length === 0) return;
-    setProfile({ savedMeals: savedMeals.map((m) => m.id === editingSavedMeal.id ? { ...m, name: editMealName.trim() || m.name, items: editMealItems } : m) });
+    const updated: SavedMeal = { ...editingSavedMeal, name: editMealName.trim() || editingSavedMeal.name, items: editMealItems };
+    setProfile({ savedMeals: savedMeals.map((m) => m.id === editingSavedMeal.id ? updated : m) });
+    dbUpdateSavedMeal(updated);
     setEditingSavedMeal(null);
   };
-  const deleteSavedExercise = (exerciseId: string) => setProfile({ savedExercises: savedExercises.filter((e) => e.id !== exerciseId) });
+  const deleteSavedExercise = (exerciseId: string) => { setProfile({ savedExercises: savedExercises.filter((e) => e.id !== exerciseId) }); dbDeleteSavedExercise(exerciseId); };
 
   // ====== RENDER ======
   return (
@@ -673,7 +678,7 @@ const Profile = () => {
                   <h3 className="text-sm font-semibold text-foreground">Cycle Tracker</h3>
                   <div className="flex items-center gap-2">
                     {profile.cycleStartDate && (
-                      <button onClick={() => setProfile({ cycleStartDate: undefined })} className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform">
+                      <button onClick={() => { setProfile({ cycleStartDate: undefined }); dbUpdateProfileExtended({ cycle_start_date: null }); }} className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform">
                         <Trash2 className="h-3.5 w-3.5 text-foreground" />
                       </button>
                     )}
@@ -831,7 +836,7 @@ const Profile = () => {
                                           <div className="flex items-center gap-1">
                                             <button onClick={() => { setEditDefaultMealItemsId(dm.id); setEditDefaultMealItemsName(dm.name); setEditDefaultMealItemsList([...dm.items]); setEditDefaultMealAddingItem(false); setEditingDefaultMealItem(null); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
                                             <button onClick={() => { setEditDefaultMealId(dm.id); setEditDefaultFrequency(dm.frequency); setEditDefaultDays(dm.specificDays || []); setEditDefaultName(dm.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
-                                            <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                                            <button onClick={() => { setProfile({ defaultMeals: (profile.defaultMeals || []).filter((d) => d.id !== dm.id), defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== dm.id) }); dbDeleteDefaultMeal(dm.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-1.5">
@@ -1107,6 +1112,7 @@ const Profile = () => {
             </div>
             <Button onClick={() => {
               setProfile({ dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns });
+              persistToDB({ dietary_preferences: editDietPrefs, dietary_restrictions: editDietRestrictions, health_concerns: editHealthConcerns });
               setLifestyleOpen(false);
             }} className="w-full rounded-xl h-12">Save</Button>
           </div>
@@ -1208,7 +1214,7 @@ const Profile = () => {
               );
             })}
           </div>
-          <Button onClick={() => { setProfile({ trackedNutrients: pendingNutrients, nutrientTargetOverrides: pendingOverrides, cholesterolLevel: pendingCholesterol as "" | "low" | "medium" | "high" }); setNutrientModalOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+          <Button onClick={() => { setProfile({ trackedNutrients: pendingNutrients, nutrientTargetOverrides: pendingOverrides, cholesterolLevel: pendingCholesterol as "" | "low" | "medium" | "high" }); dbUpdateProfileExtended({ tracked_nutrients: pendingNutrients, nutrient_target_overrides: pendingOverrides, cholesterol_level: pendingCholesterol }); setNutrientModalOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
@@ -1217,7 +1223,7 @@ const Profile = () => {
         <DialogContent className="rounded-2xl"><DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
             <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
+            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); dbUpdateProfileExtended({ cycle_start_date: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1227,7 +1233,7 @@ const Profile = () => {
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Period Duration</DialogTitle></DialogHeader>
           <ScrollPicker items={Array.from({ length: 10 }, (_, i) => i + 1)} value={pendingCycleDuration} onChange={(v) => setPendingCycleDuration(Number(v))} suffix=" days" />
-          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); dbUpdateProfileExtended({ cycle_duration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
@@ -1266,7 +1272,7 @@ const Profile = () => {
                 </div>
               )}
               <FoodSearchInput onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])} onClose={() => {}} keepOpenOnAdd />
-              <Button onClick={() => { if (createMealItems.length === 0) return; setProfile({ savedMeals: [...savedMeals, { id: Date.now().toString(), name: createMealName.trim(), items: createMealItems }] }); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
+              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal: SavedMeal = { id: Date.now().toString(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...savedMeals, newMeal] }); dbInsertSavedMeal(newMeal); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
             </div>
           )}
         </DialogContent>
@@ -1342,7 +1348,7 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => { setEditingWeightDate(entry.date); setAddWeightDate(new Date(entry.date)); setAddWeightUnit(weightUnit); setAddWeightValue(displayW); setAddWeightOpen(true); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => setProfile({ weightHistory: profile.weightHistory.filter((h) => h.date !== entry.date) })} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => { const newHistory = profile.weightHistory.filter((h) => h.date !== entry.date); setProfile({ weightHistory: newHistory }); dbUpdateProfileExtended({ weight_history: newHistory }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
                   );
@@ -1379,7 +1385,7 @@ const Profile = () => {
               const mostRecent = history[history.length - 1];
               const newCalories = autoCalcCalories(mostRecent.weight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
               setProfile({ weightHistory: history, currentWeight: mostRecent.weight, dailyCalorieTarget: newCalories });
-              persistToDB({ current_weight: mostRecent.weight, daily_calorie_goal: newCalories });
+              persistToDB({ current_weight: mostRecent.weight, daily_calorie_goal: newCalories, weight_history: history });
               setAddWeightOpen(false);
             }} className="w-full rounded-xl h-12" disabled={!addWeightDate}>{editingWeightDate ? "Save changes" : "Add entry"}</Button>
           </div>
@@ -1388,7 +1394,9 @@ const Profile = () => {
 
       {/* Exercise */}
       <ExerciseEntry open={addExerciseOpen} onOpenChange={setAddExerciseOpen} onAdd={(exercise: Exercise) => {
-        setProfile({ savedExercises: [...savedExercises, { id: Date.now().toString(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit }] });
+        const newEx: SavedExercise = { id: Date.now().toString(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit };
+        setProfile({ savedExercises: [...savedExercises, newEx] });
+        dbInsertSavedExercise(newEx);
         setAddExerciseOpen(false);
       }} />
 
@@ -1446,13 +1454,14 @@ const Profile = () => {
             <Button
               onClick={() => {
                 if (!editDefaultMealId) return;
-                setProfile({
-                  defaultMeals: (profile.defaultMeals || []).map((dm) =>
-                    dm.id === editDefaultMealId
-                      ? { ...dm, name: editDefaultName.trim() || dm.name, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
-                      : dm
-                  ),
-                });
+                const updatedDefaults = (profile.defaultMeals || []).map((dm) =>
+                  dm.id === editDefaultMealId
+                    ? { ...dm, name: editDefaultName.trim() || dm.name, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
+                    : dm
+                );
+                setProfile({ defaultMeals: updatedDefaults });
+                const updatedDM = updatedDefaults.find((dm) => dm.id === editDefaultMealId);
+                if (updatedDM) dbUpdateDefaultMeal(updatedDM);
                 setEditDefaultMealId(null);
               }}
               className="w-full rounded-xl h-12 mt-2"
@@ -1549,6 +1558,7 @@ const Profile = () => {
                       createdAt: format(new Date(), "yyyy-MM-dd"),
                     };
                     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+                    dbInsertDefaultMeal(newDefault);
                     setCreateDefaultMealOpen(false);
                   }}
                   className="w-full rounded-xl h-12 mt-2"
@@ -1606,7 +1616,10 @@ const Profile = () => {
               )}
               <Button onClick={() => {
                 if (!editDefaultMealItemsId || editDefaultMealItemsList.length === 0) return;
-                setProfile({ defaultMeals: (profile.defaultMeals || []).map((dm) => dm.id === editDefaultMealItemsId ? { ...dm, name: editDefaultMealItemsName.trim() || dm.name, items: editDefaultMealItemsList } : dm) });
+                const updatedDefaults = (profile.defaultMeals || []).map((dm) => dm.id === editDefaultMealItemsId ? { ...dm, name: editDefaultMealItemsName.trim() || dm.name, items: editDefaultMealItemsList } : dm);
+                setProfile({ defaultMeals: updatedDefaults });
+                const updatedDM = updatedDefaults.find((dm) => dm.id === editDefaultMealItemsId);
+                if (updatedDM) dbUpdateDefaultMeal(updatedDM);
                 setEditDefaultMealItemsId(null);
               }} className="w-full rounded-xl h-12" disabled={editDefaultMealItemsList.length === 0 || !editDefaultMealItemsName.trim()}>Save changes</Button>
             </div>
@@ -1681,6 +1694,7 @@ const Profile = () => {
                   createdAt: format(new Date(), "yyyy-MM-dd"),
                 };
                 setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+                dbInsertDefaultMeal(newDefault);
                 setDragToDefaultMeal(null);
               }}
               className="w-full rounded-xl h-12"

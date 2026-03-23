@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
+import { dbUpdateProfileExtended } from "@/utils/dbPersistence";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1 },
@@ -353,7 +354,7 @@ const HealthDiary = () => {
           <DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
             <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
+            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); dbUpdateProfileExtended({ cycle_start_date: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
           </div>
         </DialogContent>
       </Dialog>

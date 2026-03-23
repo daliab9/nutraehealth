@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      default_meal_overrides: {
+        Row: {
+          created_at: string
+          date: string
+          default_meal_id: string
+          id: string
+          removed: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          default_meal_id: string
+          id?: string
+          removed?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          default_meal_id?: string
+          id?: string
+          removed?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      default_meals: {
+        Row: {
+          created_at: string
+          created_at_date: string | null
+          frequency: string
+          id: string
+          items: Json
+          meal_type: string
+          name: string
+          specific_days: number[] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_at_date?: string | null
+          frequency?: string
+          id?: string
+          items?: Json
+          meal_type: string
+          name: string
+          specific_days?: number[] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_at_date?: string | null
+          frequency?: string
+          id?: string
+          items?: Json
+          meal_type?: string
+          name?: string
+          specific_days?: number[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      diary_entries: {
+        Row: {
+          created_at: string
+          date: string
+          exercises: Json
+          id: string
+          meals: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          exercises?: Json
+          id?: string
+          meals?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          exercises?: Json
+          id?: string
+          meals?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_entries: {
+        Row: {
+          created_at: string
+          data: Json
+          date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           calories: number
@@ -107,8 +227,12 @@ export type Database = {
         Row: {
           activity_level: string | null
           age: number | null
+          ai_scans_used: number | null
+          cholesterol_level: string | null
           created_at: string
           current_weight: number | null
+          cycle_duration: number | null
+          cycle_start_date: string | null
           daily_calorie_goal: number
           daily_carbs_goal: number
           daily_fat_goal: number
@@ -124,17 +248,25 @@ export type Database = {
           height: number | null
           height_unit: string | null
           id: string
+          nutrient_target_overrides: Json | null
           onboarding_complete: boolean | null
+          subscription: string | null
           target_weight: number | null
+          tracked_nutrients: string[] | null
           updated_at: string
           user_id: string
+          weight_history: Json | null
           weight_unit: string | null
         }
         Insert: {
           activity_level?: string | null
           age?: number | null
+          ai_scans_used?: number | null
+          cholesterol_level?: string | null
           created_at?: string
           current_weight?: number | null
+          cycle_duration?: number | null
+          cycle_start_date?: string | null
           daily_calorie_goal?: number
           daily_carbs_goal?: number
           daily_fat_goal?: number
@@ -150,17 +282,25 @@ export type Database = {
           height?: number | null
           height_unit?: string | null
           id?: string
+          nutrient_target_overrides?: Json | null
           onboarding_complete?: boolean | null
+          subscription?: string | null
           target_weight?: number | null
+          tracked_nutrients?: string[] | null
           updated_at?: string
           user_id: string
+          weight_history?: Json | null
           weight_unit?: string | null
         }
         Update: {
           activity_level?: string | null
           age?: number | null
+          ai_scans_used?: number | null
+          cholesterol_level?: string | null
           created_at?: string
           current_weight?: number | null
+          cycle_duration?: number | null
+          cycle_start_date?: string | null
           daily_calorie_goal?: number
           daily_carbs_goal?: number
           daily_fat_goal?: number
@@ -176,11 +316,72 @@ export type Database = {
           height?: number | null
           height_unit?: string | null
           id?: string
+          nutrient_target_overrides?: Json | null
           onboarding_complete?: boolean | null
+          subscription?: string | null
           target_weight?: number | null
+          tracked_nutrients?: string[] | null
           updated_at?: string
           user_id?: string
+          weight_history?: Json | null
           weight_unit?: string | null
+        }
+        Relationships: []
+      }
+      saved_exercises: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          duration: number
+          id: string
+          name: string
+          secondary_metric: number | null
+          secondary_unit: string | null
+          user_id: string
+        }
+        Insert: {
+          calories_burned?: number
+          created_at?: string
+          duration?: number
+          id?: string
+          name: string
+          secondary_metric?: number | null
+          secondary_unit?: string | null
+          user_id: string
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          duration?: number
+          id?: string
+          name?: string
+          secondary_metric?: number | null
+          secondary_unit?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_meals: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          user_id?: string
         }
         Relationships: []
       }

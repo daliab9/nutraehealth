@@ -14,6 +14,7 @@ import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedE
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
+import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbDeleteDefaultMeal, dbInsertOverride, dbDeleteOverridesForMeal } from "@/utils/dbPersistence";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -264,20 +265,24 @@ const Diary = () => {
 
   const handleSaveMeal = (meal: SavedMeal) => {
     setProfile({ savedMeals: [...(profile.savedMeals || []), meal] });
+    dbInsertSavedMeal(meal);
   };
 
   const handleUnsaveMeal = (mealName: string) => {
+    const toRemove = (profile.savedMeals || []).find((m) => m.name.toLowerCase() === mealName.toLowerCase());
     setProfile({ savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()) });
+    if (toRemove) dbDeleteSavedMeal(toRemove.id);
   };
 
   const handleAddToSavedMeal = (mealId: string, item: FoodItem) => {
-    setProfile({
-      savedMeals: (profile.savedMeals || []).map((m) =>
-        m.id === mealId
-          ? { ...m, items: [...m.items, { ...item, id: Date.now().toString(), groupId: undefined, groupName: undefined }] }
-          : m
-      ),
-    });
+    const updated = (profile.savedMeals || []).map((m) =>
+      m.id === mealId
+        ? { ...m, items: [...m.items, { ...item, id: Date.now().toString(), groupId: undefined, groupName: undefined }] }
+        : m
+    );
+    setProfile({ savedMeals: updated });
+    const updatedMeal = updated.find((m) => m.id === mealId);
+    if (updatedMeal) dbUpdateSavedMeal(updatedMeal);
   };
 
   const handleSaveAsDefault = (name: string, items: FoodItem[], mt: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => {
@@ -291,15 +296,18 @@ const Diary = () => {
       createdAt: format(new Date(), "yyyy-MM-dd"),
     };
     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+    dbInsertDefaultMeal(newDefault);
   };
 
   const handleRemoveDefaultToday = (defaultMealId: string) => {
+    const override = { defaultMealId, date: dateKey, removed: true };
     setProfile({
       defaultMealOverrides: [
         ...(profile.defaultMealOverrides || []),
-        { defaultMealId, date: dateKey, removed: true },
+        override,
       ],
     });
+    dbInsertOverride(override);
     toast.success("Removed for today");
   };
 
@@ -308,6 +316,7 @@ const Diary = () => {
       defaultMeals: (profile.defaultMeals || []).filter((dm) => dm.id !== defaultMealId),
       defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== defaultMealId),
     });
+    dbDeleteDefaultMeal(defaultMealId);
     toast.success("Default meal removed");
   };
 
@@ -318,18 +327,20 @@ const Diary = () => {
   const handleToggleSaveExercise = (ex: Exercise) => {
     const saved = profile.savedExercises || [];
     if (isExerciseSaved(ex.name)) {
+      const toRemove = saved.find((e) => e.name.toLowerCase() === ex.name.toLowerCase());
       setProfile({ savedExercises: saved.filter((e) => e.name.toLowerCase() !== ex.name.toLowerCase()) });
+      if (toRemove) dbDeleteSavedExercise(toRemove.id);
     } else {
-      setProfile({
-        savedExercises: [...saved, {
-          id: Date.now().toString(),
-          name: ex.name,
-          duration: ex.duration,
-          caloriesBurned: ex.caloriesBurned,
-          secondaryMetric: ex.secondaryMetric,
-          secondaryUnit: ex.secondaryUnit,
-        }],
-      });
+      const newEx: SavedExercise = {
+        id: Date.now().toString(),
+        name: ex.name,
+        duration: ex.duration,
+        caloriesBurned: ex.caloriesBurned,
+        secondaryMetric: ex.secondaryMetric,
+        secondaryUnit: ex.secondaryUnit,
+      };
+      setProfile({ savedExercises: [...saved, newEx] });
+      dbInsertSavedExercise(newEx);
     }
   };
 

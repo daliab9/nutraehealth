@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface FoodItem {
   id: string;
@@ -23,10 +24,10 @@ export interface FoodItem {
 export interface Exercise {
   id: string;
   name: string;
-  duration: number; // minutes
+  duration: number;
   caloriesBurned: number;
-  secondaryMetric?: number; // km, steps, laps, etc.
-  secondaryUnit?: string; // "km", "steps", "laps", etc.
+  secondaryMetric?: number;
+  secondaryUnit?: string;
 }
 
 export interface MealEntry {
@@ -36,7 +37,7 @@ export interface MealEntry {
 
 export interface PoopEntry {
   id: string;
-  type: number; // Bristol Stool Scale 1-7
+  type: number;
 }
 
 export interface HealthEntry {
@@ -55,7 +56,7 @@ export interface HealthEntry {
 }
 
 export interface DayEntry {
-  date: string; // YYYY-MM-DD
+  date: string;
   meals: MealEntry[];
   exercises: Exercise[];
 }
@@ -74,14 +75,13 @@ export interface DefaultMeal {
   mealType: MealEntry["type"];
   items: FoodItem[];
   frequency: DefaultMealFrequency;
-  specificDays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
-  createdAt?: string; // YYYY-MM-DD — only active from this date forward
+  specificDays?: number[];
+  createdAt?: string;
 }
 
-// Track which default meals have been removed for specific dates
 export interface DefaultMealOverride {
   defaultMealId: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   removed: boolean;
 }
 
@@ -164,61 +164,56 @@ function getLocalDayOfWeek(date: string): number {
   return new Date(year, (month || 1) - 1, day || 1).getDay();
 }
 
-function loadProfile(): UserProfile {
-  try {
-    const stored = localStorage.getItem("nuria_profile");
-    if (stored) return { ...DEFAULT_PROFILE, ...JSON.parse(stored) };
-  } catch {}
-  return DEFAULT_PROFILE;
+// Debounce helper
+function debounce<T extends (...args: any[]) => any>(fn: T, ms: number): T {
+  let timer: ReturnType<typeof setTimeout>;
+  return ((...args: any[]) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  }) as unknown as T;
 }
 
-function loadDiary(): Record<string, DayEntry> {
-  try {
-    const stored = localStorage.getItem("nuria_diary");
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return {};
+async function getUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
 }
-
-function loadHealth(): Record<string, HealthEntry> {
-  try {
-    const stored = localStorage.getItem("nuria_health");
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return {};
-}
-
-const DEFAULT_HEALTH: HealthEntry = {
-  poopCount: 0,
-  poopEntries: [],
-  sleepQuality: 0,
-  stressLevel: 0,
-  mood: 0,
-  positiveEmotions: [],
-  positiveReasons: [],
-  positiveOtherText: "",
-  negativeEmotions: [],
-  negativeReasons: [],
-  negativeOtherText: "",
-  diaryText: "",
-};
 
 export function useUserStore() {
-  const [profile, setProfileState] = useState<UserProfile>(loadProfile);
-  const [diary, setDiaryState] = useState<Record<string, DayEntry>>(loadDiary);
-  const [health, setHealthState] = useState<Record<string, HealthEntry>>(loadHealth);
+  const [profile, setProfileState] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [diary, setDiaryState] = useState<Record<string, DayEntry>>({});
+  const [health, setHealthState] = useState<Record<string, HealthEntry>>({});
 
-  useEffect(() => {
-    localStorage.setItem("nuria_profile", JSON.stringify(profile));
-  }, [profile]);
+  // Refs for debounced DB writes
+  const diaryRef = useRef(diary);
+  diaryRef.current = diary;
+  const healthRef = useRef(health);
+  healthRef.current = health;
 
-  useEffect(() => {
-    localStorage.setItem("nuria_diary", JSON.stringify(diary));
-  }, [diary]);
+  // ===== Debounced DB persistence for diary entries =====
+  const persistDiaryEntry = useCallback(
+    debounce(async (date: string, entry: DayEntry) => {
+      const userId = await getUserId();
+      if (!userId) return;
+      await supabase.from("diary_entries").upsert(
+        { user_id: userId, date, meals: entry.meals as any, exercises: entry.exercises as any },
+        { onConflict: "user_id,date" }
+      );
+    }, 500),
+    []
+  );
 
-  useEffect(() => {
-    localStorage.setItem("nuria_health", JSON.stringify(health));
-  }, [health]);
+  // ===== Debounced DB persistence for health entries =====
+  const persistHealthEntry = useCallback(
+    debounce(async (date: string, entry: HealthEntry) => {
+      const userId = await getUserId();
+      if (!userId) return;
+      await supabase.from("health_entries").upsert(
+        { user_id: userId, date, data: entry as any },
+        { onConflict: "user_id,date" }
+      );
+    }, 500),
+    []
+  );
 
   const setProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfileState((prev) => ({ ...prev, ...updates }));
@@ -233,7 +228,8 @@ export function useUserStore() {
 
   const setDayEntry = useCallback((date: string, entry: DayEntry) => {
     setDiaryState((prev) => ({ ...prev, [date]: entry }));
-  }, []);
+    persistDiaryEntry(date, entry);
+  }, [persistDiaryEntry]);
 
   const addFoodToMeal = useCallback(
     (date: string, mealType: MealEntry["type"], item: FoodItem) => {
@@ -249,21 +245,22 @@ export function useUserStore() {
         } else {
           meals.push({ type: mealType, items: [item] });
         }
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const addExercise = useCallback((date: string, exercise: Exercise) => {
     setDiaryState((prev) => {
       const day = prev[date] || { date, meals: [], exercises: [] };
-      return {
-        ...prev,
-        [date]: { ...day, exercises: [...day.exercises, exercise] },
-      };
+      const updated = { ...day, exercises: [...day.exercises, exercise] };
+      persistDiaryEntry(date, updated);
+      return { ...prev, [date]: updated };
     });
-  }, []);
+  }, [persistDiaryEntry]);
 
   const removeFoodFromMeal = useCallback(
     (date: string, mealType: MealEntry["type"], itemId: string) => {
@@ -275,22 +272,23 @@ export function useUserStore() {
             ? { ...m, items: m.items.filter((i) => i.id !== itemId) }
             : m
         );
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const removeExercise = useCallback((date: string, exerciseId: string) => {
     setDiaryState((prev) => {
       const day = prev[date];
       if (!day) return prev;
-      return {
-        ...prev,
-        [date]: { ...day, exercises: day.exercises.filter((e) => e.id !== exerciseId) },
-      };
+      const updated = { ...day, exercises: day.exercises.filter((e) => e.id !== exerciseId) };
+      persistDiaryEntry(date, updated);
+      return { ...prev, [date]: updated };
     });
-  }, []);
+  }, [persistDiaryEntry]);
 
   const updateFoodInMeal = useCallback(
     (date: string, mealType: MealEntry["type"], updatedItem: FoodItem) => {
@@ -302,25 +300,26 @@ export function useUserStore() {
             ? { ...m, items: m.items.map((i) => (i.id === updatedItem.id ? updatedItem : i)) }
             : m
         );
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const updateExercise = useCallback((date: string, updatedExercise: Exercise) => {
     setDiaryState((prev) => {
       const day = prev[date];
       if (!day) return prev;
-      return {
-        ...prev,
-        [date]: {
-          ...day,
-          exercises: day.exercises.map((e) => (e.id === updatedExercise.id ? updatedExercise : e)),
-        },
+      const updated = {
+        ...day,
+        exercises: day.exercises.map((e) => (e.id === updatedExercise.id ? updatedExercise : e)),
       };
+      persistDiaryEntry(date, updated);
+      return { ...prev, [date]: updated };
     });
-  }, []);
+  }, [persistDiaryEntry]);
 
   const moveFoodBetweenMeals = useCallback(
     (date: string, fromMealType: MealEntry["type"], toMealType: MealEntry["type"], itemId: string) => {
@@ -350,10 +349,12 @@ export function useUserStore() {
           meals.push({ type: toMealType, items: [movedItem] });
         }
 
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const mergeItemsIntoGroup = useCallback(
@@ -373,14 +374,12 @@ export function useUserStore() {
         const srcIt = srcMeal?.items.find((i) => i.id === sourceItem.itemId);
         if (!srcIt) return prev;
 
-        // Remove source item
         let meals = day.meals.map((m) =>
           m.type === sourceItem.mealType
             ? { ...m, items: m.items.filter((i) => i.id !== sourceItem.itemId) }
             : m
         );
 
-        // Update target item with group info and add source item
         const tgtIdx = meals.findIndex((m) => m.type === targetItem.mealType);
         if (tgtIdx >= 0) {
           meals[tgtIdx] = {
@@ -394,10 +393,12 @@ export function useUserStore() {
           };
         }
 
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const isDefaultMealActiveForDate = useCallback(
@@ -419,7 +420,6 @@ export function useUserStore() {
       const overrides = profile.defaultMealOverrides || [];
       return (profile.defaultMeals || [])
         .filter((dm) => {
-          // Only show on current and future days from when it was created
           if (dm.createdAt && date < dm.createdAt) return false;
           const isRemoved = overrides.some((o) => o.defaultMealId === dm.id && o.date === date && o.removed);
           return !isRemoved && isDefaultMealActiveForDate(dm, date);
@@ -458,10 +458,8 @@ export function useUserStore() {
         b12 += i.b12 || 0;
       };
 
-      // Sum logged meals
       day.meals.forEach((m) => m.items.forEach(addItem));
 
-      // Sum default meals that haven't already been materialized into the diary
       const defaultMeals = getDefaultMealsForDate(date);
       const materializedDefaultMealIds = new Set<string>();
       day.meals.forEach((meal) => {
@@ -496,6 +494,21 @@ export function useUserStore() {
     [getDayEntry, getDefaultMealsForDate]
   );
 
+  const DEFAULT_HEALTH: HealthEntry = {
+    poopCount: 0,
+    poopEntries: [],
+    sleepQuality: 0,
+    stressLevel: 0,
+    mood: 0,
+    positiveEmotions: [],
+    positiveReasons: [],
+    positiveOtherText: "",
+    negativeEmotions: [],
+    negativeReasons: [],
+    negativeOtherText: "",
+    diaryText: "",
+  };
+
   const getHealthEntry = useCallback(
     (date: string): HealthEntry => {
       return { ...DEFAULT_HEALTH, ...(health[date] || {}) };
@@ -505,7 +518,8 @@ export function useUserStore() {
 
   const setHealthEntry = useCallback((date: string, entry: HealthEntry) => {
     setHealthState((prev) => ({ ...prev, [date]: entry }));
-  }, []);
+    persistHealthEntry(date, entry);
+  }, [persistHealthEntry]);
 
   const addFoodToGroup = useCallback(
     (date: string, mealType: MealEntry["type"], groupId: string, groupName: string, item: FoodItem) => {
@@ -517,10 +531,12 @@ export function useUserStore() {
             ? { ...m, items: [...m.items, { ...item, groupId, groupName }] }
             : m
         );
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
   const removeFoodFromGroup = useCallback(
@@ -533,12 +549,103 @@ export function useUserStore() {
             ? { ...m, items: m.items.map((i) => i.id === itemId ? { ...i, groupId: undefined, groupName: undefined } : i) }
             : m
         );
-        return { ...prev, [date]: { ...day, meals } };
+        const updated = { ...day, meals };
+        persistDiaryEntry(date, updated);
+        return { ...prev, [date]: updated };
       });
     },
-    []
+    [persistDiaryEntry]
   );
 
+  // ===== Load all data from DB =====
+  const loadAllFromDB = useCallback(async (userId: string) => {
+    // Load diary entries
+    const { data: diaryRows } = await supabase
+      .from("diary_entries")
+      .select("date, meals, exercises")
+      .eq("user_id", userId);
+
+    if (diaryRows) {
+      const diaryMap: Record<string, DayEntry> = {};
+      for (const row of diaryRows) {
+        diaryMap[row.date] = {
+          date: row.date,
+          meals: (row.meals as any) || [],
+          exercises: (row.exercises as any) || [],
+        };
+      }
+      setDiaryState(diaryMap);
+    }
+
+    // Load health entries
+    const { data: healthRows } = await supabase
+      .from("health_entries")
+      .select("date, data")
+      .eq("user_id", userId);
+
+    if (healthRows) {
+      const healthMap: Record<string, HealthEntry> = {};
+      for (const row of healthRows) {
+        healthMap[row.date] = (row.data as any) || {};
+      }
+      setHealthState(healthMap);
+    }
+
+    // Load saved meals
+    const { data: savedMealRows } = await supabase
+      .from("saved_meals")
+      .select("id, name, items")
+      .eq("user_id", userId);
+
+    // Load saved exercises
+    const { data: savedExRows } = await supabase
+      .from("saved_exercises")
+      .select("id, name, duration, calories_burned, secondary_metric, secondary_unit")
+      .eq("user_id", userId);
+
+    // Load default meals
+    const { data: defaultMealRows } = await supabase
+      .from("default_meals")
+      .select("id, name, meal_type, items, frequency, specific_days, created_at_date")
+      .eq("user_id", userId);
+
+    // Load default meal overrides
+    const { data: overrideRows } = await supabase
+      .from("default_meal_overrides")
+      .select("default_meal_id, date, removed")
+      .eq("user_id", userId);
+
+    setProfileState((prev) => ({
+      ...prev,
+      savedMeals: (savedMealRows || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        items: (r.items as any) || [],
+      })),
+      savedExercises: (savedExRows || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        duration: r.duration,
+        caloriesBurned: r.calories_burned,
+        secondaryMetric: r.secondary_metric ? Number(r.secondary_metric) : undefined,
+        secondaryUnit: r.secondary_unit || undefined,
+      })),
+      defaultMeals: (defaultMealRows || []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        mealType: r.meal_type as MealEntry["type"],
+        items: (r.items as any) || [],
+        frequency: r.frequency as DefaultMealFrequency,
+        specificDays: r.specific_days || undefined,
+        createdAt: r.created_at_date || undefined,
+      })),
+      defaultMealOverrides: (overrideRows || []).map((r) => ({
+        defaultMealId: r.default_meal_id,
+        date: r.date,
+        removed: r.removed,
+      })),
+    }));
+  }, []);
 
   return {
     profile,
@@ -561,5 +668,6 @@ export function useUserStore() {
     getHealthEntry,
     setHealthEntry,
     getDefaultMealsForDate,
+    loadAllFromDB,
   };
 }
