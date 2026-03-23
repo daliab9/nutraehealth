@@ -1384,7 +1384,7 @@ const Profile = () => {
               const mostRecent = history[history.length - 1];
               const newCalories = autoCalcCalories(mostRecent.weight, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
               setProfile({ weightHistory: history, currentWeight: mostRecent.weight, dailyCalorieTarget: newCalories });
-              persistToDB({ current_weight: mostRecent.weight, daily_calorie_goal: newCalories });
+              persistToDB({ current_weight: mostRecent.weight, daily_calorie_goal: newCalories, weight_history: history });
               setAddWeightOpen(false);
             }} className="w-full rounded-xl h-12" disabled={!addWeightDate}>{editingWeightDate ? "Save changes" : "Add entry"}</Button>
           </div>
