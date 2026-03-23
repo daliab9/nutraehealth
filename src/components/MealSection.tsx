@@ -114,10 +114,10 @@ export const MealSection = ({
   };
 
   const handleAddSavedMeal = (meal: SavedMeal) => {
-    const groupId = Date.now().toString();
+    const groupId = crypto.randomUUID();
     const mealItems = meal.items.map((item) => ({
       ...item,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: crypto.randomUUID(),
       groupId,
       groupName: meal.name,
     }));
