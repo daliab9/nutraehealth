@@ -41,9 +41,11 @@ const AppContent = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
-      // Handle password recovery redirect
       if (event === "PASSWORD_RECOVERY") {
         setScreen("reset-password");
+      }
+      if (!sess) {
+        setScreen("landing");
       }
     });
 
