@@ -382,11 +382,12 @@ const Profile = () => {
 
       if (!activeData.mealId || !nextMealType || nextMealType === activeData.mealType) return;
 
-      setProfile({
-        defaultMeals: (profile.defaultMeals || []).map((meal) =>
-          meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
-        ),
-      });
+      const updatedDefaults = (profile.defaultMeals || []).map((meal) =>
+        meal.id === activeData.mealId ? { ...meal, mealType: nextMealType as MealEntry["type"] } : meal
+      );
+      setProfile({ defaultMeals: updatedDefaults });
+      const updatedDM = updatedDefaults.find((m) => m.id === activeData.mealId);
+      if (updatedDM) dbUpdateDefaultMeal(updatedDM);
       return;
     }
 
