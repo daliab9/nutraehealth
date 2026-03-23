@@ -332,7 +332,7 @@ const Diary = () => {
       if (toRemove) dbDeleteSavedExercise(toRemove.id);
     } else {
       const newEx: SavedExercise = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name: ex.name,
         duration: ex.duration,
         caloriesBurned: ex.caloriesBurned,

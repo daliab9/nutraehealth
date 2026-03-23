@@ -1685,7 +1685,7 @@ const Profile = () => {
               onClick={() => {
                 if (!dragToDefaultMeal) return;
                 const newDefault: DefaultMeal = {
-                  id: Date.now().toString(),
+                  id: crypto.randomUUID(),
                   name: dragToDefaultMeal.name,
                   mealType: dragToDefaultMealType,
                   items: dragToDefaultMeal.items,

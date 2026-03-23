@@ -721,7 +721,7 @@ export const MealSection = ({
         groupName={saveMealModalName}
         onSaveAsMeal={(name, mealItems) => {
           onSaveMeal?.({
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             name,
             items: mealItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
           });

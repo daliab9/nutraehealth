@@ -26,7 +26,7 @@ export const AppointmentForm = ({ open, onOpenChange, onSave, existing }: Appoin
   const handleSave = () => {
     if (!date || !provider || !reason) return;
     onSave({
-      id: existing?.id || Date.now().toString(),
+      id: existing?.id || crypto.randomUUID(),
       date,
       time,
       provider,

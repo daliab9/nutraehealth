@@ -132,7 +132,7 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
     if (!selected) return;
     const wholeGrams = wholeGramsMap.get(selected.name) || selected.default_portion_g || 100;
     onAddItem({
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: selected.name,
       calories: scale(selected.calories),
       protein: scale(selected.protein),
