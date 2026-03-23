@@ -1347,7 +1347,7 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <button onClick={() => { setEditingWeightDate(entry.date); setAddWeightDate(new Date(entry.date)); setAddWeightUnit(weightUnit); setAddWeightValue(displayW); setAddWeightOpen(true); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => setProfile({ weightHistory: profile.weightHistory.filter((h) => h.date !== entry.date) })} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => { const newHistory = profile.weightHistory.filter((h) => h.date !== entry.date); setProfile({ weightHistory: newHistory }); dbUpdateProfileExtended({ weight_history: newHistory }); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
                   );
