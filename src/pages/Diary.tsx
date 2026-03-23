@@ -316,6 +316,7 @@ const Diary = () => {
       defaultMeals: (profile.defaultMeals || []).filter((dm) => dm.id !== defaultMealId),
       defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== defaultMealId),
     });
+    dbDeleteDefaultMeal(defaultMealId);
     toast.success("Default meal removed");
   };
 
