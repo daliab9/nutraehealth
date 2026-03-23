@@ -679,7 +679,7 @@ export const MealSection = ({
                 <Button
                   onClick={() => {
                     if (addToMealItem && newMealName.trim() && onUpdateItem) {
-                      const gid = Date.now().toString();
+                      const gid = crypto.randomUUID();
                       onUpdateItem({ ...addToMealItem, groupId: gid, groupName: newMealName.trim() });
                       setAddToMealItem(null);
                       setNewMealName("");
