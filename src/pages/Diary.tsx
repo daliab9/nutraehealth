@@ -277,7 +277,7 @@ const Diary = () => {
   const handleAddToSavedMeal = (mealId: string, item: FoodItem) => {
     const updated = (profile.savedMeals || []).map((m) =>
       m.id === mealId
-        ? { ...m, items: [...m.items, { ...item, id: Date.now().toString(), groupId: undefined, groupName: undefined }] }
+        ? { ...m, items: [...m.items, { ...item, id: crypto.randomUUID(), groupId: undefined, groupName: undefined }] }
         : m
     );
     setProfile({ savedMeals: updated });
