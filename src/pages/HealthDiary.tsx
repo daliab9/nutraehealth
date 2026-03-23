@@ -354,7 +354,7 @@ const HealthDiary = () => {
           <DialogHeader><DialogTitle>First Day of Cycle</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
             <Input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="rounded-xl" />
-            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
+            <Button onClick={() => { setProfile({ cycleStartDate: cycleDate }); dbUpdateProfileExtended({ cycle_start_date: cycleDate }); setCycleOpen(false); }} className="w-full rounded-xl h-12" disabled={!cycleDate}>Save</Button>
           </div>
         </DialogContent>
       </Dialog>
