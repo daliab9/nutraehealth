@@ -1213,7 +1213,7 @@ const Profile = () => {
               );
             })}
           </div>
-          <Button onClick={() => { setProfile({ trackedNutrients: pendingNutrients, nutrientTargetOverrides: pendingOverrides, cholesterolLevel: pendingCholesterol as "" | "low" | "medium" | "high" }); setNutrientModalOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+          <Button onClick={() => { setProfile({ trackedNutrients: pendingNutrients, nutrientTargetOverrides: pendingOverrides, cholesterolLevel: pendingCholesterol as "" | "low" | "medium" | "high" }); dbUpdateProfileExtended({ tracked_nutrients: pendingNutrients, nutrient_target_overrides: pendingOverrides, cholesterol_level: pendingCholesterol }); setNutrientModalOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
