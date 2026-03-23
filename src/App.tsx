@@ -12,7 +12,7 @@ import { SignupPage } from "@/components/SignupPage";
 import { ForgotPasswordPage } from "@/components/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/components/ResetPasswordPage";
 import type { OnboardingData } from "@/components/Onboarding";
-import { useUserStore } from "@/stores/useUserStore";
+import { useUserStore, UserStoreProvider } from "@/stores/useUserStore";
 import { supabase } from "@/integrations/supabase/client";
 import Diary from "./pages/Diary";
 import Tracker from "./pages/Tracker";
