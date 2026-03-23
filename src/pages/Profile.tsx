@@ -421,7 +421,7 @@ const Profile = () => {
     dbUpdateSavedMeal(updated);
     setEditingSavedMeal(null);
   };
-  const deleteSavedExercise = (exerciseId: string) => setProfile({ savedExercises: savedExercises.filter((e) => e.id !== exerciseId) });
+  const deleteSavedExercise = (exerciseId: string) => { setProfile({ savedExercises: savedExercises.filter((e) => e.id !== exerciseId) }); dbDeleteSavedExercise(exerciseId); };
 
   // ====== RENDER ======
   return (
