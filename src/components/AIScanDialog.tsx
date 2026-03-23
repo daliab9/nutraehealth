@@ -163,9 +163,9 @@ export const AIScanDialog = ({ open, onOpenChange, onAddItems, mealTitle }: AISc
   };
 
   const handleConfirm = (groupName?: string) => {
-    const groupId = groupName ? Date.now().toString() : undefined;
+    const groupId = groupName ? crypto.randomUUID() : undefined;
     const foodItems: FoodItem[] = editingItems.map((item) => ({
-      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      id: crypto.randomUUID(),
       name: item.name,
       calories: Number(item.calories),
       protein: Number(item.protein),

@@ -109,15 +109,15 @@ export const MealSection = ({
     .slice(0, 5);
 
   const handleAddPastItem = (item: FoodItem) => {
-    onAddItem({ ...item, id: Date.now().toString() });
+    onAddItem({ ...item, id: crypto.randomUUID() });
     setMode(null);
   };
 
   const handleAddSavedMeal = (meal: SavedMeal) => {
-    const groupId = Date.now().toString();
+    const groupId = crypto.randomUUID();
     const mealItems = meal.items.map((item) => ({
       ...item,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: crypto.randomUUID(),
       groupId,
       groupName: meal.name,
     }));
@@ -137,7 +137,7 @@ export const MealSection = ({
       setMode(null);
       return;
     }
-    const groupId = Date.now().toString();
+    const groupId = crypto.randomUUID();
     const mealItems = creatingMealItems.map((item) => ({
       ...item,
       groupId,
@@ -212,7 +212,7 @@ export const MealSection = ({
       toast.success(`"${name}" removed from saved meals`);
     } else {
       onSaveMeal?.({
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name,
         items: groupItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
       });
@@ -240,7 +240,7 @@ export const MealSection = ({
   const handleLongPressCreateSaved = () => {
     if (longPressItem && newSavedMealName.trim() && onSaveMeal) {
       onSaveMeal({
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name: newSavedMealName.trim(),
         items: [{ ...longPressItem, groupId: undefined, groupName: undefined }],
       });
@@ -679,7 +679,7 @@ export const MealSection = ({
                 <Button
                   onClick={() => {
                     if (addToMealItem && newMealName.trim() && onUpdateItem) {
-                      const gid = Date.now().toString();
+                      const gid = crypto.randomUUID();
                       onUpdateItem({ ...addToMealItem, groupId: gid, groupName: newMealName.trim() });
                       setAddToMealItem(null);
                       setNewMealName("");
@@ -721,7 +721,7 @@ export const MealSection = ({
         groupName={saveMealModalName}
         onSaveAsMeal={(name, mealItems) => {
           onSaveMeal?.({
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             name,
             items: mealItems.map(({ groupId: _, groupName: __, ...rest }) => rest),
           });

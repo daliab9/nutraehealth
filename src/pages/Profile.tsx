@@ -1272,7 +1272,7 @@ const Profile = () => {
                 </div>
               )}
               <FoodSearchInput onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])} onClose={() => {}} keepOpenOnAdd />
-              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal: SavedMeal = { id: Date.now().toString(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...savedMeals, newMeal] }); dbInsertSavedMeal(newMeal); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
+              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal: SavedMeal = { id: crypto.randomUUID(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...savedMeals, newMeal] }); dbInsertSavedMeal(newMeal); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
             </div>
           )}
         </DialogContent>
@@ -1394,7 +1394,7 @@ const Profile = () => {
 
       {/* Exercise */}
       <ExerciseEntry open={addExerciseOpen} onOpenChange={setAddExerciseOpen} onAdd={(exercise: Exercise) => {
-        const newEx: SavedExercise = { id: Date.now().toString(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit };
+        const newEx: SavedExercise = { id: crypto.randomUUID(), name: exercise.name, duration: exercise.duration, caloriesBurned: exercise.caloriesBurned, secondaryMetric: exercise.secondaryMetric, secondaryUnit: exercise.secondaryUnit };
         setProfile({ savedExercises: [...savedExercises, newEx] });
         dbInsertSavedExercise(newEx);
         setAddExerciseOpen(false);
@@ -1549,7 +1549,7 @@ const Profile = () => {
                 <Button
                   onClick={() => {
                     const newDefault: DefaultMeal = {
-                      id: Date.now().toString(),
+                      id: crypto.randomUUID(),
                       name: createDefaultMealName.trim(),
                       mealType: createDefaultMealType,
                       items: createDefaultMealItems,
@@ -1685,7 +1685,7 @@ const Profile = () => {
               onClick={() => {
                 if (!dragToDefaultMeal) return;
                 const newDefault: DefaultMeal = {
-                  id: Date.now().toString(),
+                  id: crypto.randomUUID(),
                   name: dragToDefaultMeal.name,
                   mealType: dragToDefaultMealType,
                   items: dragToDefaultMeal.items,

@@ -277,7 +277,7 @@ const Diary = () => {
   const handleAddToSavedMeal = (mealId: string, item: FoodItem) => {
     const updated = (profile.savedMeals || []).map((m) =>
       m.id === mealId
-        ? { ...m, items: [...m.items, { ...item, id: Date.now().toString(), groupId: undefined, groupName: undefined }] }
+        ? { ...m, items: [...m.items, { ...item, id: crypto.randomUUID(), groupId: undefined, groupName: undefined }] }
         : m
     );
     setProfile({ savedMeals: updated });
@@ -287,7 +287,7 @@ const Diary = () => {
 
   const handleSaveAsDefault = (name: string, items: FoodItem[], mt: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => {
     const newDefault: DefaultMeal = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name,
       mealType: mt,
       items: items.map(({ groupId: _, groupName: __, ...rest }) => rest),
@@ -332,7 +332,7 @@ const Diary = () => {
       if (toRemove) dbDeleteSavedExercise(toRemove.id);
     } else {
       const newEx: SavedExercise = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name: ex.name,
         duration: ex.duration,
         caloriesBurned: ex.caloriesBurned,
