@@ -269,7 +269,9 @@ const Diary = () => {
   };
 
   const handleUnsaveMeal = (mealName: string) => {
+    const toRemove = (profile.savedMeals || []).find((m) => m.name.toLowerCase() === mealName.toLowerCase());
     setProfile({ savedMeals: (profile.savedMeals || []).filter((m) => m.name.toLowerCase() !== mealName.toLowerCase()) });
+    if (toRemove) dbDeleteSavedMeal(toRemove.id);
   };
 
   const handleAddToSavedMeal = (mealId: string, item: FoodItem) => {
