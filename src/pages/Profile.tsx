@@ -1112,6 +1112,7 @@ const Profile = () => {
             </div>
             <Button onClick={() => {
               setProfile({ dietaryPreferences: editDietPrefs, dietaryRestrictions: editDietRestrictions, healthConcerns: editHealthConcerns });
+              persistToDB({ dietary_preferences: editDietPrefs, dietary_restrictions: editDietRestrictions, health_concerns: editHealthConcerns });
               setLifestyleOpen(false);
             }} className="w-full rounded-xl h-12">Save</Button>
           </div>
