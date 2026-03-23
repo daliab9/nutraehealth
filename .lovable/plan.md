@@ -1,30 +1,29 @@
 
 
-# Add Red Logout Button to Profile Page
+# Fix Logout Button + Spacing
+
+## Issues
+
+1. **Logout doesn't work**: `onAuthStateChange` in `App.tsx` sets `session` to null on sign-out, but never updates `screen` to `"landing"` — so the app stays on the main view.
+2. **Spacing is off**: The logout button div uses `px-4 pb-4` without matching the section spacing above it.
 
 ## Changes
 
-**File: `src/pages/Profile.tsx`**
-
-1. Add `LogOut` to the lucide-react import on line 22
-2. Insert a red logout button just before `<BottomNav />` (before line 1709):
+### 1. `src/App.tsx` — Fix sign-out redirect
+In the `onAuthStateChange` callback (line 42-48), add a check: when `sess` becomes `null` (user signed out), set `screen` to `"landing"`.
 
 ```tsx
-<div className="px-4 pb-4">
-  <Button
-    variant="destructive"
-    className="w-full h-12 rounded-xl"
-    onClick={async () => {
-      await supabase.auth.signOut();
-    }}
-  >
-    <LogOut className="mr-2" size={18} />
-    Log Out
-  </Button>
-</div>
+supabase.auth.onAuthStateChange((event, sess) => {
+  setSession(sess);
+  if (event === "PASSWORD_RECOVERY") {
+    setScreen("reset-password");
+  }
+  if (!sess) {
+    setScreen("landing");
+  }
+});
 ```
 
-The `onAuthStateChange` listener in `App.tsx` already handles session removal — it will set session to `null` and switch the screen back to `"landing"`.
-
-No other files need changes.
+### 2. `src/pages/Profile.tsx` — Fix spacing
+Change the logout button wrapper (line 1709) from `px-4 pb-4` to `px-4 py-6` to give it even spacing consistent with the rest of the page sections.
 
