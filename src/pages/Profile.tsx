@@ -1613,7 +1613,10 @@ const Profile = () => {
               )}
               <Button onClick={() => {
                 if (!editDefaultMealItemsId || editDefaultMealItemsList.length === 0) return;
-                setProfile({ defaultMeals: (profile.defaultMeals || []).map((dm) => dm.id === editDefaultMealItemsId ? { ...dm, name: editDefaultMealItemsName.trim() || dm.name, items: editDefaultMealItemsList } : dm) });
+                const updatedDefaults = (profile.defaultMeals || []).map((dm) => dm.id === editDefaultMealItemsId ? { ...dm, name: editDefaultMealItemsName.trim() || dm.name, items: editDefaultMealItemsList } : dm);
+                setProfile({ defaultMeals: updatedDefaults });
+                const updatedDM = updatedDefaults.find((dm) => dm.id === editDefaultMealItemsId);
+                if (updatedDM) dbUpdateDefaultMeal(updatedDM);
                 setEditDefaultMealItemsId(null);
               }} className="w-full rounded-xl h-12" disabled={editDefaultMealItemsList.length === 0 || !editDefaultMealItemsName.trim()}>Save changes</Button>
             </div>
