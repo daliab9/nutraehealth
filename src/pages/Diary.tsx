@@ -300,12 +300,14 @@ const Diary = () => {
   };
 
   const handleRemoveDefaultToday = (defaultMealId: string) => {
+    const override = { defaultMealId, date: dateKey, removed: true };
     setProfile({
       defaultMealOverrides: [
         ...(profile.defaultMealOverrides || []),
-        { defaultMealId, date: dateKey, removed: true },
+        override,
       ],
     });
+    dbInsertOverride(override);
     toast.success("Removed for today");
   };
 
