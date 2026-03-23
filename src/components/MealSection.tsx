@@ -240,7 +240,7 @@ export const MealSection = ({
   const handleLongPressCreateSaved = () => {
     if (longPressItem && newSavedMealName.trim() && onSaveMeal) {
       onSaveMeal({
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name: newSavedMealName.trim(),
         items: [{ ...longPressItem, groupId: undefined, groupName: undefined }],
       });
