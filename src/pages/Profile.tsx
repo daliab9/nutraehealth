@@ -358,7 +358,7 @@ const Profile = () => {
     setScrollCalories(Math.max(1000, Math.min(4000, Math.round(cal / 10) * 10)));
   };
 
-  const deleteSavedMeal = (mealId: string) => setProfile({ savedMeals: savedMeals.filter((m) => m.id !== mealId) });
+  const deleteSavedMeal = (mealId: string) => { setProfile({ savedMeals: savedMeals.filter((m) => m.id !== mealId) }); dbDeleteSavedMeal(mealId); };
   const openEditMeal = (meal: SavedMeal) => { setEditingSavedMeal(meal); setEditMealName(meal.name); setEditMealItems([...meal.items]); setEditMealAddingItem(false); setEditingMealItem(null); };
   const handleProfileMealDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current as { type?: string; mealName?: string } | null;
