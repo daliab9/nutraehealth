@@ -137,7 +137,7 @@ export const MealSection = ({
       setMode(null);
       return;
     }
-    const groupId = Date.now().toString();
+    const groupId = crypto.randomUUID();
     const mealItems = creatingMealItems.map((item) => ({
       ...item,
       groupId,
