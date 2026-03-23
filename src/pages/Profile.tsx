@@ -322,11 +322,12 @@ const Profile = () => {
     const kgVal = weightUnit === "lbs" ? lbsToKg(scrollWeight) : scrollWeight;
     const today = format(new Date(), "yyyy-MM-dd");
     const newCalories = autoCalcCalories(kgVal, profile.targetWeight, profile.age, profile.height, profile.gender, profile.goals || [], profile.activityLevel, profile.goalTimeline);
+    const newHistory = [...profile.weightHistory.filter((h) => h.date !== today), { date: today, weight: kgVal }].sort((a, b) => a.date.localeCompare(b.date));
     setProfile({
       currentWeight: kgVal, weightUnit, dailyCalorieTarget: newCalories,
-      weightHistory: [...profile.weightHistory.filter((h) => h.date !== today), { date: today, weight: kgVal }].sort((a, b) => a.date.localeCompare(b.date)),
+      weightHistory: newHistory,
     });
-    persistToDB({ current_weight: kgVal, weight_unit: weightUnit, daily_calorie_goal: newCalories });
+    persistToDB({ current_weight: kgVal, weight_unit: weightUnit, daily_calorie_goal: newCalories, weight_history: newHistory });
     setEditField(null);
   };
 
