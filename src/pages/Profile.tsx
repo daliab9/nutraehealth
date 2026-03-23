@@ -1549,7 +1549,7 @@ const Profile = () => {
                 <Button
                   onClick={() => {
                     const newDefault: DefaultMeal = {
-                      id: Date.now().toString(),
+                      id: crypto.randomUUID(),
                       name: createDefaultMealName.trim(),
                       mealType: createDefaultMealType,
                       items: createDefaultMealItems,
