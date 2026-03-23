@@ -1272,7 +1272,7 @@ const Profile = () => {
                 </div>
               )}
               <FoodSearchInput onAddItem={(item) => setCreateMealItems((prev) => [...prev, item])} onClose={() => {}} keepOpenOnAdd />
-              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal: SavedMeal = { id: Date.now().toString(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...savedMeals, newMeal] }); dbInsertSavedMeal(newMeal); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
+              <Button onClick={() => { if (createMealItems.length === 0) return; const newMeal: SavedMeal = { id: crypto.randomUUID(), name: createMealName.trim(), items: createMealItems }; setProfile({ savedMeals: [...savedMeals, newMeal] }); dbInsertSavedMeal(newMeal); setCreateMealOpen(false); }} className="w-full rounded-xl h-12" disabled={createMealItems.length === 0}>Save meal ({createMealItems.length} items)</Button>
             </div>
           )}
         </DialogContent>
