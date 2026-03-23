@@ -28,7 +28,7 @@ const queryClient = new QueryClient();
 type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
 const AppContent = () => {
-  const { profile, setProfile } = useUserStore();
+  const { profile, setProfile, loadAllFromDB } = useUserStore();
   const [screen, setScreen] = useState<AppScreen>("loading");
   const [session, setSession] = useState<Session | null>(null);
   const [pendingOnboardingData, setPendingOnboardingData] = useState<OnboardingData | null>(null);
