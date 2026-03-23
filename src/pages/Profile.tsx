@@ -1232,7 +1232,7 @@ const Profile = () => {
         <DialogContent className="rounded-2xl">
           <DialogHeader><DialogTitle>Period Duration</DialogTitle></DialogHeader>
           <ScrollPicker items={Array.from({ length: 10 }, (_, i) => i + 1)} value={pendingCycleDuration} onChange={(v) => setPendingCycleDuration(Number(v))} suffix=" days" />
-          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
+          <Button onClick={() => { setProfile({ cycleDuration: pendingCycleDuration }); dbUpdateProfileExtended({ cycle_duration: pendingCycleDuration }); setCycleDurationOpen(false); }} className="w-full rounded-xl h-12 mt-2">Save</Button>
         </DialogContent>
       </Dialog>
 
