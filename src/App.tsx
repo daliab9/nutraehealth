@@ -12,7 +12,7 @@ import { SignupPage } from "@/components/SignupPage";
 import { ForgotPasswordPage } from "@/components/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/components/ResetPasswordPage";
 import type { OnboardingData } from "@/components/Onboarding";
-import { useUserStore } from "@/stores/useUserStore";
+import { useUserStore, UserStoreProvider } from "@/stores/useUserStore";
 import { supabase } from "@/integrations/supabase/client";
 import Diary from "./pages/Diary";
 import Tracker from "./pages/Tracker";
@@ -28,7 +28,7 @@ const queryClient = new QueryClient();
 type AppScreen = "loading" | "landing" | "onboarding" | "login" | "forgot-password" | "reset-password" | "summary" | "signup" | "main";
 
 const AppContent = () => {
-  const { profile, setProfile, loadAllFromDB } = useUserStore();
+  const { profile, setProfile, loadAllFromDB, resetStore } = useUserStore();
   const [screen, setScreen] = useState<AppScreen>("loading");
   const [session, setSession] = useState<Session | null>(null);
   const [pendingOnboardingData, setPendingOnboardingData] = useState<OnboardingData | null>(null);
@@ -45,6 +45,7 @@ const AppContent = () => {
         setScreen("reset-password");
       }
       if (!sess) {
+        resetStore();
         setScreen("landing");
       }
     });
@@ -294,9 +295,11 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppContent />
+      <UserStoreProvider>
+        <Toaster />
+        <Sonner />
+        <AppContent />
+      </UserStoreProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
