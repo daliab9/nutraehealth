@@ -218,7 +218,7 @@ export const ExerciseEntry = ({ open, onOpenChange, onAdd, editExercise }: Exerc
     const cals = isMetric ? estimateCalsFromMetric() : estimatedCals;
 
     const exercise: Exercise = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: selectedExercise || query,
       duration: isMetric ? 0 : durationValue,
       caloriesBurned: cals,

@@ -368,7 +368,7 @@ export function useUserStore() {
         const day = prev[date];
         if (!day) return prev;
 
-        const groupId = Date.now().toString();
+        const groupId = crypto.randomUUID();
 
         const srcMeal = day.meals.find((m) => m.type === sourceItem.mealType);
         const srcIt = srcMeal?.items.find((i) => i.id === sourceItem.itemId);
