@@ -1451,13 +1451,14 @@ const Profile = () => {
             <Button
               onClick={() => {
                 if (!editDefaultMealId) return;
-                setProfile({
-                  defaultMeals: (profile.defaultMeals || []).map((dm) =>
-                    dm.id === editDefaultMealId
-                      ? { ...dm, name: editDefaultName.trim() || dm.name, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
-                      : dm
-                  ),
-                });
+                const updatedDefaults = (profile.defaultMeals || []).map((dm) =>
+                  dm.id === editDefaultMealId
+                    ? { ...dm, name: editDefaultName.trim() || dm.name, frequency: editDefaultFrequency, specificDays: editDefaultFrequency === "specific" ? editDefaultDays : undefined }
+                    : dm
+                );
+                setProfile({ defaultMeals: updatedDefaults });
+                const updatedDM = updatedDefaults.find((dm) => dm.id === editDefaultMealId);
+                if (updatedDM) dbUpdateDefaultMeal(updatedDM);
                 setEditDefaultMealId(null);
               }}
               className="w-full rounded-xl h-12 mt-2"
