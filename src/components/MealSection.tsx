@@ -109,7 +109,7 @@ export const MealSection = ({
     .slice(0, 5);
 
   const handleAddPastItem = (item: FoodItem) => {
-    onAddItem({ ...item, id: Date.now().toString() });
+    onAddItem({ ...item, id: crypto.randomUUID() });
     setMode(null);
   };
 
