@@ -26,7 +26,7 @@ import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbDeleteSavedExercise, dbInsertDefaultMeal, dbUpdateDefaultMeal, dbDeleteDefaultMeal, dbUpdateProfileExtended } from "@/utils/dbPersistence";
+import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbUpdateDefaultMeal, dbDeleteDefaultMeal, dbUpdateProfileExtended } from "@/utils/dbPersistence";
 import { useAppointmentStore, type Appointment } from "@/stores/useAppointmentStore";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
