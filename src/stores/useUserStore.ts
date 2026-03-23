@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, createContext, useContext, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface FoodItem {
@@ -164,7 +164,6 @@ function getLocalDayOfWeek(date: string): number {
   return new Date(year, (month || 1) - 1, day || 1).getDay();
 }
 
-// Debounce helper
 function debounce<T extends (...args: any[]) => any>(fn: T, ms: number): T {
   let timer: ReturnType<typeof setTimeout>;
   return ((...args: any[]) => {
@@ -178,18 +177,21 @@ async function getUserId(): Promise<string | null> {
   return session?.user?.id ?? null;
 }
 
-export function useUserStore() {
+// ===== Store value type =====
+type UserStoreValue = ReturnType<typeof useUserStoreInternal>;
+
+const UserStoreContext = createContext<UserStoreValue | null>(null);
+
+function useUserStoreInternal() {
   const [profile, setProfileState] = useState<UserProfile>(DEFAULT_PROFILE);
   const [diary, setDiaryState] = useState<Record<string, DayEntry>>({});
   const [health, setHealthState] = useState<Record<string, HealthEntry>>({});
 
-  // Refs for debounced DB writes
   const diaryRef = useRef(diary);
   diaryRef.current = diary;
   const healthRef = useRef(health);
   healthRef.current = health;
 
-  // ===== Debounced DB persistence for diary entries =====
   const persistDiaryEntry = useCallback(
     debounce(async (date: string, entry: DayEntry) => {
       const userId = await getUserId();
@@ -202,7 +204,6 @@ export function useUserStore() {
     []
   );
 
-  // ===== Debounced DB persistence for health entries =====
   const persistHealthEntry = useCallback(
     debounce(async (date: string, entry: HealthEntry) => {
       const userId = await getUserId();
@@ -557,9 +558,7 @@ export function useUserStore() {
     [persistDiaryEntry]
   );
 
-  // ===== Load all data from DB =====
   const loadAllFromDB = useCallback(async (userId: string) => {
-    // Load diary entries
     const { data: diaryRows } = await supabase
       .from("diary_entries")
       .select("date, meals, exercises")
@@ -577,7 +576,6 @@ export function useUserStore() {
       setDiaryState(diaryMap);
     }
 
-    // Load health entries
     const { data: healthRows } = await supabase
       .from("health_entries")
       .select("date, data")
@@ -591,25 +589,21 @@ export function useUserStore() {
       setHealthState(healthMap);
     }
 
-    // Load saved meals
     const { data: savedMealRows } = await supabase
       .from("saved_meals")
       .select("id, name, items")
       .eq("user_id", userId);
 
-    // Load saved exercises
     const { data: savedExRows } = await supabase
       .from("saved_exercises")
       .select("id, name, duration, calories_burned, secondary_metric, secondary_unit")
       .eq("user_id", userId);
 
-    // Load default meals
     const { data: defaultMealRows } = await supabase
       .from("default_meals")
       .select("id, name, meal_type, items, frequency, specific_days, created_at_date")
       .eq("user_id", userId);
 
-    // Load default meal overrides
     const { data: overrideRows } = await supabase
       .from("default_meal_overrides")
       .select("default_meal_id, date, removed")
@@ -647,6 +641,12 @@ export function useUserStore() {
     }));
   }, []);
 
+  const resetStore = useCallback(() => {
+    setProfileState(DEFAULT_PROFILE);
+    setDiaryState({});
+    setHealthState({});
+  }, []);
+
   return {
     profile,
     setProfile,
@@ -669,5 +669,24 @@ export function useUserStore() {
     setHealthEntry,
     getDefaultMealsForDate,
     loadAllFromDB,
+    resetStore,
   };
+}
+
+// ===== Provider + Hook =====
+export function UserStoreProvider({ children }: { children: ReactNode }) {
+  const store = useUserStoreInternal();
+  return (
+    <UserStoreContext.Provider value={store}>
+      {children}
+    </UserStoreContext.Provider>
+  );
+}
+
+export function useUserStore() {
+  const ctx = useContext(UserStoreContext);
+  if (!ctx) {
+    throw new Error("useUserStore must be used within a UserStoreProvider");
+  }
+  return ctx;
 }
