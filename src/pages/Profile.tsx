@@ -1706,6 +1706,19 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      <div className="px-4 pb-4">
+        <Button
+          variant="destructive"
+          className="w-full h-12 rounded-xl"
+          onClick={async () => {
+            await supabase.auth.signOut();
+          }}
+        >
+          <LogOut className="mr-2" size={18} />
+          Log Out
+        </Button>
+      </div>
+
       <BottomNav />
     </div>
   );
