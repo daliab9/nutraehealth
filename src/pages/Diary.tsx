@@ -296,6 +296,7 @@ const Diary = () => {
       createdAt: format(new Date(), "yyyy-MM-dd"),
     };
     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
+    dbInsertDefaultMeal(newDefault);
   };
 
   const handleRemoveDefaultToday = (defaultMealId: string) => {
