@@ -678,7 +678,7 @@ const Profile = () => {
                   <h3 className="text-sm font-semibold text-foreground">Cycle Tracker</h3>
                   <div className="flex items-center gap-2">
                     {profile.cycleStartDate && (
-                      <button onClick={() => setProfile({ cycleStartDate: undefined })} className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform">
+                      <button onClick={() => { setProfile({ cycleStartDate: undefined }); dbUpdateProfileExtended({ cycle_start_date: null }); }} className="h-7 w-7 rounded-full bg-action-button hover:bg-action-button/80 flex items-center justify-center active:scale-95 transition-transform">
                         <Trash2 className="h-3.5 w-3.5 text-foreground" />
                       </button>
                     )}
