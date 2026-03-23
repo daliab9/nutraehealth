@@ -121,7 +121,17 @@ const AppContent = () => {
         goalTimeline: (data.goal_timeline as GoalTimeline) || "3_4_months",
         dailyCalorieTarget: data.daily_calorie_goal ?? 2000,
         goalDate: data.goal_date ?? "",
+        weightHistory: (data as any).weight_history ?? [],
+        cycleStartDate: (data as any).cycle_start_date ?? undefined,
+        cycleDuration: (data as any).cycle_duration ?? 5,
+        trackedNutrients: (data as any).tracked_nutrients ?? ["calories", "protein", "fiber"],
+        nutrientTargetOverrides: (data as any).nutrient_target_overrides ?? {},
+        cholesterolLevel: (data as any).cholesterol_level ?? "",
+        subscription: (data as any).subscription ?? "free",
+        aiScansUsed: (data as any).ai_scans_used ?? 0,
       });
+      // Load diary, health, saved meals, exercises, defaults from DB
+      await loadAllFromDB(userId);
       setScreen("main");
     } else {
       setScreen("onboarding");
