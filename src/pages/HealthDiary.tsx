@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
+import { dbUpdateProfileExtended } from "@/utils/dbPersistence";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1 },
