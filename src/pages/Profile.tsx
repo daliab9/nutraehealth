@@ -1706,7 +1706,7 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="px-4 pb-4">
+      <div className="px-4 py-6">
         <Button
           variant="destructive"
           className="w-full h-12 rounded-xl"
