@@ -1,29 +1,32 @@
 
 
-# Fix Logout Button + Spacing
+# Fix: Saved Meals Not Persisting After Logout/Login
 
-## Issues
+## Root Cause
 
-1. **Logout doesn't work**: `onAuthStateChange` in `App.tsx` sets `session` to null on sign-out, but never updates `screen` to `"landing"` — so the app stays on the main view.
-2. **Spacing is off**: The logout button div uses `px-4 pb-4` without matching the section spacing above it.
+When you save a meal, the code generates an ID using `Date.now().toString()` (e.g., `"1774225788000"`). But the `saved_meals` database table expects the `id` column to be a **UUID** (e.g., `"a1b2c3d4-..."`). The insert silently fails because a numeric string is not a valid UUID, so the meal only exists in memory — it's lost on logout.
 
-## Changes
+The same issue likely affects **saved exercises**, **default meals**, and **default meal overrides**, which all use `Date.now().toString()` for IDs but have UUID columns in the database.
 
-### 1. `src/App.tsx` — Fix sign-out redirect
-In the `onAuthStateChange` callback (line 42-48), add a check: when `sess` becomes `null` (user signed out), set `screen` to `"landing"`.
+## Fix
 
-```tsx
-supabase.auth.onAuthStateChange((event, sess) => {
-  setSession(sess);
-  if (event === "PASSWORD_RECOVERY") {
-    setScreen("reset-password");
-  }
-  if (!sess) {
-    setScreen("landing");
-  }
-});
-```
+### 1. Replace `Date.now().toString()` with `crypto.randomUUID()`
 
-### 2. `src/pages/Profile.tsx` — Fix spacing
-Change the logout button wrapper (line 1709) from `px-4 pb-4` to `px-4 py-6` to give it even spacing consistent with the rest of the page sections.
+Update all places where these IDs are generated:
+
+- **`src/pages/Diary.tsx`** — meal save, exercise save, default meal creation, override creation
+- **`src/pages/Profile.tsx`** — meal creation, default meal creation, exercise saving
+- **`src/components/MealSection.tsx`** — if IDs are generated here
+- **`src/components/SaveMealModal.tsx`** — if IDs are generated here
+
+Search for `Date.now().toString()` across these files and replace with `crypto.randomUUID()` wherever the result is used as an `id` for a database-backed entity (saved meals, saved exercises, default meals, overrides).
+
+### 2. No database changes needed
+
+The tables and RLS policies are already correct. The only issue is the ID format mismatch.
+
+## What This Fixes
+- Saved meals persist across sessions
+- Saved exercises persist across sessions
+- Default meals and their overrides persist across sessions
 
