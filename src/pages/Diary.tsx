@@ -287,7 +287,7 @@ const Diary = () => {
 
   const handleSaveAsDefault = (name: string, items: FoodItem[], mt: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => {
     const newDefault: DefaultMeal = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name,
       mealType: mt,
       items: items.map(({ groupId: _, groupName: __, ...rest }) => rest),
