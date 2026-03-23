@@ -1,32 +1,82 @@
+# Fix disappearing meals after tab changes
 
+## What I found
 
-# Fix: Saved Meals Not Persisting After Logout/Login
+This does not look like a database schema or RLS problem.
 
-## Root Cause
+I checked the backend and there is already at least one `diary_entries` row being written, which means meal logging can reach the database. The bigger issue is in the frontend state architecture:
 
-When you save a meal, the code generates an ID using `Date.now().toString()` (e.g., `"1774225788000"`). But the `saved_meals` database table expects the `id` column to be a **UUID** (e.g., `"a1b2c3d4-..."`). The insert silently fails because a numeric string is not a valid UUID, so the meal only exists in memory — it's lost on logout.
+- `useUserStore.ts` is named like a shared store, but it is actually just a custom hook using `useState`
+- `App.tsx` calls `useUserStore()` and loads data from the backend into that instance
+- `Diary.tsx`, `Profile.tsx`, `Tracker.tsx` also each call `useUserStore()` again, creating separate isolated instances
 
-The same issue likely affects **saved exercises**, **default meals**, and **default meal overrides**, which all use `Date.now().toString()` for IDs but have UUID columns in the database.
+So the app currently has multiple independent copies of the “store”.
 
-## Fix
+## Why meals disappear
 
-### 1. Replace `Date.now().toString()` with `crypto.randomUUID()`
+When you add a meal in Diary:
 
-Update all places where these IDs are generated:
+- it updates the Diary page’s private hook state
+- when you switch tabs, that page can unmount/remount
+- on remount, a fresh empty hook instance is created
+- the data that was loaded in `App.tsx` is in a different store instance, so Diary does not see it
 
-- **`src/pages/Diary.tsx`** — meal save, exercise save, default meal creation, override creation
-- **`src/pages/Profile.tsx`** — meal creation, default meal creation, exercise saving
-- **`src/components/MealSection.tsx`** — if IDs are generated here
-- **`src/components/SaveMealModal.tsx`** — if IDs are generated here
+That matches your symptom exactly: the meal appears briefly, then disappears when you navigate away and back.
 
-Search for `Date.now().toString()` across these files and replace with `crypto.randomUUID()` wherever the result is used as an `id` for a database-backed entity (saved meals, saved exercises, default meals, overrides).
+## Implementation plan
 
-### 2. No database changes needed
+### 1. Make the user store truly shared
 
-The tables and RLS policies are already correct. The only issue is the ID format mismatch.
+Refactor `src/stores/useUserStore.ts` so the app uses one shared store instance instead of creating a new one in every component.
 
-## What This Fixes
-- Saved meals persist across sessions
-- Saved exercises persist across sessions
-- Default meals and their overrides persist across sessions
+Preferred approach:
 
+- create a `UserStoreProvider`
+- keep the existing store logic inside that provider
+- expose `useUserStore()` as a context hook so all pages read the same state
+
+### 2. Wrap the app with the shared provider
+
+Update `src/App.tsx` so `AppContent`, `Diary`, `Profile`, `Tracker`, and `HealthDiary` all consume the same user-store instance.
+
+This ensures:
+
+- backend-loaded data is visible everywhere
+- diary changes survive route switches
+- saved meals/default meals/exercises stay in sync across pages
+
+### 3. Keep backend hydration on the shared instance
+
+Leave the current backend loading flow in `App.tsx`, but make sure it writes into the shared store instance.
+
+Also add a simple hydration guard so pages do not render “empty” state before the initial backend load finishes.
+
+### 4. Clear shared state properly on logout
+
+When signing out, reset the shared store to defaults so the next user does not briefly see stale data.
+
+## Files to update
+
+- `src/stores/useUserStore.ts`
+- `src/App.tsx`
+- any page/component currently calling `useUserStore()` directly:
+  - `src/pages/Diary.tsx`
+  - `src/pages/Profile.tsx`
+  - `src/pages/Tracker.tsx`
+  - `src/pages/HealthDiary.tsx`
+
+## Expected result
+
+After this change:
+
+- adding a meal should remain visible when switching tabs
+- meals already saved in the backend should reappear consistently
+- the app will use one source of truth instead of multiple disconnected local copies
+
+## Technical note
+
+There may still be secondary improvements worth adding after this:
+
+- explicit error logging in `dbPersistence.ts`
+- optimistic-save indicators / loading state
+- converting `useAppointmentStore` to the same shared pattern, since it currently has the same architectural issue
