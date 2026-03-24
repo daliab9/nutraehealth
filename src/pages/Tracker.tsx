@@ -433,9 +433,9 @@ const Tracker = () => {
                 <XAxis dataKey="day" tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval={monthlyInterval} />
                 <YAxis hide />
                 <Tooltip content={<PoopTooltip />} />
-                <Bar dataKey="poopHard" stackId="poop" fill="hsl(var(--destructive))" maxBarSize={chartBarSize} />
-                <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--primary))" maxBarSize={chartBarSize} />
-                <Bar dataKey="poopLoose" stackId="poop" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
+                <Bar dataKey="poopHard" stackId="poop" fill="hsl(var(--foreground))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--chart-positive))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopLoose" stackId="poop" fill="hsl(var(--negative-selected))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
             </ResponsiveContainer>
           </div>
