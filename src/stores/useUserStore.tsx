@@ -52,6 +52,7 @@ export interface HealthEntry {
   negativeEmotions: string[];
   negativeReasons: string[];
   negativeOtherText: string;
+  wakeUps: number;
   diaryText: string;
 }
 
@@ -94,6 +95,24 @@ export interface SavedExercise {
   secondaryUnit?: string;
 }
 
+export interface DefaultExercise {
+  id: string;
+  name: string;
+  duration: number;
+  caloriesBurned: number;
+  secondaryMetric?: number;
+  secondaryUnit?: string;
+  frequency: DefaultMealFrequency;
+  specificDays?: number[];
+  createdAt?: string;
+}
+
+export interface DefaultExerciseOverride {
+  defaultExerciseId: string;
+  date: string;
+  removed: boolean;
+}
+
 export interface UserProfile {
   onboardingComplete: boolean;
   goal: string;
@@ -119,6 +138,8 @@ export interface UserProfile {
   savedExercises: SavedExercise[];
   defaultMeals: DefaultMeal[];
   defaultMealOverrides: DefaultMealOverride[];
+  defaultExercises: DefaultExercise[];
+  defaultExerciseOverrides: DefaultExerciseOverride[];
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
@@ -151,6 +172,8 @@ const DEFAULT_PROFILE: UserProfile = {
   savedExercises: [],
   defaultMeals: [],
   defaultMealOverrides: [],
+  defaultExercises: [],
+  defaultExerciseOverrides: [],
   subscription: "free",
   aiScansUsed: 0,
   cycleDuration: 5,
@@ -440,6 +463,28 @@ function useUserStoreInternal() {
     [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
   );
 
+  const getDefaultExercisesForDate = useCallback(
+    (date: string): { name: string; duration: number; caloriesBurned: number; secondaryMetric?: number; secondaryUnit?: string; defaultExerciseId: string }[] => {
+      const overrides = profile.defaultExerciseOverrides || [];
+      return (profile.defaultExercises || [])
+        .filter((de) => {
+          if (de.createdAt && date < de.createdAt) return false;
+          const isRemoved = overrides.some((o) => o.defaultExerciseId === de.id && o.date === date && o.removed);
+          if (isRemoved) return false;
+          return isDefaultMealActiveForDate(de as any, date);
+        })
+        .map((de) => ({
+          name: de.name,
+          duration: de.duration,
+          caloriesBurned: de.caloriesBurned,
+          secondaryMetric: de.secondaryMetric,
+          secondaryUnit: de.secondaryUnit,
+          defaultExerciseId: de.id,
+        }));
+    },
+    [profile.defaultExercises, profile.defaultExerciseOverrides, isDefaultMealActiveForDate]
+  );
+
   const getDayTotals = useCallback(
     (date: string) => {
       const day = getDayEntry(date);
@@ -507,6 +552,7 @@ function useUserStoreInternal() {
     negativeEmotions: [],
     negativeReasons: [],
     negativeOtherText: "",
+    wakeUps: 0,
     diaryText: "",
   };
 
@@ -609,6 +655,16 @@ function useUserStoreInternal() {
       .select("default_meal_id, date, removed")
       .eq("user_id", userId);
 
+    const { data: defaultExRows } = await supabase
+      .from("default_exercises")
+      .select("id, name, duration, calories_burned, secondary_metric, secondary_unit, frequency, specific_days, created_at_date")
+      .eq("user_id", userId);
+
+    const { data: exOverrideRows } = await supabase
+      .from("default_exercise_overrides")
+      .select("default_exercise_id, date, removed")
+      .eq("user_id", userId);
+
     setProfileState((prev) => ({
       ...prev,
       savedMeals: (savedMealRows || []).map((r) => ({
@@ -635,6 +691,22 @@ function useUserStoreInternal() {
       })),
       defaultMealOverrides: (overrideRows || []).map((r) => ({
         defaultMealId: r.default_meal_id,
+        date: r.date,
+        removed: r.removed,
+      })),
+      defaultExercises: (defaultExRows || []).map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        duration: r.duration,
+        caloriesBurned: r.calories_burned,
+        secondaryMetric: r.secondary_metric ? Number(r.secondary_metric) : undefined,
+        secondaryUnit: r.secondary_unit || undefined,
+        frequency: r.frequency as DefaultMealFrequency,
+        specificDays: r.specific_days || undefined,
+        createdAt: r.created_at_date || undefined,
+      })),
+      defaultExerciseOverrides: (exOverrideRows || []).map((r: any) => ({
+        defaultExerciseId: r.default_exercise_id,
         date: r.date,
         removed: r.removed,
       })),
@@ -668,6 +740,7 @@ function useUserStoreInternal() {
     getHealthEntry,
     setHealthEntry,
     getDefaultMealsForDate,
+    getDefaultExercisesForDate,
     loadAllFromDB,
     resetStore,
   };

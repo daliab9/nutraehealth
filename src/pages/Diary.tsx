@@ -9,12 +9,12 @@ import { ExerciseEntry } from "@/components/ExerciseEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart } from "lucide-react";
-import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry, type DefaultMealFrequency, type DefaultMeal } from "@/stores/useUserStore";
+import { AlertTriangle, Dumbbell, Pencil, Plus, X, Utensils, Sunrise, Sun, Moon, Apple, Pill, GlassWater, CircleDot, Heart, Star } from "lucide-react";
+import { useUserStore, type Exercise, type FoodItem, type SavedMeal, type SavedExercise, type MealEntry, type PoopEntry, type DefaultMealFrequency, type DefaultMeal, type DefaultExercise } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
-import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbDeleteDefaultMeal, dbInsertOverride, dbDeleteOverridesForMeal } from "@/utils/dbPersistence";
+import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbDeleteDefaultMeal, dbInsertOverride, dbDeleteOverridesForMeal, dbInsertDefaultExercise, dbDeleteDefaultExercise, dbInsertExerciseOverride } from "@/utils/dbPersistence";
 import { CheckInCards } from "@/components/CheckInCards";
 
 const MEAL_TYPES = [
@@ -37,7 +37,7 @@ const Diary = () => {
     profile, setProfile, diary, getDayEntry, setDayEntry, addFoodToMeal, removeFoodFromMeal,
     updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
     getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
-    addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate,
+    addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate, getDefaultExercisesForDate,
   } = useUserStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -45,6 +45,9 @@ const Diary = () => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
   const [addingPoopType, setAddingPoopType] = useState(false);
+  const [saveExAsDefaultOpen, setSaveExAsDefaultOpen] = useState<Exercise | null>(null);
+  const [defaultExFrequency, setDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [defaultExDays, setDefaultExDays] = useState<number[]>([]);
 
   // Drag and drop state
   const [activeDragItem, setActiveDragItem] = useState<FoodItem | null>(null);
@@ -82,6 +85,7 @@ const Diary = () => {
 
   // Default meals for today
   const defaultMealsForDate = useMemo(() => getDefaultMealsForDate(dateKey), [getDefaultMealsForDate, dateKey]);
+  const defaultExercisesForDate = useMemo(() => getDefaultExercisesForDate(dateKey), [getDefaultExercisesForDate, dateKey]);
   
   // Track which groupIds are from default meals, and map groupId -> defaultMealId
   const defaultMealGroupIds = useMemo(() => new Set(defaultMealsForDate.map((dm) => `default-${dm.defaultMealId}`)), [defaultMealsForDate]);
@@ -373,7 +377,46 @@ const Diary = () => {
     }
   };
 
-  // Drag and drop handlers
+  const handleSaveExAsDefault = (ex: Exercise) => {
+    const newDefault: DefaultExercise = {
+      id: crypto.randomUUID(),
+      name: ex.name,
+      duration: ex.duration,
+      caloriesBurned: ex.caloriesBurned,
+      secondaryMetric: ex.secondaryMetric,
+      secondaryUnit: ex.secondaryUnit,
+      frequency: defaultExFrequency,
+      specificDays: defaultExFrequency === "specific" ? defaultExDays : undefined,
+      createdAt: format(new Date(), "yyyy-MM-dd"),
+    };
+    setProfile({ defaultExercises: [...(profile.defaultExercises || []), newDefault] });
+    dbInsertDefaultExercise(newDefault);
+    setSaveExAsDefaultOpen(null);
+    setDefaultExFrequency("everyday");
+    setDefaultExDays([]);
+  };
+
+  const handleRemoveDefaultExToday = (defaultExerciseId: string) => {
+    const override = { defaultExerciseId, date: dateKey, removed: true };
+    setProfile({
+      defaultExerciseOverrides: [...(profile.defaultExerciseOverrides || []), override],
+    });
+    dbInsertExerciseOverride(override);
+  };
+
+  const handleRemoveDefaultExPermanently = (defaultExerciseId: string) => {
+    setProfile({
+      defaultExercises: (profile.defaultExercises || []).filter((de) => de.id !== defaultExerciseId),
+      defaultExerciseOverrides: (profile.defaultExerciseOverrides || []).filter((o) => o.defaultExerciseId !== defaultExerciseId),
+    });
+    dbDeleteDefaultExercise(defaultExerciseId);
+  };
+
+  const isExerciseDefault = (name: string) => {
+    return (profile.defaultExercises || []).some((de) => de.name.toLowerCase() === name.toLowerCase());
+  };
+
+
   const handleDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.type === "meal-group") {
@@ -853,6 +896,32 @@ const Diary = () => {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+            {/* Default exercises */}
+            {defaultExercisesForDate.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {defaultExercisesForDate.map((dex) => (
+                  <div key={dex.defaultExerciseId} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]/60 border-dashed">
+                    <div className="flex flex-col min-w-0 flex-1 mr-2">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-foreground fill-foreground flex-shrink-0" />
+                        <span className="text-sm text-foreground font-bold break-words">{dex.name}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        {dex.secondaryMetric && dex.secondaryUnit
+                          ? `${dex.secondaryMetric} ${dex.secondaryUnit} · -${dex.caloriesBurned} kcal`
+                          : `${dex.duration}min · -${dex.caloriesBurned} kcal`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveDefaultExToday(dex.defaultExerciseId)}
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {dayEntry.exercises.length > 0 ? (
               <div className="space-y-1.5">
                 {dayEntry.exercises.map((ex) => (
@@ -873,6 +942,21 @@ const Diary = () => {
                         <Heart className={`h-5 w-5 ${isExerciseSaved(ex.name) ? "fill-foreground" : ""}`} />
                       </button>
                       <button
+                        onClick={() => {
+                          if (isExerciseDefault(ex.name)) {
+                            const de = (profile.defaultExercises || []).find((d) => d.name.toLowerCase() === ex.name.toLowerCase());
+                            if (de) handleRemoveDefaultExPermanently(de.id);
+                          } else {
+                            setSaveExAsDefaultOpen(ex);
+                            setDefaultExFrequency("everyday");
+                            setDefaultExDays([]);
+                          }
+                        }}
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-foreground transition-colors active:scale-95"
+                      >
+                        <Star className={`h-5 w-5 ${isExerciseDefault(ex.name) ? "fill-foreground" : ""}`} />
+                      </button>
+                      <button
                         onClick={() => setEditingExercise(ex)}
                         className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95"
                       >
@@ -888,9 +972,9 @@ const Diary = () => {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : defaultExercisesForDate.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-2">No exercises logged yet</p>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -1002,6 +1086,34 @@ const Diary = () => {
         }}
         editExercise={editingExercise}
       />
+
+      {/* Save Exercise as Default Dialog */}
+      <Dialog open={!!saveExAsDefaultOpen} onOpenChange={(o) => { if (!o) setSaveExAsDefaultOpen(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Set as Default Exercise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-foreground font-medium">{saveExAsDefaultOpen?.name}</p>
+            <p className="text-xs text-muted-foreground">This exercise will auto-appear on scheduled days.</p>
+            {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+              <button key={f} onClick={() => setDefaultExFrequency(f)} className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${defaultExFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}>
+                {f === "everyday" && "Every day"}{f === "weekdays" && "Weekdays only"}{f === "weekends" && "Weekends only"}{f === "specific" && "Specific days"}
+              </button>
+            ))}
+            {defaultExFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button key={i} onClick={() => setDefaultExDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])} className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${defaultExDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{label}</button>
+                ))}
+              </div>
+            )}
+            <Button onClick={() => { if (saveExAsDefaultOpen) handleSaveExAsDefault(saveExAsDefaultOpen); }} className="w-full rounded-xl h-12" disabled={defaultExFrequency === "specific" && defaultExDays.length === 0}>
+              Save Default Exercise
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
