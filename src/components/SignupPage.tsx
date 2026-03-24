@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface SignupPageProps {
   onSignupComplete: (userId: string) => void;
   onGoToLogin: () => void;
+  onBack?: () => void;
 }
 
-export const SignupPage = ({ onSignupComplete, onGoToLogin }: SignupPageProps) => {
+export const SignupPage = ({ onSignupComplete, onGoToLogin, onBack }: SignupPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -68,6 +69,13 @@ export const SignupPage = ({ onSignupComplete, onGoToLogin }: SignupPageProps) =
 
   return (
     <div className="flex min-h-screen flex-col bg-background px-6 pt-12 pb-8">
+      {onBack && (
+        <button onClick={onBack} className="mb-8 flex items-center text-foreground">
+          <ChevronLeft className="h-5 w-5" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+      )}
+
       <h2 className="text-2xl font-bold text-foreground mb-2">Create your account</h2>
       <p className="text-sm text-muted-foreground mb-8">
         Save your plan and track your progress

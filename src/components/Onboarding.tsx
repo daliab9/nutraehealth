@@ -6,6 +6,7 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 
 interface OnboardingProps {
   onComplete: (data: OnboardingData) => void;
+  onBack?: () => void;
 }
 
 export interface OnboardingData {
@@ -94,7 +95,7 @@ const UnitToggle = ({ options, value, onChange }: { options: [string, string]; v
   </div>
 );
 
-export const Onboarding = ({ onComplete }: OnboardingProps) => {
+export const Onboarding = ({ onComplete, onBack }: OnboardingProps) => {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [data, setData] = useState<OnboardingData>({
@@ -433,6 +434,8 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     if (step > 0) {
       setDirection(-1);
       setStep(getPrevStep(step));
+    } else if (onBack) {
+      onBack();
     }
   };
 
@@ -442,7 +445,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
 
       <div className="sticky bottom-0 bg-background pt-3 pb-[env(safe-area-inset-bottom,24px)] space-y-2">
         <div className="flex gap-3">
-          {step > 0 && (
+          {(step > 0 || onBack) && (
             <Button onClick={back} variant="outline" className="h-14 rounded-2xl px-4">
               <ChevronLeft className="h-5 w-5" />
             </Button>
