@@ -138,6 +138,8 @@ export interface UserProfile {
   savedExercises: SavedExercise[];
   defaultMeals: DefaultMeal[];
   defaultMealOverrides: DefaultMealOverride[];
+  defaultExercises: DefaultExercise[];
+  defaultExerciseOverrides: DefaultExerciseOverride[];
   subscription: "free" | "pro";
   aiScansUsed: number;
   cycleStartDate?: string;
