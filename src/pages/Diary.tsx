@@ -297,6 +297,22 @@ const Diary = () => {
     };
     setProfile({ defaultMeals: [...(profile.defaultMeals || []), newDefault] });
     dbInsertDefaultMeal(newDefault);
+
+    // Remove the manually-logged items for today to avoid duplication with the new default
+    const entry = getDayEntry(dateKey);
+    if (entry) {
+      const mealEntry = entry.meals.find((m) => m.type === mt);
+      if (mealEntry) {
+        const itemIds = new Set(items.map((i) => i.id));
+        const filtered = mealEntry.items.filter((i) => !itemIds.has(i.id));
+        if (filtered.length !== mealEntry.items.length) {
+          const updatedMeals = entry.meals.map((m) =>
+            m.type === mt ? { ...m, items: filtered } : m
+          );
+          setDayEntry(dateKey, { ...entry, meals: updatedMeals });
+        }
+      }
+    }
   };
 
   const handleRemoveDefaultToday = (defaultMealId: string) => {

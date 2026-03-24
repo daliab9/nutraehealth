@@ -298,6 +298,22 @@ export const MealSection = ({
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-muted-foreground text-xs font-bold">{groupCals} kcal</span>
+                      <QuickMultiplierPopover
+                        item={group.items[0]}
+                        onDuplicate={(_item, multiplier) => {
+                          group.items.forEach((gi) => {
+                            const scaled = applyMultiplierToItem(gi, multiplier);
+                            onUpdateItem?.(scaled);
+                          });
+                        }}
+                      >
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95 transition-transform"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      </QuickMultiplierPopover>
                       {onAddToGroup && (
                         <button
                           onClick={(e) => {
