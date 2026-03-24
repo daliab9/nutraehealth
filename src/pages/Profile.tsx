@@ -1708,8 +1708,8 @@ const Profile = () => {
 
       <div className="px-4 py-6">
         <Button
-          variant="destructive"
-          className="w-full h-12 rounded-xl"
+          variant="ghost"
+          className="w-full h-12 rounded-xl text-foreground"
           onClick={async () => {
             await supabase.auth.signOut();
           }}
