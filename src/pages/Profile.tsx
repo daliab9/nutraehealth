@@ -18,7 +18,7 @@ import { FoodEditInput } from "@/components/FoodEditInput";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { QuickMultiplierPopover } from "@/components/QuickMultiplierPopover";
 import { DraggableMealCard } from "@/components/DraggableMealCard";
-import { useUserStore, type FoodItem, type SavedMeal, type DefaultMeal, type DefaultMealFrequency, type MealEntry } from "@/stores/useUserStore";
+import { useUserStore, type FoodItem, type SavedMeal, type DefaultMeal, type DefaultMealFrequency, type MealEntry, type DefaultExercise } from "@/stores/useUserStore";
 import { Pencil, Heart, Calendar, ChevronDown, ChevronRight, Trash2, Plus, X, Dumbbell, RotateCcw, SlidersHorizontal, ClipboardList, Target, User, Activity, Star, Copy, LogOut } from "lucide-react";
 import { getCycleInfo, getPhaseDates } from "@/utils/cyclePhase";
 import { CycleCalendarView, getPhaseForDay, PHASE_LABELS } from "@/components/CycleCalendarView";
@@ -26,7 +26,7 @@ import { ChevronLeft, ChevronRight as ChevRight2 } from "lucide-react";
 import { ExerciseEntry } from "@/components/ExerciseEntry";
 import type { Exercise, SavedExercise } from "@/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbUpdateDefaultMeal, dbDeleteDefaultMeal, dbUpdateProfileExtended } from "@/utils/dbPersistence";
+import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbUpdateDefaultMeal, dbDeleteDefaultMeal, dbUpdateProfileExtended, dbInsertDefaultExercise, dbUpdateDefaultExercise, dbDeleteDefaultExercise } from "@/utils/dbPersistence";
 import { useAppointmentStore, type Appointment } from "@/stores/useAppointmentStore";
 import { AppointmentForm } from "@/components/AppointmentForm";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -159,11 +159,11 @@ const ProfileDropZone = ({
   );
 };
 
-const formatDefaultFrequency = (meal: DefaultMeal) => {
-  if (meal.frequency === "everyday") return "Every day";
-  if (meal.frequency === "weekdays") return "Weekdays";
-  if (meal.frequency === "weekends") return "Weekends";
-  return (meal.specificDays || [])
+const formatDefaultFrequency = (item: DefaultMeal | DefaultExercise) => {
+  if (item.frequency === "everyday") return "Every day";
+  if (item.frequency === "weekdays") return "Weekdays";
+  if (item.frequency === "weekends") return "Weekends";
+  return (item.specificDays || [])
     .map((day) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day])
     .join(" · ");
 };
@@ -223,6 +223,15 @@ const Profile = () => {
 
   // Saved exercises
   const [addExerciseOpen, setAddExerciseOpen] = useState(false);
+
+  // Default exercises
+  const [editDefaultExerciseId, setEditDefaultExerciseId] = useState<string | null>(null);
+  const [editDefaultExFrequency, setEditDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [editDefaultExDays, setEditDefaultExDays] = useState<number[]>([]);
+  const [editDefaultExName, setEditDefaultExName] = useState("");
+  const [addDefaultExerciseOpen, setAddDefaultExerciseOpen] = useState(false);
+  const [addDefaultExFrequency, setAddDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [addDefaultExDays, setAddDefaultExDays] = useState<number[]>([]);
 
   // Activity & Timeline
   const [activityModalOpen, setActivityModalOpen] = useState(false);
@@ -976,6 +985,44 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+
+              {/* Default Exercises */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Default Exercises</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setAddDefaultExFrequency("everyday"); setAddDefaultExDays([]); setAddDefaultExerciseOpen(true); }}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(profile.defaultExercises || []).length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border/70 bg-card/60 px-4 py-5">
+                    <p className="text-sm text-muted-foreground">No default exercises yet. Tap + to create one or star an exercise in your diary.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(profile.defaultExercises || []).map((de) => (
+                      <div key={de.id} className="rounded-xl border border-border/50 bg-card p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">{de.name}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {de.secondaryMetric && de.secondaryUnit ? `${de.secondaryMetric} ${de.secondaryUnit} · ${de.caloriesBurned} kcal` : `${de.duration}min · ${de.caloriesBurned} kcal`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => { setEditDefaultExerciseId(de.id); setEditDefaultExFrequency(de.frequency); setEditDefaultExDays(de.specificDays || []); setEditDefaultExName(de.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
+                            <button onClick={() => { setProfile({ defaultExercises: (profile.defaultExercises || []).filter((d) => d.id !== de.id), defaultExerciseOverrides: (profile.defaultExerciseOverrides || []).filter((o) => o.defaultExerciseId !== de.id) }); dbDeleteDefaultExercise(de.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{formatDefaultFrequency(de)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -1705,6 +1752,88 @@ const Profile = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Default Exercise Schedule + Rename */}
+      <Dialog open={!!editDefaultExerciseId} onOpenChange={(o) => { if (!o) setEditDefaultExerciseId(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>Edit Default Exercise</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Name</p>
+              <Input value={editDefaultExName} onChange={(e) => setEditDefaultExName(e.target.value)} className="rounded-xl" placeholder="Exercise name" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Schedule</p>
+              {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setEditDefaultExFrequency(f)}
+                  className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all mb-2 ${editDefaultExFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+                >
+                  {f === "everyday" && "Every day"}
+                  {f === "weekdays" && "Weekdays only"}
+                  {f === "weekends" && "Weekends only"}
+                  {f === "specific" && "Specific days"}
+                </button>
+              ))}
+            </div>
+            {editDefaultExFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setEditDefaultExDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${editDefaultExDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                if (!editDefaultExerciseId) return;
+                const updatedDefaults = (profile.defaultExercises || []).map((de) =>
+                  de.id === editDefaultExerciseId
+                    ? { ...de, name: editDefaultExName.trim() || de.name, frequency: editDefaultExFrequency, specificDays: editDefaultExFrequency === "specific" ? editDefaultExDays : undefined }
+                    : de
+                );
+                setProfile({ defaultExercises: updatedDefaults });
+                const updatedDE = updatedDefaults.find((de) => de.id === editDefaultExerciseId);
+                if (updatedDE) dbUpdateDefaultExercise(updatedDE);
+                setEditDefaultExerciseId(null);
+              }}
+              className="w-full rounded-xl h-12 mt-2"
+              disabled={(editDefaultExFrequency === "specific" && editDefaultExDays.length === 0) || !editDefaultExName.trim()}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Default Exercise from Profile */}
+      <ExerciseEntry open={addDefaultExerciseOpen} onOpenChange={setAddDefaultExerciseOpen} onAdd={(exercise: Exercise) => {
+        const newDefault: DefaultExercise = {
+          id: crypto.randomUUID(),
+          name: exercise.name,
+          duration: exercise.duration,
+          caloriesBurned: exercise.caloriesBurned,
+          secondaryMetric: exercise.secondaryMetric,
+          secondaryUnit: exercise.secondaryUnit,
+          frequency: addDefaultExFrequency,
+          specificDays: addDefaultExFrequency === "specific" ? addDefaultExDays : undefined,
+          createdAt: format(new Date(), "yyyy-MM-dd"),
+        };
+        setProfile({ defaultExercises: [...(profile.defaultExercises || []), newDefault] });
+        dbInsertDefaultExercise(newDefault);
+        setAddDefaultExerciseOpen(false);
+        // Open schedule dialog for the new exercise
+        setEditDefaultExerciseId(newDefault.id);
+        setEditDefaultExFrequency(newDefault.frequency);
+        setEditDefaultExDays(newDefault.specificDays || []);
+        setEditDefaultExName(newDefault.name);
+      }} />
 
       <div className="px-4 py-6">
         <Button
