@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          date: string
+          follow_up_actions: string
+          id: string
+          lab_results: string
+          next_appointment_date: string
+          notes: string
+          provider: string
+          reason: string
+          time: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          follow_up_actions?: string
+          id?: string
+          lab_results?: string
+          next_appointment_date?: string
+          notes?: string
+          provider?: string
+          reason?: string
+          time?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          follow_up_actions?: string
+          id?: string
+          lab_results?: string
+          next_appointment_date?: string
+          notes?: string
+          provider?: string
+          reason?: string
+          time?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       default_exercise_overrides: {
         Row: {
           created_at: string
