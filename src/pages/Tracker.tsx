@@ -327,31 +327,6 @@ const Tracker = () => {
           </div>
         </div>
 
-        {/* Most eaten foods - sorted by count */}
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-base font-semibold text-foreground mb-3">Most eaten foods</h3>
-          {allFoods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No food logged yet</p>
-          ) : (
-            <div className="space-y-3">
-              {allFoods.map((f) => (
-                <div key={f.name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-foreground truncate max-w-[60%]">{f.name}</span>
-                    <span className="text-xs text-muted-foreground">{f.count}x · {f.totalCals} kcal</span>
-                  </div>
-                  <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-foreground transition-all"
-                      style={{ width: `${(f.count / maxFoodVal) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Exercise chart */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Exercise</h3>
@@ -431,7 +406,7 @@ const Tracker = () => {
         {/* Bowel movements */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-foreground">Bowel Movements 💩</h3>
+            <h3 className="text-base font-semibold text-foreground">Bowel Movements</h3>
             <div className="text-right">
               <span className="text-lg font-bold text-foreground">{poopAvg}</span>
               <span className="text-xs text-muted-foreground ml-1">avg/day</span>
@@ -440,15 +415,15 @@ const Tracker = () => {
           <p className="text-sm text-muted-foreground mb-2">{rangeLabel} · total: {poopTotal}</p>
           <div className="flex items-center gap-4 mb-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--destructive))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--foreground))" }} />
               <span className="text-xs text-muted-foreground">Hard</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--primary))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--chart-positive))" }} />
               <span className="text-xs text-muted-foreground">Normal</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--accent))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--negative-selected))" }} />
               <span className="text-xs text-muted-foreground">Loose</span>
             </div>
           </div>
@@ -458,39 +433,11 @@ const Tracker = () => {
                 <XAxis dataKey="day" tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval={monthlyInterval} />
                 <YAxis hide />
                 <Tooltip content={<PoopTooltip />} />
-                <Bar dataKey="poopHard" stackId="poop" fill="hsl(var(--destructive))" maxBarSize={chartBarSize} />
-                <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--primary))" maxBarSize={chartBarSize} />
-                <Bar dataKey="poopLoose" stackId="poop" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
+                <Bar dataKey="poopHard" stackId="poop" fill="hsl(var(--foreground))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopNormal" stackId="poop" fill="hsl(var(--chart-positive))" maxBarSize={chartBarSize} />
+                <Bar dataKey="poopLoose" stackId="poop" fill="hsl(var(--negative-selected))" radius={[6, 6, 0, 0]} maxBarSize={chartBarSize} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Emotions */}
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-base font-semibold text-foreground mb-1">Emotions</h3>
-          <p className="text-sm text-muted-foreground mb-4">Positive vs negative · {rangeLabel.toLowerCase()}</p>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mentalData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval={monthlyInterval} />
-                <YAxis hide />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
-                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex items-center gap-5 mt-3">
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "hsl(var(--chart-positive-dark))" }} />
-              <span className="text-xs text-muted-foreground">Positive</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "hsl(var(--chart-negative-dark))" }} />
-              <span className="text-xs text-muted-foreground">Negative</span>
-            </div>
           </div>
         </div>
 
