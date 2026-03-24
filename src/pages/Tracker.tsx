@@ -441,34 +441,6 @@ const Tracker = () => {
           </div>
         </div>
 
-        {/* Emotions */}
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-base font-semibold text-foreground mb-1">Emotions</h3>
-          <p className="text-sm text-muted-foreground mb-4">Positive vs negative · {rangeLabel.toLowerCase()}</p>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mentalData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fontSize: tickFontSize, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval={monthlyInterval} />
-                <YAxis hide />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="positiveCount" name="Positive" fill="hsl(var(--chart-positive-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
-                <Bar dataKey="negativeCount" name="Negative" fill="hsl(var(--chart-negative-dark))" radius={[6, 6, 0, 0]} maxBarSize={range === "week" ? 36 : 12} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex items-center gap-5 mt-3">
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "hsl(var(--chart-positive-dark))" }} />
-              <span className="text-xs text-muted-foreground">Positive</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "hsl(var(--chart-negative-dark))" }} />
-              <span className="text-xs text-muted-foreground">Negative</span>
-            </div>
-          </div>
-        </div>
-
         {/* Frequent emotions */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <h3 className="text-base font-semibold text-foreground mb-3">Frequent emotions</h3>
