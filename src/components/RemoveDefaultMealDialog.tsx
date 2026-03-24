@@ -25,7 +25,7 @@ export const RemoveDefaultMealDialog = ({
         <div className="space-y-3 pt-2">
           <Button
             variant="outline"
-            className="w-full rounded-xl h-12 bg-pink-50 border-pink-200 text-foreground hover:bg-pink-100"
+            className="w-full rounded-xl h-12 bg-negative border-negative text-foreground hover:bg-negative-selected hover:text-white hover:border-negative-selected"
             onClick={() => {
               onRemoveToday();
               onOpenChange(false);
