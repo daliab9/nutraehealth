@@ -1753,6 +1753,88 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Default Exercise Schedule + Rename */}
+      <Dialog open={!!editDefaultExerciseId} onOpenChange={(o) => { if (!o) setEditDefaultExerciseId(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader><DialogTitle>Edit Default Exercise</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Name</p>
+              <Input value={editDefaultExName} onChange={(e) => setEditDefaultExName(e.target.value)} className="rounded-xl" placeholder="Exercise name" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Schedule</p>
+              {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setEditDefaultExFrequency(f)}
+                  className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all mb-2 ${editDefaultExFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}
+                >
+                  {f === "everyday" && "Every day"}
+                  {f === "weekdays" && "Weekdays only"}
+                  {f === "weekends" && "Weekends only"}
+                  {f === "specific" && "Specific days"}
+                </button>
+              ))}
+            </div>
+            {editDefaultExFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setEditDefaultExDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${editDefaultExDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                if (!editDefaultExerciseId) return;
+                const updatedDefaults = (profile.defaultExercises || []).map((de) =>
+                  de.id === editDefaultExerciseId
+                    ? { ...de, name: editDefaultExName.trim() || de.name, frequency: editDefaultExFrequency, specificDays: editDefaultExFrequency === "specific" ? editDefaultExDays : undefined }
+                    : de
+                );
+                setProfile({ defaultExercises: updatedDefaults });
+                const updatedDE = updatedDefaults.find((de) => de.id === editDefaultExerciseId);
+                if (updatedDE) dbUpdateDefaultExercise(updatedDE);
+                setEditDefaultExerciseId(null);
+              }}
+              className="w-full rounded-xl h-12 mt-2"
+              disabled={(editDefaultExFrequency === "specific" && editDefaultExDays.length === 0) || !editDefaultExName.trim()}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Default Exercise from Profile */}
+      <ExerciseEntry open={addDefaultExerciseOpen} onOpenChange={setAddDefaultExerciseOpen} onAdd={(exercise: Exercise) => {
+        const newDefault: DefaultExercise = {
+          id: crypto.randomUUID(),
+          name: exercise.name,
+          duration: exercise.duration,
+          caloriesBurned: exercise.caloriesBurned,
+          secondaryMetric: exercise.secondaryMetric,
+          secondaryUnit: exercise.secondaryUnit,
+          frequency: addDefaultExFrequency,
+          specificDays: addDefaultExFrequency === "specific" ? addDefaultExDays : undefined,
+          createdAt: format(new Date(), "yyyy-MM-dd"),
+        };
+        setProfile({ defaultExercises: [...(profile.defaultExercises || []), newDefault] });
+        dbInsertDefaultExercise(newDefault);
+        setAddDefaultExerciseOpen(false);
+        // Open schedule dialog for the new exercise
+        setEditDefaultExerciseId(newDefault.id);
+        setEditDefaultExFrequency(newDefault.frequency);
+        setEditDefaultExDays(newDefault.specificDays || []);
+        setEditDefaultExName(newDefault.name);
+      }} />
+
       <div className="px-4 py-6">
         <Button
           variant="ghost"
