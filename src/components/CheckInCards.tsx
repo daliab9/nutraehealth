@@ -5,7 +5,7 @@ import { X, ChevronRight } from "lucide-react";
 import { generatePrompts, getTimeWindow, type CheckInPrompt, type PromptContext, type PromptType } from "@/utils/checkInPrompts";
 import { useUserStore } from "@/stores/useUserStore";
 
-const DISMISS_STORAGE_KEY = "checkin_dismissed";
+const DISMISS_STORAGE_KEY = "checkin_dismissed_v2";
 
 interface DismissState {
   date: string;
@@ -14,20 +14,41 @@ interface DismissState {
   notYetUntil: Record<string, number>;
 }
 
+function getTodayKey() {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+function createDismissState(date = getTodayKey()): DismissState {
+  return { date, types: [], completed: [], notYetUntil: {} };
+}
+
 function loadDismissState(): DismissState {
   try {
-    const raw = sessionStorage.getItem(DISMISS_STORAGE_KEY);
+    const raw = localStorage.getItem(DISMISS_STORAGE_KEY) ?? sessionStorage.getItem(DISMISS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as DismissState;
-      const today = format(new Date(), "yyyy-MM-dd");
-      if (parsed.date === today) return { completed: [], ...parsed };
+      const today = getTodayKey();
+      if (parsed.date === today) {
+        return {
+          date: today,
+          types: Array.isArray(parsed.types) ? parsed.types : [],
+          completed: Array.isArray(parsed.completed) ? parsed.completed : [],
+          notYetUntil: parsed.notYetUntil ?? {},
+        };
+      }
     }
   } catch {}
-  return { date: format(new Date(), "yyyy-MM-dd"), types: [], completed: [], notYetUntil: {} };
+  return createDismissState();
 }
 
 function saveDismissState(state: DismissState) {
-  sessionStorage.setItem(DISMISS_STORAGE_KEY, JSON.stringify(state));
+  const serialized = JSON.stringify(state);
+  localStorage.setItem(DISMISS_STORAGE_KEY, serialized);
+  sessionStorage.setItem(DISMISS_STORAGE_KEY, serialized);
+}
+
+function appendUnique(values: string[], nextValue: string) {
+  return values.includes(nextValue) ? values : [...values, nextValue];
 }
 
 interface CheckInCardsProps {
@@ -98,7 +119,11 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
       if (notYet) {
         next.notYetUntil = { ...prev.notYetUntil, [type]: Date.now() + 2 * 60 * 60 * 1000 };
       } else {
-        next.types = [...prev.types, type];
+        next.types = appendUnique(prev.types, type);
+        if (type in next.notYetUntil) {
+          const { [type]: _removed, ...rest } = next.notYetUntil;
+          next.notYetUntil = rest;
+        }
       }
       saveDismissState(next);
       return next;
@@ -107,7 +132,13 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
 
   const complete = useCallback((type: PromptType, feedback?: string) => {
     setDismissState(prev => {
-      const next = { ...prev, completed: [...prev.completed, type] };
+      const next: DismissState = {
+        ...prev,
+        completed: appendUnique(prev.completed, type),
+        notYetUntil: Object.fromEntries(
+          Object.entries(prev.notYetUntil).filter(([key]) => key !== type)
+        ),
+      };
       saveDismissState(next);
       return next;
     });
@@ -202,17 +233,17 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
           setFollowUp(null);
         } else if (value === "add") {
           const mealType = type === "missing_yesterday_dinner" ? "dinner" : type;
-          onNavigateToMeal(mealType);
           complete(type, feedback);
           setFollowUp(null);
+          onNavigateToMeal(mealType);
         }
         return;
       }
 
       case "exercise": {
-        onOpenExercise();
         complete(type, feedback);
         setFollowUp(null);
+        onOpenExercise();
         return;
       }
 
