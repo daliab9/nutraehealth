@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { CalendarStrip } from "@/components/CalendarStrip";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
 import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbDeleteDefaultMeal, dbInsertOverride, dbDeleteOverridesForMeal } from "@/utils/dbPersistence";
+import { CheckInCards } from "@/components/CheckInCards";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
@@ -670,6 +671,23 @@ const Diary = () => {
         </h1>
         <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       </div>
+
+      {/* Check-in prompts */}
+      <CheckInCards
+        selectedDate={selectedDate}
+        onNavigateToMeal={(mealType) => {
+          setActiveSection("meals");
+          // Scroll to the relevant meal section
+          setTimeout(() => {
+            const el = document.getElementById(`meal-section-${mealType}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        }}
+        onOpenExercise={() => {
+          setActiveSection("exercise");
+          setExerciseOpen(true);
+        }}
+      />
 
       {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
