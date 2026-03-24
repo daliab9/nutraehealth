@@ -1087,6 +1087,34 @@ const Diary = () => {
         editExercise={editingExercise}
       />
 
+      {/* Save Exercise as Default Dialog */}
+      <Dialog open={!!saveExAsDefaultOpen} onOpenChange={(o) => { if (!o) setSaveExAsDefaultOpen(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Set as Default Exercise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-foreground font-medium">{saveExAsDefaultOpen?.name}</p>
+            <p className="text-xs text-muted-foreground">This exercise will auto-appear on scheduled days.</p>
+            {(["everyday", "weekdays", "weekends", "specific"] as const).map((f) => (
+              <button key={f} onClick={() => setDefaultExFrequency(f)} className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${defaultExFrequency === f ? "border-foreground bg-secondary" : "border-border bg-card"}`}>
+                {f === "everyday" && "Every day"}{f === "weekdays" && "Weekdays only"}{f === "weekends" && "Weekends only"}{f === "specific" && "Specific days"}
+              </button>
+            ))}
+            {defaultExFrequency === "specific" && (
+              <div className="flex justify-between gap-1.5">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, i) => (
+                  <button key={i} onClick={() => setDefaultExDays((prev) => prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i])} className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all border ${defaultExDays.includes(i) ? "border-foreground bg-secondary text-secondary-foreground" : "border-border text-muted-foreground"}`}>{label}</button>
+                ))}
+              </div>
+            )}
+            <Button onClick={() => { if (saveExAsDefaultOpen) handleSaveExAsDefault(saveExAsDefaultOpen); }} className="w-full rounded-xl h-12" disabled={defaultExFrequency === "specific" && defaultExDays.length === 0}>
+              Save Default Exercise
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
