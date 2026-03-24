@@ -43,7 +43,7 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
   } = useUserStore();
 
   const [dismissState, setDismissState] = useState<DismissState>(loadDismissState);
-  const [completedTypes, setCompletedTypes] = useState<Set<string>>(new Set());
+  const completedTypes = useMemo(() => new Set(dismissState.completed), [dismissState.completed]);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<CheckInPrompt | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
