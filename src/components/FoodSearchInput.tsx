@@ -48,6 +48,8 @@ interface FoodSearchInputProps {
   onAddItem: (item: FoodItem) => void;
   onClose: () => void;
   keepOpenOnAdd?: boolean;
+  defaultMeals?: DefaultMeal[];
+  onAddItems?: (items: FoodItem[]) => void;
 }
 
 export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearchInputProps) => {
