@@ -239,6 +239,7 @@ const AppContent = () => {
   if (screen === "onboarding") {
     return (
       <Onboarding
+        onBack={() => setScreen("landing")}
         onComplete={(data) => {
           const calories = calculateCalories(data.currentWeight, data.targetWeight, data.age, data.height, data.gender, data.goals, data.activityLevel, data.goalTimeline);
           const goalDate = calculateGoalDate(data.currentWeight, data.targetWeight, data.goals, data.goalTimeline, data.age, data.height, data.gender, data.activityLevel);
