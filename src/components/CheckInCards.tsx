@@ -10,6 +10,7 @@ const DISMISS_STORAGE_KEY = "checkin_dismissed";
 interface DismissState {
   date: string;
   types: string[];
+  completed: string[];
   notYetUntil: Record<string, number>;
 }
 
@@ -19,10 +20,10 @@ function loadDismissState(): DismissState {
     if (raw) {
       const parsed = JSON.parse(raw) as DismissState;
       const today = format(new Date(), "yyyy-MM-dd");
-      if (parsed.date === today) return parsed;
+      if (parsed.date === today) return { completed: [], ...parsed };
     }
   } catch {}
-  return { date: format(new Date(), "yyyy-MM-dd"), types: [], notYetUntil: {} };
+  return { date: format(new Date(), "yyyy-MM-dd"), types: [], completed: [], notYetUntil: {} };
 }
 
 function saveDismissState(state: DismissState) {
