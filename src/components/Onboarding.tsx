@@ -434,6 +434,8 @@ export const Onboarding = ({ onComplete, onBack }: OnboardingProps) => {
     if (step > 0) {
       setDirection(-1);
       setStep(getPrevStep(step));
+    } else if (onBack) {
+      onBack();
     }
   };
 
