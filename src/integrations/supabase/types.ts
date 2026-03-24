@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      default_exercise_overrides: {
+        Row: {
+          created_at: string
+          date: string
+          default_exercise_id: string
+          id: string
+          removed: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          default_exercise_id: string
+          id?: string
+          removed?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          default_exercise_id?: string
+          id?: string
+          removed?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      default_exercises: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          created_at_date: string | null
+          duration: number
+          frequency: string
+          id: string
+          name: string
+          secondary_metric: number | null
+          secondary_unit: string | null
+          specific_days: number[] | null
+          user_id: string
+        }
+        Insert: {
+          calories_burned?: number
+          created_at?: string
+          created_at_date?: string | null
+          duration?: number
+          frequency?: string
+          id?: string
+          name: string
+          secondary_metric?: number | null
+          secondary_unit?: string | null
+          specific_days?: number[] | null
+          user_id: string
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          created_at_date?: string | null
+          duration?: number
+          frequency?: string
+          id?: string
+          name?: string
+          secondary_metric?: number | null
+          secondary_unit?: string | null
+          specific_days?: number[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       default_meal_overrides: {
         Row: {
           created_at: string
