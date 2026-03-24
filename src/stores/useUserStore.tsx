@@ -736,6 +736,7 @@ function useUserStoreInternal() {
     getHealthEntry,
     setHealthEntry,
     getDefaultMealsForDate,
+    getDefaultExercisesForDate,
     loadAllFromDB,
     resetStore,
   };
