@@ -224,6 +224,15 @@ const Profile = () => {
   // Saved exercises
   const [addExerciseOpen, setAddExerciseOpen] = useState(false);
 
+  // Default exercises
+  const [editDefaultExerciseId, setEditDefaultExerciseId] = useState<string | null>(null);
+  const [editDefaultExFrequency, setEditDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [editDefaultExDays, setEditDefaultExDays] = useState<number[]>([]);
+  const [editDefaultExName, setEditDefaultExName] = useState("");
+  const [addDefaultExerciseOpen, setAddDefaultExerciseOpen] = useState(false);
+  const [addDefaultExFrequency, setAddDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [addDefaultExDays, setAddDefaultExDays] = useState<number[]>([]);
+
   // Activity & Timeline
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [pendingActivity, setPendingActivity] = useState<ActivityLevel>(profile.activityLevel || "sedentary");
