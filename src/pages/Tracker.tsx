@@ -327,31 +327,6 @@ const Tracker = () => {
           </div>
         </div>
 
-        {/* Most eaten foods - sorted by count */}
-        <div className="rounded-2xl bg-card border border-border p-4 mb-4">
-          <h3 className="text-base font-semibold text-foreground mb-3">Most eaten foods</h3>
-          {allFoods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No food logged yet</p>
-          ) : (
-            <div className="space-y-3">
-              {allFoods.map((f) => (
-                <div key={f.name}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-foreground truncate max-w-[60%]">{f.name}</span>
-                    <span className="text-xs text-muted-foreground">{f.count}x · {f.totalCals} kcal</span>
-                  </div>
-                  <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-foreground transition-all"
-                      style={{ width: `${(f.count / maxFoodVal) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Exercise chart */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <h3 className="text-base font-semibold text-foreground mb-1">Exercise</h3>
