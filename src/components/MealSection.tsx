@@ -649,7 +649,12 @@ export const MealSection = ({
           <DialogHeader>
             <DialogTitle>Add to {title}</DialogTitle>
           </DialogHeader>
-          <FoodSearchInput onAddItem={(item) => { onAddItem(item); setMode(null); }} onClose={() => setMode(null)} />
+          <FoodSearchInput
+            onAddItem={(item) => { onAddItem(item); setMode(null); }}
+            onClose={() => setMode(null)}
+            defaultMeals={defaultMeals.filter((dm) => dm.mealType === mealType)}
+            onAddItems={(items) => { if (onAddItems) onAddItems(items); else items.forEach(onAddItem); setMode(null); }}
+          />
         </DialogContent>
       </Dialog>
 

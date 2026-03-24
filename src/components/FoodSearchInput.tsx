@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { supabase } from "@/integrations/supabase/client";
-import type { FoodItem } from "@/stores/useUserStore";
+import type { FoodItem, DefaultMeal } from "@/stores/useUserStore";
 
 interface FoodSuggestion {
   name: string;
@@ -48,9 +48,11 @@ interface FoodSearchInputProps {
   onAddItem: (item: FoodItem) => void;
   onClose: () => void;
   keepOpenOnAdd?: boolean;
+  defaultMeals?: DefaultMeal[];
+  onAddItems?: (items: FoodItem[]) => void;
 }
 
-export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearchInputProps) => {
+export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd, defaultMeals = [], onAddItems }: FoodSearchInputProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<FoodSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -192,6 +194,40 @@ export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearc
           )}
           {!loading && query.length >= 2 && suggestions.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">No results found</p>
+          )}
+          {defaultMeals.length > 0 && !loading && suggestions.length === 0 && query.length < 2 && (
+            <div className="pt-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Default meals</p>
+              <div className="max-h-[180px] overflow-y-auto space-y-1">
+                {defaultMeals.map((dm) => {
+                  const totalCals = dm.items.reduce((s, i) => s + ((i as FoodItem).calories || 0), 0);
+                  return (
+                    <button
+                      key={dm.id}
+                      onClick={() => {
+                        const groupId = crypto.randomUUID();
+                        const mealItems = dm.items.map((item) => ({
+                          ...(item as FoodItem),
+                          id: crypto.randomUUID(),
+                          groupId,
+                          groupName: dm.name,
+                        }));
+                        if (onAddItems) {
+                          onAddItems(mealItems);
+                        } else {
+                          mealItems.forEach((i) => onAddItem(i));
+                        }
+                        if (!keepOpenOnAdd) onClose();
+                      }}
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <span className="text-sm text-foreground font-medium">{dm.name}</span>
+                      <span className="text-xs text-muted-foreground">{totalCals} kcal</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </>
       ) : (
