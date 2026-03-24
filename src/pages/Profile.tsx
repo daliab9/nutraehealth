@@ -985,6 +985,44 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+
+              {/* Default Exercises */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Default Exercises</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-action-button hover:bg-action-button/80" onClick={() => { setAddDefaultExFrequency("everyday"); setAddDefaultExDays([]); setAddDefaultExerciseOpen(true); }}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(profile.defaultExercises || []).length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border/70 bg-card/60 px-4 py-5">
+                    <p className="text-sm text-muted-foreground">No default exercises yet. Tap + to create one or star an exercise in your diary.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(profile.defaultExercises || []).map((de) => (
+                      <div key={de.id} className="rounded-xl border border-border/50 bg-card p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">{de.name}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {de.secondaryMetric && de.secondaryUnit ? `${de.secondaryMetric} ${de.secondaryUnit} · ${de.caloriesBurned} kcal` : `${de.duration}min · ${de.caloriesBurned} kcal`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => { setEditDefaultExerciseId(de.id); setEditDefaultExFrequency(de.frequency); setEditDefaultExDays(de.specificDays || []); setEditDefaultExName(de.name); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full active:scale-95"><Calendar className="h-4 w-4" /></button>
+                            <button onClick={() => { setProfile({ defaultExercises: (profile.defaultExercises || []).filter((d) => d.id !== de.id), defaultExerciseOverrides: (profile.defaultExerciseOverrides || []).filter((o) => o.defaultExerciseId !== de.id) }); dbDeleteDefaultExercise(de.id); }} className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-full active:scale-95"><Trash2 className="h-4 w-4" /></button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{formatDefaultFrequency(de)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
