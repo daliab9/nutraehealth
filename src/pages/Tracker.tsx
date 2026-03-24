@@ -415,15 +415,15 @@ const Tracker = () => {
           <p className="text-sm text-muted-foreground mb-2">{rangeLabel} · total: {poopTotal}</p>
           <div className="flex items-center gap-4 mb-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--destructive))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--foreground))" }} />
               <span className="text-xs text-muted-foreground">Hard</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--primary))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--chart-positive))" }} />
               <span className="text-xs text-muted-foreground">Normal</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--accent))" }} />
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--negative-selected))" }} />
               <span className="text-xs text-muted-foreground">Loose</span>
             </div>
           </div>
