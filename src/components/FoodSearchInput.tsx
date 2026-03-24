@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollPicker } from "@/components/ScrollPicker";
 import { supabase } from "@/integrations/supabase/client";
-import type { FoodItem } from "@/stores/useUserStore";
+import type { FoodItem, DefaultMeal } from "@/stores/useUserStore";
 
 interface FoodSuggestion {
   name: string;
