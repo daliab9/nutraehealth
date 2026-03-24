@@ -187,18 +187,9 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
       }
 
       case "exercise": {
-        if (value === "walked") {
-          // Quick-log a walk
-          const { addExercise } = useUserStore.getState?.() || {};
-          // Navigate to exercise dialog instead for simplicity
-          onOpenExercise();
-          complete(type, feedback);
-          setFollowUp(null);
-        } else {
-          onOpenExercise();
-          complete(type, feedback);
-          setFollowUp(null);
-        }
+        onOpenExercise();
+        complete(type, feedback);
+        setFollowUp(null);
         return;
       }
 
