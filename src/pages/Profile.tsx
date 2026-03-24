@@ -159,11 +159,11 @@ const ProfileDropZone = ({
   );
 };
 
-const formatDefaultFrequency = (meal: DefaultMeal) => {
-  if (meal.frequency === "everyday") return "Every day";
-  if (meal.frequency === "weekdays") return "Weekdays";
-  if (meal.frequency === "weekends") return "Weekends";
-  return (meal.specificDays || [])
+const formatDefaultFrequency = (item: DefaultMeal | DefaultExercise) => {
+  if (item.frequency === "everyday") return "Every day";
+  if (item.frequency === "weekdays") return "Weekdays";
+  if (item.frequency === "weekends") return "Weekends";
+  return (item.specificDays || [])
     .map((day) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day])
     .join(" · ");
 };
