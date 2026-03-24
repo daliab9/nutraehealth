@@ -106,12 +106,15 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
   }, []);
 
   const complete = useCallback((type: PromptType, feedback?: string) => {
-    setCompletedTypes(prev => new Set([...prev, type]));
+    setDismissState(prev => {
+      const next = { ...prev, completed: [...prev.completed, type] };
+      saveDismissState(next);
+      return next;
+    });
     if (feedback) {
       setFeedbackMsg(feedback);
       setTimeout(() => {
         setFeedbackMsg(null);
-        // Move to next prompt
         setCurrentIndex(prev => prev + 1);
       }, 1800);
     } else {
