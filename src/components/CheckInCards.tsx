@@ -1,17 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, subDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { generatePrompts, getTimeWindow, type CheckInPrompt, type PromptContext, type PromptType } from "@/utils/checkInPrompts";
 import { useUserStore } from "@/stores/useUserStore";
-import { toast } from "sonner";
 
 const DISMISS_STORAGE_KEY = "checkin_dismissed";
 
 interface DismissState {
   date: string;
   types: string[];
-  notYetUntil: Record<string, number>; // type → timestamp
+  notYetUntil: Record<string, number>;
 }
 
 function loadDismissState(): DismissState {
@@ -46,6 +45,8 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
   const [completedTypes, setCompletedTypes] = useState<Set<string>>(new Set());
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<CheckInPrompt | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [popupOpen, setPopupOpen] = useState(true);
 
   const now = useMemo(() => new Date(), []);
   const todayKey = format(now, "yyyy-MM-dd");
@@ -54,7 +55,6 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
 
   const dismissedSet = useMemo(() => {
     const s = new Set(dismissState.types);
-    // Also include "not yet" types that haven't expired
     const nowMs = Date.now();
     for (const [type, until] of Object.entries(dismissState.notYetUntil)) {
       if (nowMs < until) s.add(type);
@@ -75,7 +75,6 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
       defaultMeals: profile.defaultMeals || [],
       getDefaultMealsForDate: (date: string) => {
         const results = getDefaultMealsForDate(date);
-        // Map to DefaultMeal shape for prompt engine
         return results.map(r => ({
           id: (r as any).defaultMealId || r.name,
           name: r.name,
@@ -109,8 +108,18 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
     setCompletedTypes(prev => new Set([...prev, type]));
     if (feedback) {
       setFeedbackMsg(feedback);
-      setTimeout(() => setFeedbackMsg(null), 2500);
+      setTimeout(() => {
+        setFeedbackMsg(null);
+        // Move to next prompt
+        setCurrentIndex(prev => prev + 1);
+      }, 1800);
+    } else {
+      setCurrentIndex(prev => prev + 1);
     }
+  }, []);
+
+  const advanceOrClose = useCallback(() => {
+    setCurrentIndex(prev => prev + 1);
   }, []);
 
   const handleAction = useCallback((prompt: CheckInPrompt, value: string) => {
@@ -119,10 +128,18 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
     if (value === "dismiss") {
       dismiss(type, true);
       setFollowUp(null);
+      advanceOrClose();
       return;
     }
     if (value === "skip") {
       dismiss(type);
+      setFollowUp(null);
+      advanceOrClose();
+      return;
+    }
+    if (value === "confirm") {
+      // User confirmed default meal — just dismiss
+      complete(type, feedback || "Confirmed ✓");
       setFollowUp(null);
       return;
     }
@@ -133,7 +150,6 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
         const entry = getHealthEntry(todayKey);
         setHealthEntry(todayKey, { ...entry, sleepQuality: quality });
         complete(type, feedback);
-        // Show follow-up for wake-ups
         setFollowUp({
           id: "sleep_wakeups",
           type: "sleep_wakeups",
@@ -145,11 +161,15 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
           ],
           feedback: "Noted. This helps identify sleep quality trends.",
         });
+        // Reset index to show follow-up
+        setCurrentIndex(0);
         return;
       }
 
       case "sleep_wakeups": {
-        // We don't have a dedicated field for this, store as part of diary text or dismiss
+        const wakeUps = parseInt(value);
+        const entry = getHealthEntry(todayKey);
+        setHealthEntry(todayKey, { ...entry, wakeUps });
         setFollowUp(null);
         complete(type, feedback);
         return;
@@ -160,7 +180,6 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
       case "dinner":
       case "missing_yesterday_dinner": {
         if (value === "default") {
-          // Log default meal for this type
           const mealType = type === "missing_yesterday_dinner" ? "dinner" : type;
           const dateKey = type === "missing_yesterday_dinner" ? yesterdayKey : todayKey;
           const defaults = getDefaultMealsForDate(dateKey).filter(dm => dm.mealType === mealType);
@@ -202,64 +221,106 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
         return;
       }
     }
-  }, [todayKey, yesterdayKey, getHealthEntry, setHealthEntry, getDefaultMealsForDate, addFoodToMeal, complete, dismiss, onNavigateToMeal, onOpenExercise]);
+  }, [todayKey, yesterdayKey, getHealthEntry, setHealthEntry, getDefaultMealsForDate, addFoodToMeal, complete, dismiss, onNavigateToMeal, onOpenExercise, advanceOrClose]);
 
-  if (!isToday || prompts.length === 0) return null;
+  if (!isToday || prompts.length === 0 || !popupOpen) return null;
+
+  // If we've gone through all prompts, close
+  const currentPrompt = followUp || prompts[currentIndex];
+  if (!currentPrompt && !feedbackMsg) return null;
+
+  const totalPrompts = followUp ? 1 : prompts.length;
+  const progressIndex = followUp ? 0 : Math.min(currentIndex, totalPrompts - 1);
 
   return (
-    <div className="px-5 space-y-2 mb-4">
-      <AnimatePresence mode="popLayout">
-        {feedbackMsg && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <AnimatePresence mode="wait">
+        {feedbackMsg && !currentPrompt ? (
+          <motion.div
+            key="feedback-final"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="mx-6 w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6 text-center"
+          >
+            <p className="text-sm text-foreground">{feedbackMsg}</p>
+          </motion.div>
+        ) : feedbackMsg ? (
           <motion.div
             key="feedback"
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-2xl bg-positive-bg/50 border border-positive-selected/20 px-4 py-3 text-sm text-foreground"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mx-6 w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6 text-center"
           >
-            {feedbackMsg}
+            <p className="text-sm text-foreground">{feedbackMsg}</p>
           </motion.div>
-        )}
-
-        {prompts.map((prompt) => (
+        ) : currentPrompt ? (
           <motion.div
-            key={prompt.id}
-            layout
-            initial={{ opacity: 0, y: -12, scale: 0.97 }}
+            key={currentPrompt.id}
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.97 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="rounded-2xl bg-card border border-border shadow-sm px-4 py-4"
+            exit={{ opacity: 0, y: -20, scale: 0.97 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="mx-6 w-full max-w-sm"
           >
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <p className="text-sm font-medium text-foreground leading-snug">
-                {prompt.question}
-              </p>
-              <button
-                onClick={() => dismiss(prompt.type)}
-                className="shrink-0 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {prompt.buttons.map((btn) => (
+            <div className="rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+              {/* Header with close */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                <div className="flex gap-1.5">
+                  {Array.from({ length: totalPrompts }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1 rounded-full transition-all ${
+                        i <= progressIndex ? "w-6 bg-foreground" : "w-3 bg-border"
+                      }`}
+                    />
+                  ))}
+                </div>
                 <button
-                  key={btn.value}
-                  onClick={() => handleAction(prompt, btn.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 ${
-                    btn.variant === "subtle"
-                      ? "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      : "bg-foreground text-background hover:bg-foreground/85"
-                  }`}
+                  onClick={() => setPopupOpen(false)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                 >
-                  {btn.label}
+                  <X className="h-4 w-4" />
                 </button>
-              ))}
+              </div>
+
+              {/* Question */}
+              <div className="px-5 pt-3 pb-2">
+                <p className="text-lg font-semibold text-foreground leading-snug">
+                  {currentPrompt.question}
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="px-5 pb-5 pt-3 space-y-2">
+                {currentPrompt.buttons.map((btn) => (
+                  <button
+                    key={btn.value}
+                    onClick={() => handleAction(currentPrompt, btn.value)}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+                      btn.variant === "subtle"
+                        ? "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        : "bg-foreground text-background hover:bg-foreground/85"
+                    }`}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Skip all link */}
+            <button
+              onClick={() => setPopupOpen(false)}
+              className="w-full mt-3 py-2 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+            >
+              Skip all
+            </button>
           </motion.div>
-        ))}
+        ) : null}
       </AnimatePresence>
     </div>
   );

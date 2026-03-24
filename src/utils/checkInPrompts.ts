@@ -37,14 +37,9 @@ export function getTimeWindow(now: Date = new Date()): TimeWindow {
   const h = now.getHours();
   if (h >= 4 && h < 12) return "morning";
   if (h >= 12 && h < 18) return "midday";
-  // 18-23 or 0-3
   return "evening";
 }
 
-/**
- * For evening window (6pm–3:59am), the "effective date" for dinner
- * is today if before midnight, or yesterday if 12am–3:59am.
- */
 export function getEffectiveDinnerDate(now: Date = new Date()): string {
   const h = now.getHours();
   if (h < 4) {
@@ -57,6 +52,16 @@ function hasMealItems(dayEntry: DayEntry | undefined, mealType: string): boolean
   if (!dayEntry) return false;
   const meal = dayEntry.meals.find(m => m.type === mealType);
   return !!meal && meal.items.length > 0;
+}
+
+function getDefaultMealNamesForType(
+  defaultMeals: DefaultMeal[],
+  mealType: string,
+  dateKey: string,
+  getDefaultMealsForDate: (date: string) => DefaultMeal[]
+): string[] {
+  const defaults = getDefaultMealsForDate(dateKey);
+  return defaults.filter(dm => dm.mealType === mealType).map(dm => dm.name);
 }
 
 function hasDefaultMealForType(
@@ -98,21 +103,70 @@ export interface PromptContext {
   dismissedPrompts: Set<string>;
 }
 
+function buildMealPrompt(
+  type: PromptType,
+  mealType: string,
+  question: string,
+  confirmQuestion: string,
+  ctx: PromptContext,
+  dateKey: string,
+  dayEntry: DayEntry | undefined,
+): CheckInPrompt | null {
+  const hasLogged = hasMealItems(dayEntry, mealType);
+  if (hasLogged) return null;
+
+  const hasDefault = hasDefaultMealForType(ctx.defaultMeals, mealType, dateKey, ctx.getDefaultMealsForDate);
+  const defaultNames = getDefaultMealNamesForType(ctx.defaultMeals, mealType, dateKey, ctx.getDefaultMealsForDate);
+
+  if (hasDefault) {
+    const name = defaultNames[0] || mealType;
+    return {
+      id: type,
+      type,
+      question: `${confirmQuestion} ${name}?`,
+      buttons: [
+        { label: "Yes", value: "confirm" },
+        { label: "No — add different", value: "add" },
+        { label: "Didn't eat", value: "skip" },
+      ],
+      feedback: FEEDBACK[type],
+    };
+  }
+
+  const hasAnyDefault = ctx.defaultMeals.some(dm => dm.mealType === mealType);
+
+  return {
+    id: type,
+    type,
+    question,
+    buttons: hasAnyDefault
+      ? [
+          { label: "Yes — log default", value: "default" },
+          { label: "Add something different", value: "add" },
+          { label: "Not yet", value: "dismiss", variant: "subtle" as const },
+        ]
+      : [
+          { label: "Add", value: "add" },
+          { label: "Not yet", value: "dismiss", variant: "subtle" as const },
+        ],
+    feedback: FEEDBACK[type],
+  };
+}
+
 export function generatePrompts(ctx: PromptContext): CheckInPrompt[] {
   const prompts: CheckInPrompt[] = [];
   const window = getTimeWindow(ctx.now);
   const h = ctx.now.getHours();
 
   const isDismissed = (type: PromptType) => ctx.dismissedPrompts.has(type);
-  const add = (p: CheckInPrompt) => {
-    if (prompts.length < 3 && !isDismissed(p.type)) prompts.push(p);
+  const add = (p: CheckInPrompt | null) => {
+    if (p && prompts.length < 3 && !isDismissed(p.type)) prompts.push(p);
   };
 
-  // 1. Missing previous-day dinner (morning only, or after 4am if dinner still missing)
+  // 1. Missing previous-day dinner (morning only)
   if (window === "morning") {
     const dinnerDateKey = ctx.yesterdayKey;
-    const yesterdayHasDinner = hasMealItems(ctx.yesterdayEntry, "dinner") ||
-      hasDefaultMealForType(ctx.defaultMeals, "dinner", dinnerDateKey, ctx.getDefaultMealsForDate);
+    const yesterdayHasDinner = hasMealItems(ctx.yesterdayEntry, "dinner");
     if (!yesterdayHasDinner) {
       add({
         id: "missing_yesterday_dinner",
@@ -148,94 +202,40 @@ export function generatePrompts(ctx: PromptContext): CheckInPrompt[] {
 
   // 3. Time-relevant meal
   if (window === "morning") {
-    const hasBreakfast = hasMealItems(ctx.todayEntry, "breakfast") ||
-      hasDefaultMealForType(ctx.defaultMeals, "breakfast", ctx.todayKey, ctx.getDefaultMealsForDate);
-    if (!hasBreakfast) {
-      const hasBreakfastDefault = ctx.defaultMeals.some(dm => dm.mealType === "breakfast");
-      add({
-        id: "breakfast",
-        type: "breakfast",
-        question: "Breakfast same as usual?",
-        buttons: hasBreakfastDefault
-          ? [
-              { label: "Yes — log default", value: "default" },
-              { label: "Add something different", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ]
-          : [
-              { label: "Add breakfast", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ],
-        feedback: FEEDBACK.breakfast,
-      });
-    }
+    add(buildMealPrompt(
+      "breakfast", "breakfast",
+      "Breakfast same as usual?",
+      "Had your usual",
+      ctx, ctx.todayKey, ctx.todayEntry
+    ));
   }
 
   if (window === "midday") {
     // Check breakfast first
-    const hasBreakfast = hasMealItems(ctx.todayEntry, "breakfast") ||
-      hasDefaultMealForType(ctx.defaultMeals, "breakfast", ctx.todayKey, ctx.getDefaultMealsForDate);
-    if (!hasBreakfast) {
-      add({
-        id: "breakfast",
-        type: "breakfast",
-        question: "Have you had breakfast?",
-        buttons: [
-          { label: "Yes — add", value: "add" },
-          { label: "Not today", value: "skip" },
-        ],
-        dismissLabel: "Skip",
-        feedback: FEEDBACK.breakfast,
-      });
-    }
+    add(buildMealPrompt(
+      "breakfast", "breakfast",
+      "Have you had breakfast?",
+      "Had your usual",
+      ctx, ctx.todayKey, ctx.todayEntry
+    ));
 
-    const hasLunch = hasMealItems(ctx.todayEntry, "lunch") ||
-      hasDefaultMealForType(ctx.defaultMeals, "lunch", ctx.todayKey, ctx.getDefaultMealsForDate);
-    if (!hasLunch) {
-      const hasLunchDefault = ctx.defaultMeals.some(dm => dm.mealType === "lunch");
-      add({
-        id: "lunch",
-        type: "lunch",
-        question: "Have you had lunch?",
-        buttons: hasLunchDefault
-          ? [
-              { label: "Yes — same as usual", value: "default" },
-              { label: "Yes — add", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ]
-          : [
-              { label: "Yes — add", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ],
-        feedback: FEEDBACK.lunch,
-      });
-    }
+    add(buildMealPrompt(
+      "lunch", "lunch",
+      "Have you had lunch?",
+      "Had your usual",
+      ctx, ctx.todayKey, ctx.todayEntry
+    ));
   }
 
   if (window === "evening") {
     const dinnerDateKey = getEffectiveDinnerDate(ctx.now);
     const dinnerEntry = h < 4 ? ctx.yesterdayEntry : ctx.todayEntry;
-    const hasDinner = hasMealItems(dinnerEntry, "dinner") ||
-      hasDefaultMealForType(ctx.defaultMeals, "dinner", dinnerDateKey, ctx.getDefaultMealsForDate);
-    if (!hasDinner) {
-      const hasDinnerDefault = ctx.defaultMeals.some(dm => dm.mealType === "dinner");
-      add({
-        id: "dinner",
-        type: "dinner",
-        question: "Have you had dinner?",
-        buttons: hasDinnerDefault
-          ? [
-              { label: "Yes — same as usual", value: "default" },
-              { label: "Yes — add", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ]
-          : [
-              { label: "Yes — add", value: "add" },
-              { label: "Not yet", value: "dismiss", variant: "subtle" },
-            ],
-        feedback: FEEDBACK.dinner,
-      });
-    }
+    add(buildMealPrompt(
+      "dinner", "dinner",
+      "Have you had dinner?",
+      "Had your usual",
+      ctx, dinnerDateKey, dinnerEntry
+    ));
   }
 
   // 4. Exercise

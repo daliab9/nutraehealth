@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Moon, Brain, Pencil, BookOpen, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { dbUpdateProfileExtended } from "@/utils/dbPersistence";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SLEEP_OPTIONS = [
   { label: "Terrible", value: 1 },
@@ -20,6 +21,13 @@ const SLEEP_OPTIONS = [
   { label: "Fair", value: 3 },
   { label: "Good", value: 4 },
   { label: "Great", value: 5 },
+];
+
+const WAKEUP_OPTIONS = [
+  { label: "No", value: 0 },
+  { label: "Once", value: 1 },
+  { label: "A few times", value: 2 },
+  { label: "Many times", value: 3 },
 ];
 
 const STRESS_OPTIONS = [
@@ -60,6 +68,7 @@ const HealthDiary = () => {
   const [cycleDate, setCycleDate] = useState(profile.cycleStartDate || "");
 
   const [sleepEditing, setSleepEditing] = useState(true);
+  const [showWakeUp, setShowWakeUp] = useState(false);
   const [stressEditing, setStressEditing] = useState(true);
   const [emotionsEditing, setEmotionsEditing] = useState(true);
   const [diaryEditing, setDiaryEditing] = useState(true);
@@ -70,6 +79,7 @@ const HealthDiary = () => {
   useEffect(() => {
     const e = getHealthEntry(dateKey);
     setSleepEditing(e.sleepQuality === 0);
+    setShowWakeUp(false);
     setStressEditing(e.stressLevel === 0);
     setEmotionsEditing(e.positiveEmotions.length === 0 && e.negativeEmotions.length === 0);
     setDiaryText(e.diaryText || "");
@@ -78,6 +88,17 @@ const HealthDiary = () => {
 
   const update = (field: string, value: number) => {
     setHealthEntry(dateKey, { ...entry, [field]: value });
+  };
+
+  const handleSleepSelect = (value: number) => {
+    update("sleepQuality", value);
+    setShowWakeUp(true);
+  };
+
+  const handleWakeUpSelect = (value: number) => {
+    setHealthEntry(dateKey, { ...entry, wakeUps: value });
+    setShowWakeUp(false);
+    setSleepEditing(false);
   };
 
   const handleEmotionalChange = (emotionalData: EmotionalCheckInData) => {
@@ -106,12 +127,9 @@ const HealthDiary = () => {
     recognition.lang = "en-US";
     recognition.onresult = (event: any) => {
       let finalTranscript = "";
-      let interimTranscript = "";
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
         }
       }
       if (finalTranscript) {
@@ -129,6 +147,7 @@ const HealthDiary = () => {
   };
 
   const sleepLabel = SLEEP_OPTIONS.find((o) => o.value === entry.sleepQuality);
+  const wakeUpLabel = WAKEUP_OPTIONS.find((o) => o.value === entry.wakeUps);
   const stressLabel = STRESS_OPTIONS.find((o) => o.value === entry.stressLevel);
   const hasEmotions = entry.positiveEmotions.length > 0 || entry.negativeEmotions.length > 0;
 
@@ -142,7 +161,6 @@ const HealthDiary = () => {
       </div>
 
       <div className="px-4 pt-6 space-y-4">
-        {/* Cycle mental health banner */}
         <CycleMentalBanner
           isFemale={profile.gender === "Female"}
           cycleStartDate={profile.cycleStartDate}
@@ -216,7 +234,7 @@ const HealthDiary = () => {
             </div>
             {!sleepEditing && sleepLabel && (
               <button
-                onClick={() => setSleepEditing(true)}
+                onClick={() => { setSleepEditing(true); setShowWakeUp(false); }}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-action-button text-foreground text-xs font-medium hover:opacity-80 transition-opacity"
               >
                 <Pencil className="h-3 w-3" />
@@ -225,14 +243,49 @@ const HealthDiary = () => {
             )}
           </div>
           {sleepEditing ? (
-            <div className="flex flex-wrap gap-2">
-              {SLEEP_OPTIONS.map((opt) => (
-                <Chip key={opt.value} label={opt.label} selected={entry.sleepQuality === opt.value} onClick={() => { update("sleepQuality", opt.value); setSleepEditing(false); }} />
-              ))}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {SLEEP_OPTIONS.map((opt) => (
+                  <Chip
+                    key={opt.value}
+                    label={opt.label}
+                    selected={entry.sleepQuality === opt.value}
+                    onClick={() => handleSleepSelect(opt.value)}
+                  />
+                ))}
+              </div>
+              <AnimatePresence>
+                {showWakeUp && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="text-sm font-medium text-foreground mb-2">Did you wake during the night?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {WAKEUP_OPTIONS.map((opt) => (
+                        <Chip
+                          key={opt.value}
+                          label={opt.label}
+                          selected={entry.wakeUps === opt.value}
+                          onClick={() => handleWakeUpSelect(opt.value)}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">{sleepLabel?.label}</span>
+              {wakeUpLabel && entry.wakeUps > 0 && (
+                <span className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-foreground">
+                  Woke up: {wakeUpLabel.label.toLowerCase()}
+                </span>
+              )}
             </div>
           )}
         </div>

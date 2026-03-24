@@ -116,3 +116,56 @@ export async function dbUpdateProfileExtended(updates: Record<string, unknown>) 
   if (!userId) return;
   await supabase.from("profiles").update(updates).eq("user_id", userId);
 }
+
+// ===== Default Exercises =====
+export async function dbInsertDefaultExercise(ex: DefaultExercise) {
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase.from("default_exercises").insert({
+    id: ex.id,
+    user_id: userId,
+    name: ex.name,
+    duration: ex.duration,
+    calories_burned: ex.caloriesBurned,
+    secondary_metric: ex.secondaryMetric ?? null,
+    secondary_unit: ex.secondaryUnit ?? null,
+    frequency: ex.frequency,
+    specific_days: ex.specificDays ?? null,
+    created_at_date: ex.createdAt ?? null,
+  });
+}
+
+export async function dbUpdateDefaultExercise(ex: DefaultExercise) {
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase.from("default_exercises")
+    .update({
+      name: ex.name,
+      duration: ex.duration,
+      calories_burned: ex.caloriesBurned,
+      secondary_metric: ex.secondaryMetric ?? null,
+      secondary_unit: ex.secondaryUnit ?? null,
+      frequency: ex.frequency,
+      specific_days: ex.specificDays ?? null,
+    })
+    .eq("id", ex.id)
+    .eq("user_id", userId);
+}
+
+export async function dbDeleteDefaultExercise(exerciseId: string) {
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase.from("default_exercises").delete().eq("id", exerciseId).eq("user_id", userId);
+  await supabase.from("default_exercise_overrides").delete().eq("default_exercise_id", exerciseId).eq("user_id", userId);
+}
+
+export async function dbInsertExerciseOverride(override: DefaultExerciseOverride) {
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase.from("default_exercise_overrides").upsert({
+    user_id: userId,
+    default_exercise_id: override.defaultExerciseId,
+    date: override.date,
+    removed: override.removed,
+  }, { onConflict: "user_id,default_exercise_id,date" });
+}
