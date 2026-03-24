@@ -336,6 +336,18 @@ const Diary = () => {
     toast.success("Default meal removed");
   };
 
+  const handleUnsetDefault = (defaultMealId: string, groupId: string) => {
+    // Materialize the default meal items as regular diary entries first
+    materializeDefaultMealForToday(defaultMealId);
+    // Then remove it as a default permanently
+    setProfile({
+      defaultMeals: (profile.defaultMeals || []).filter((dm) => dm.id !== defaultMealId),
+      defaultMealOverrides: (profile.defaultMealOverrides || []).filter((o) => o.defaultMealId !== defaultMealId),
+    });
+    dbDeleteDefaultMeal(defaultMealId);
+    toast.success("Removed as default, kept for today");
+  };
+
   const isExerciseSaved = (name: string) => {
     return (profile.savedExercises || []).some((e) => e.name.toLowerCase() === name.toLowerCase());
   };
