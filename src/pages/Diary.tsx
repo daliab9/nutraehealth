@@ -377,7 +377,46 @@ const Diary = () => {
     }
   };
 
-  // Drag and drop handlers
+  const handleSaveExAsDefault = (ex: Exercise) => {
+    const newDefault: DefaultExercise = {
+      id: crypto.randomUUID(),
+      name: ex.name,
+      duration: ex.duration,
+      caloriesBurned: ex.caloriesBurned,
+      secondaryMetric: ex.secondaryMetric,
+      secondaryUnit: ex.secondaryUnit,
+      frequency: defaultExFrequency,
+      specificDays: defaultExFrequency === "specific" ? defaultExDays : undefined,
+      createdAt: format(new Date(), "yyyy-MM-dd"),
+    };
+    setProfile({ defaultExercises: [...(profile.defaultExercises || []), newDefault] });
+    dbInsertDefaultExercise(newDefault);
+    setSaveExAsDefaultOpen(null);
+    setDefaultExFrequency("everyday");
+    setDefaultExDays([]);
+  };
+
+  const handleRemoveDefaultExToday = (defaultExerciseId: string) => {
+    const override = { defaultExerciseId, date: dateKey, removed: true };
+    setProfile({
+      defaultExerciseOverrides: [...(profile.defaultExerciseOverrides || []), override],
+    });
+    dbInsertExerciseOverride(override);
+  };
+
+  const handleRemoveDefaultExPermanently = (defaultExerciseId: string) => {
+    setProfile({
+      defaultExercises: (profile.defaultExercises || []).filter((de) => de.id !== defaultExerciseId),
+      defaultExerciseOverrides: (profile.defaultExerciseOverrides || []).filter((o) => o.defaultExerciseId !== defaultExerciseId),
+    });
+    dbDeleteDefaultExercise(defaultExerciseId);
+  };
+
+  const isExerciseDefault = (name: string) => {
+    return (profile.defaultExercises || []).some((de) => de.name.toLowerCase() === name.toLowerCase());
+  };
+
+
   const handleDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.type === "meal-group") {
