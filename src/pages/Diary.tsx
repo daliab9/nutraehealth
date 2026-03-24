@@ -37,7 +37,7 @@ const Diary = () => {
     profile, setProfile, diary, getDayEntry, setDayEntry, addFoodToMeal, removeFoodFromMeal,
     updateFoodInMeal, addExercise, removeExercise, updateExercise, getDayTotals,
     getHealthEntry, setHealthEntry, moveFoodBetweenMeals, mergeItemsIntoGroup,
-    addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate,
+    addFoodToGroup, removeFoodFromGroup, getDefaultMealsForDate, getDefaultExercisesForDate,
   } = useUserStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
