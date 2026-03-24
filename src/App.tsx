@@ -276,6 +276,7 @@ const AppContent = () => {
           setScreen("main");
         }}
         onGoToLogin={() => setScreen("login")}
+        onBack={() => setScreen("summary")}
       />
     );
   }

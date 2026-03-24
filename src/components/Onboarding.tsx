@@ -445,7 +445,7 @@ export const Onboarding = ({ onComplete, onBack }: OnboardingProps) => {
 
       <div className="sticky bottom-0 bg-background pt-3 pb-[env(safe-area-inset-bottom,24px)] space-y-2">
         <div className="flex gap-3">
-          {step > 0 && (
+          {(step > 0 || onBack) && (
             <Button onClick={back} variant="outline" className="h-14 rounded-2xl px-4">
               <ChevronLeft className="h-5 w-5" />
             </Button>
