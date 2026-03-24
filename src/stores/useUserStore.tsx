@@ -95,6 +95,24 @@ export interface SavedExercise {
   secondaryUnit?: string;
 }
 
+export interface DefaultExercise {
+  id: string;
+  name: string;
+  duration: number;
+  caloriesBurned: number;
+  secondaryMetric?: number;
+  secondaryUnit?: string;
+  frequency: DefaultMealFrequency;
+  specificDays?: number[];
+  createdAt?: string;
+}
+
+export interface DefaultExerciseOverride {
+  defaultExerciseId: string;
+  date: string;
+  removed: boolean;
+}
+
 export interface UserProfile {
   onboardingComplete: boolean;
   goal: string;
