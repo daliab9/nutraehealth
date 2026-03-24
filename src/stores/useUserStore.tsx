@@ -651,6 +651,16 @@ function useUserStoreInternal() {
       .select("default_meal_id, date, removed")
       .eq("user_id", userId);
 
+    const { data: defaultExRows } = await supabase
+      .from("default_exercises")
+      .select("id, name, duration, calories_burned, secondary_metric, secondary_unit, frequency, specific_days, created_at_date")
+      .eq("user_id", userId);
+
+    const { data: exOverrideRows } = await supabase
+      .from("default_exercise_overrides")
+      .select("default_exercise_id, date, removed")
+      .eq("user_id", userId);
+
     setProfileState((prev) => ({
       ...prev,
       savedMeals: (savedMealRows || []).map((r) => ({
@@ -677,6 +687,22 @@ function useUserStoreInternal() {
       })),
       defaultMealOverrides: (overrideRows || []).map((r) => ({
         defaultMealId: r.default_meal_id,
+        date: r.date,
+        removed: r.removed,
+      })),
+      defaultExercises: (defaultExRows || []).map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        duration: r.duration,
+        caloriesBurned: r.calories_burned,
+        secondaryMetric: r.secondary_metric ? Number(r.secondary_metric) : undefined,
+        secondaryUnit: r.secondary_unit || undefined,
+        frequency: r.frequency as DefaultMealFrequency,
+        specificDays: r.specific_days || undefined,
+        createdAt: r.created_at_date || undefined,
+      })),
+      defaultExerciseOverrides: (exOverrideRows || []).map((r: any) => ({
+        defaultExerciseId: r.default_exercise_id,
         date: r.date,
         removed: r.removed,
       })),
