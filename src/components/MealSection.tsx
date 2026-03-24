@@ -62,6 +62,7 @@ export const MealSection = ({
   onSaveAsDefault,
   onRemoveDefaultToday,
   onRemoveDefaultPermanently,
+  onUnsetDefault,
   defaultMealGroupIds = new Set(),
   defaultMealIdMap = new Map(),
 }: MealSectionProps) => {
