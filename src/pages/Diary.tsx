@@ -672,6 +672,23 @@ const Diary = () => {
         <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       </div>
 
+      {/* Check-in prompts */}
+      <CheckInCards
+        selectedDate={selectedDate}
+        onNavigateToMeal={(mealType) => {
+          setActiveSection("meals");
+          // Scroll to the relevant meal section
+          setTimeout(() => {
+            const el = document.getElementById(`meal-section-${mealType}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        }}
+        onOpenExercise={() => {
+          setActiveSection("exercise");
+          setExerciseOpen(true);
+        }}
+      />
+
       {/* Nutrient ring carousel */}
       <div className="flex flex-col items-center py-6">
         <NutrientRingCarousel nutrients={trackedNutrients} />
