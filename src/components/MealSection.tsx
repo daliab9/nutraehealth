@@ -331,6 +331,13 @@ export const MealSection = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (defaultMealGroupIds.has(groupId) && onUnsetDefault) {
+                              const defaultMealId = defaultMealIdMap.get(groupId);
+                              if (defaultMealId) {
+                                onUnsetDefault(defaultMealId, groupId);
+                                return;
+                              }
+                            }
                             setSaveMealModalItems(group.items.map(({ groupId: _, groupName: __, ...rest }) => rest));
                             setSaveMealModalName(group.name);
                             setSaveMealModalOpen(true);
