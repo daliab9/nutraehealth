@@ -459,6 +459,28 @@ function useUserStoreInternal() {
     [profile.defaultMeals, profile.defaultMealOverrides, isDefaultMealActiveForDate]
   );
 
+  const getDefaultExercisesForDate = useCallback(
+    (date: string): { name: string; duration: number; caloriesBurned: number; secondaryMetric?: number; secondaryUnit?: string; defaultExerciseId: string }[] => {
+      const overrides = profile.defaultExerciseOverrides || [];
+      return (profile.defaultExercises || [])
+        .filter((de) => {
+          if (de.createdAt && date < de.createdAt) return false;
+          const isRemoved = overrides.some((o) => o.defaultExerciseId === de.id && o.date === date && o.removed);
+          if (isRemoved) return false;
+          return isDefaultMealActiveForDate(de as any, date);
+        })
+        .map((de) => ({
+          name: de.name,
+          duration: de.duration,
+          caloriesBurned: de.caloriesBurned,
+          secondaryMetric: de.secondaryMetric,
+          secondaryUnit: de.secondaryUnit,
+          defaultExerciseId: de.id,
+        }));
+    },
+    [profile.defaultExercises, profile.defaultExerciseOverrides, isDefaultMealActiveForDate]
+  );
+
   const getDayTotals = useCallback(
     (date: string) => {
       const day = getDayEntry(date);
