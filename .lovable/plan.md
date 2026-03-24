@@ -1,82 +1,52 @@
-# Fix disappearing meals after tab changes
 
-## What I found
 
-This does not look like a database schema or RLS problem.
+# Fix 5 UI/UX Issues
 
-I checked the backend and there is already at least one `diary_entries` row being written, which means meal logging can reach the database. The bigger issue is in the frontend state architecture:
+## 1. Password visibility toggle not working (LoginPage + SignupPage)
 
-- `useUserStore.ts` is named like a shared store, but it is actually just a custom hook using `useState`
-- `App.tsx` calls `useUserStore()` and loads data from the backend into that instance
-- `Diary.tsx`, `Profile.tsx`, `Tracker.tsx` also each call `useUserStore()` again, creating separate isolated instances
+The eye icon buttons have `type="button"` and toggle `showPassword` state correctly in the code. The issue is likely that the button click is being swallowed by form event handling or the button's tap target is too small. I'll add `z-10` to ensure the button is above the input and add `e.preventDefault(); e.stopPropagation()` to the click handlers.
 
-So the app currently has multiple independent copies of the “store”.
+**Files:** `src/components/LoginPage.tsx`, `src/components/SignupPage.tsx`
 
-## Why meals disappear
+## 2. Logout button styling — remove red, make subtle
 
-When you add a meal in Diary:
+Change the logout button from `variant="destructive"` to `variant="ghost"` with black text and no background color.
 
-- it updates the Diary page’s private hook state
-- when you switch tabs, that page can unmount/remount
-- on remount, a fresh empty hook instance is created
-- the data that was loaded in `App.tsx` is in a different store instance, so Diary does not see it
+**File:** `src/pages/Profile.tsx` (line ~1710)
 
-That matches your symptom exactly: the meal appears briefly, then disappears when you navigate away and back.
+## 3. Remove default meal dialog button colors
 
-## Implementation plan
+- "Remove just for today" → light pink background (`bg-pink-50 text-foreground border-pink-200`)
+- "Remove permanently" → black outline, black text, no color (`variant="outline"` with explicit black text)
 
-### 1. Make the user store truly shared
+**File:** `src/components/RemoveDefaultMealDialog.tsx`
 
-Refactor `src/stores/useUserStore.ts` so the app uses one shared store instance instead of creating a new one in every component.
+## 4. Default meal duplication on first save
 
-Preferred approach:
+**Root cause:** When a user adds items to a meal section manually, then saves those items as a default meal, the items exist in both:
+- The diary's logged items (already added manually)
+- The default meal system (via `getDefaultMealsForDate`)
 
-- create a `UserStoreProvider`
-- keep the existing store logic inside that provider
-- expose `useUserStore()` as a context hook so all pages read the same state
+`getMealItems()` merges both, showing duplicates.
 
-### 2. Wrap the app with the shared provider
+**Fix:** In `handleSaveAsDefault` in `Diary.tsx`, after creating the default meal, remove the original manually-logged items from the diary for that day (since the default meal system will now show them). This prevents double-counting.
 
-Update `src/App.tsx` so `AppContent`, `Diary`, `Profile`, `Tracker`, and `HealthDiary` all consume the same user-store instance.
+**File:** `src/pages/Diary.tsx`
 
-This ensures:
+## 5. Add quantity multiplier to full grouped meals (not just ingredients)
 
-- backend-loaded data is visible everywhere
-- diary changes survive route switches
-- saved meals/default meals/exercises stay in sync across pages
+Add a `QuickMultiplierPopover` to the grouped meal header row in `MealSection.tsx`. When a multiplier is selected, apply it to ALL items in the group (scale calories, protein, carbs, fat, and update quantity strings).
 
-### 3. Keep backend hydration on the shared instance
+**File:** `src/components/MealSection.tsx` — add multiplier button next to the group's calorie display in the header bar (near the existing star/plus/x buttons).
 
-Leave the current backend loading flow in `App.tsx`, but make sure it writes into the shared store instance.
+## Files to modify
 
-Also add a simple hydration guard so pages do not render “empty” state before the initial backend load finishes.
+| File | Changes |
+|------|---------|
+| `src/components/LoginPage.tsx` | Fix password toggle |
+| `src/components/SignupPage.tsx` | Fix password toggle (2 fields) |
+| `src/pages/Profile.tsx` | Subtle logout button |
+| `src/components/RemoveDefaultMealDialog.tsx` | Button color changes |
+| `src/pages/Diary.tsx` | Remove manual items when saving as default |
+| `src/components/MealSection.tsx` | Add group-level multiplier |
 
-### 4. Clear shared state properly on logout
-
-When signing out, reset the shared store to defaults so the next user does not briefly see stale data.
-
-## Files to update
-
-- `src/stores/useUserStore.ts`
-- `src/App.tsx`
-- any page/component currently calling `useUserStore()` directly:
-  - `src/pages/Diary.tsx`
-  - `src/pages/Profile.tsx`
-  - `src/pages/Tracker.tsx`
-  - `src/pages/HealthDiary.tsx`
-
-## Expected result
-
-After this change:
-
-- adding a meal should remain visible when switching tabs
-- meals already saved in the backend should reappear consistently
-- the app will use one source of truth instead of multiple disconnected local copies
-
-## Technical note
-
-There may still be secondary improvements worth adding after this:
-
-- explicit error logging in `dbPersistence.ts`
-- optimistic-save indicators / loading state
-- converting `useAppointmentStore` to the same shared pattern, since it currently has the same architectural issue
