@@ -52,7 +52,7 @@ interface FoodSearchInputProps {
   onAddItems?: (items: FoodItem[]) => void;
 }
 
-export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd }: FoodSearchInputProps) => {
+export const FoodSearchInput = ({ onAddItem, onClose, keepOpenOnAdd, defaultMeals = [], onAddItems }: FoodSearchInputProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<FoodSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
