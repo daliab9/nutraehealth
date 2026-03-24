@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CyclePhaseCard } from "@/components/CyclePhaseCard";
 import { AVAILABLE_NUTRIENTS } from "@/utils/nutrientDefaults";
 import { dbInsertSavedMeal, dbUpdateSavedMeal, dbDeleteSavedMeal, dbInsertSavedExercise, dbDeleteSavedExercise, dbInsertDefaultMeal, dbDeleteDefaultMeal, dbInsertOverride, dbDeleteOverridesForMeal } from "@/utils/dbPersistence";
+import { CheckInCards } from "@/components/CheckInCards";
 
 const MEAL_TYPES = [
   { type: "breakfast", title: "Breakfast", icon: Sunrise },
