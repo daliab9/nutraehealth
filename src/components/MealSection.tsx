@@ -35,6 +35,7 @@ interface MealSectionProps {
   onSaveAsDefault?: (name: string, items: FoodItem[], mealType: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => void;
   onRemoveDefaultToday?: (defaultMealId: string) => void;
   onRemoveDefaultPermanently?: (defaultMealId: string) => void;
+  onUnsetDefault?: (defaultMealId: string, groupId: string) => void;
   defaultMealGroupIds?: Set<string>;
   defaultMealIdMap?: Map<string, string>;
 }
