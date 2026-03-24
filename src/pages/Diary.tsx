@@ -796,6 +796,7 @@ const Diary = () => {
                       onSaveAsDefault={handleSaveAsDefault}
                       onRemoveDefaultToday={handleRemoveDefaultToday}
                       onRemoveDefaultPermanently={handleRemoveDefaultPermanently}
+                      onUnsetDefault={handleUnsetDefault}
                       defaultMealGroupIds={defaultMealGroupIds}
                       defaultMealIdMap={defaultMealIdMap}
                     />
