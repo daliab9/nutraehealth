@@ -45,6 +45,9 @@ const Diary = () => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [activeSection, setActiveSection] = useState<"meals" | "exercise" | "poop">("meals");
   const [addingPoopType, setAddingPoopType] = useState(false);
+  const [saveExAsDefaultOpen, setSaveExAsDefaultOpen] = useState<Exercise | null>(null);
+  const [defaultExFrequency, setDefaultExFrequency] = useState<DefaultMealFrequency>("everyday");
+  const [defaultExDays, setDefaultExDays] = useState<number[]>([]);
 
   // Drag and drop state
   const [activeDragItem, setActiveDragItem] = useState<FoodItem | null>(null);
