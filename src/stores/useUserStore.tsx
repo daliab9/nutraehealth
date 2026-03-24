@@ -526,6 +526,7 @@ function useUserStoreInternal() {
     negativeEmotions: [],
     negativeReasons: [],
     negativeOtherText: "",
+    wakeUps: 0,
     diaryText: "",
   };
 
