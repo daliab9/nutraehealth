@@ -95,7 +95,7 @@ const UnitToggle = ({ options, value, onChange }: { options: [string, string]; v
   </div>
 );
 
-export const Onboarding = ({ onComplete }: OnboardingProps) => {
+export const Onboarding = ({ onComplete, onBack }: OnboardingProps) => {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [data, setData] = useState<OnboardingData>({

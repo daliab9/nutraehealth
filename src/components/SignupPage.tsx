@@ -69,6 +69,13 @@ export const SignupPage = ({ onSignupComplete, onGoToLogin, onBack }: SignupPage
 
   return (
     <div className="flex min-h-screen flex-col bg-background px-6 pt-12 pb-8">
+      {onBack && (
+        <button onClick={onBack} className="mb-8 flex items-center text-foreground">
+          <ChevronLeft className="h-5 w-5" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+      )}
+
       <h2 className="text-2xl font-bold text-foreground mb-2">Create your account</h2>
       <p className="text-sm text-muted-foreground mb-8">
         Save your plan and track your progress
