@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { FoodItem, SavedMeal, SavedExercise, DefaultMeal, DefaultMealFrequency, DefaultMealOverride } from "@/stores/useUserStore";
+import type { FoodItem, SavedMeal, SavedExercise, DefaultMeal, DefaultMealFrequency, DefaultMealOverride, DefaultExercise, DefaultExerciseOverride } from "@/stores/useUserStore";
 
 async function getUserId(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
