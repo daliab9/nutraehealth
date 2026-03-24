@@ -52,6 +52,7 @@ export interface HealthEntry {
   negativeEmotions: string[];
   negativeReasons: string[];
   negativeOtherText: string;
+  wakeUps: number;
   diaryText: string;
 }
 
