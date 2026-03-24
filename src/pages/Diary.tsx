@@ -896,6 +896,32 @@ const Diary = () => {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+            {/* Default exercises */}
+            {defaultExercisesForDate.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {defaultExercisesForDate.map((dex) => (
+                  <div key={dex.defaultExerciseId} className="flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-[#e4e7c6]/60 border-dashed">
+                    <div className="flex flex-col min-w-0 flex-1 mr-2">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-foreground fill-foreground flex-shrink-0" />
+                        <span className="text-sm text-foreground font-bold break-words">{dex.name}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        {dex.secondaryMetric && dex.secondaryUnit
+                          ? `${dex.secondaryMetric} ${dex.secondaryUnit} · -${dex.caloriesBurned} kcal`
+                          : `${dex.duration}min · -${dex.caloriesBurned} kcal`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveDefaultExToday(dex.defaultExerciseId)}
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors active:scale-95"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {dayEntry.exercises.length > 0 ? (
               <div className="space-y-1.5">
                 {dayEntry.exercises.map((ex) => (
@@ -916,6 +942,21 @@ const Diary = () => {
                         <Heart className={`h-5 w-5 ${isExerciseSaved(ex.name) ? "fill-foreground" : ""}`} />
                       </button>
                       <button
+                        onClick={() => {
+                          if (isExerciseDefault(ex.name)) {
+                            const de = (profile.defaultExercises || []).find((d) => d.name.toLowerCase() === ex.name.toLowerCase());
+                            if (de) handleRemoveDefaultExPermanently(de.id);
+                          } else {
+                            setSaveExAsDefaultOpen(ex);
+                            setDefaultExFrequency("everyday");
+                            setDefaultExDays([]);
+                          }
+                        }}
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-foreground transition-colors active:scale-95"
+                      >
+                        <Star className={`h-5 w-5 ${isExerciseDefault(ex.name) ? "fill-foreground" : ""}`} />
+                      </button>
+                      <button
                         onClick={() => setEditingExercise(ex)}
                         className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors active:scale-95"
                       >
@@ -931,9 +972,9 @@ const Diary = () => {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : defaultExercisesForDate.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-2">No exercises logged yet</p>
-            )}
+            ) : null}
           </div>
         )}
 
