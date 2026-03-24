@@ -85,6 +85,7 @@ const Diary = () => {
 
   // Default meals for today
   const defaultMealsForDate = useMemo(() => getDefaultMealsForDate(dateKey), [getDefaultMealsForDate, dateKey]);
+  const defaultExercisesForDate = useMemo(() => getDefaultExercisesForDate(dateKey), [getDefaultExercisesForDate, dateKey]);
   
   // Track which groupIds are from default meals, and map groupId -> defaultMealId
   const defaultMealGroupIds = useMemo(() => new Set(defaultMealsForDate.map((dm) => `default-${dm.defaultMealId}`)), [defaultMealsForDate]);
