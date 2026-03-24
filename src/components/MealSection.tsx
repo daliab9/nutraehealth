@@ -35,6 +35,7 @@ interface MealSectionProps {
   onSaveAsDefault?: (name: string, items: FoodItem[], mealType: MealEntry["type"], frequency: DefaultMealFrequency, specificDays?: number[]) => void;
   onRemoveDefaultToday?: (defaultMealId: string) => void;
   onRemoveDefaultPermanently?: (defaultMealId: string) => void;
+  onUnsetDefault?: (defaultMealId: string, groupId: string) => void;
   defaultMealGroupIds?: Set<string>;
   defaultMealIdMap?: Map<string, string>;
 }
@@ -61,6 +62,7 @@ export const MealSection = ({
   onSaveAsDefault,
   onRemoveDefaultToday,
   onRemoveDefaultPermanently,
+  onUnsetDefault,
   defaultMealGroupIds = new Set(),
   defaultMealIdMap = new Map(),
 }: MealSectionProps) => {
@@ -329,6 +331,13 @@ export const MealSection = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (defaultMealGroupIds.has(groupId) && onUnsetDefault) {
+                              const defaultMealId = defaultMealIdMap.get(groupId);
+                              if (defaultMealId) {
+                                onUnsetDefault(defaultMealId, groupId);
+                                return;
+                              }
+                            }
                             setSaveMealModalItems(group.items.map(({ groupId: _, groupName: __, ...rest }) => rest));
                             setSaveMealModalName(group.name);
                             setSaveMealModalOpen(true);
