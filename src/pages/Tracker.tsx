@@ -406,7 +406,7 @@ const Tracker = () => {
         {/* Bowel movements */}
         <div className="rounded-2xl bg-card border border-border p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-foreground">Bowel Movements 💩</h3>
+            <h3 className="text-base font-semibold text-foreground">Bowel Movements</h3>
             <div className="text-right">
               <span className="text-lg font-bold text-foreground">{poopAvg}</span>
               <span className="text-xs text-muted-foreground ml-1">avg/day</span>
