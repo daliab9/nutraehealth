@@ -73,7 +73,17 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
       yesterdayEntry: getDayEntry(yesterdayKey),
       todayHealth: getHealthEntry(todayKey),
       defaultMeals: profile.defaultMeals || [],
-      getDefaultMealsForDate,
+      getDefaultMealsForDate: (date: string) => {
+        const results = getDefaultMealsForDate(date);
+        // Map to DefaultMeal shape for prompt engine
+        return results.map(r => ({
+          id: (r as any).defaultMealId || r.name,
+          name: r.name,
+          mealType: r.mealType,
+          items: r.items,
+          frequency: "everyday" as const,
+        }));
+      },
       dismissedPrompts: new Set([...dismissedSet, ...completedTypes]),
     };
 
