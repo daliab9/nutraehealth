@@ -10,7 +10,7 @@ interface SignupPageProps {
   onBack?: () => void;
 }
 
-export const SignupPage = ({ onSignupComplete, onGoToLogin }: SignupPageProps) => {
+export const SignupPage = ({ onSignupComplete, onGoToLogin, onBack }: SignupPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
