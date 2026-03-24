@@ -10,6 +10,7 @@ const DISMISS_STORAGE_KEY = "checkin_dismissed";
 interface DismissState {
   date: string;
   types: string[];
+  completed: string[];
   notYetUntil: Record<string, number>;
 }
 
@@ -19,10 +20,10 @@ function loadDismissState(): DismissState {
     if (raw) {
       const parsed = JSON.parse(raw) as DismissState;
       const today = format(new Date(), "yyyy-MM-dd");
-      if (parsed.date === today) return parsed;
+      if (parsed.date === today) return { completed: [], ...parsed };
     }
   } catch {}
-  return { date: format(new Date(), "yyyy-MM-dd"), types: [], notYetUntil: {} };
+  return { date: format(new Date(), "yyyy-MM-dd"), types: [], completed: [], notYetUntil: {} };
 }
 
 function saveDismissState(state: DismissState) {
@@ -42,7 +43,7 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
   } = useUserStore();
 
   const [dismissState, setDismissState] = useState<DismissState>(loadDismissState);
-  const [completedTypes, setCompletedTypes] = useState<Set<string>>(new Set());
+  const completedTypes = useMemo(() => new Set(dismissState.completed), [dismissState.completed]);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<CheckInPrompt | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -105,12 +106,15 @@ export const CheckInCards = ({ selectedDate, onNavigateToMeal, onOpenExercise }:
   }, []);
 
   const complete = useCallback((type: PromptType, feedback?: string) => {
-    setCompletedTypes(prev => new Set([...prev, type]));
+    setDismissState(prev => {
+      const next = { ...prev, completed: [...prev.completed, type] };
+      saveDismissState(next);
+      return next;
+    });
     if (feedback) {
       setFeedbackMsg(feedback);
       setTimeout(() => {
         setFeedbackMsg(null);
-        // Move to next prompt
         setCurrentIndex(prev => prev + 1);
       }, 1800);
     } else {
