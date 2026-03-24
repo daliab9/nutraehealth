@@ -6,6 +6,7 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 
 interface OnboardingProps {
   onComplete: (data: OnboardingData) => void;
+  onBack?: () => void;
 }
 
 export interface OnboardingData {
