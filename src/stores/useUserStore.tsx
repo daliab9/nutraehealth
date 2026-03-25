@@ -523,6 +523,24 @@ function useUserStoreInternal() {
       });
 
       day.exercises.forEach((e) => (exerciseCals += e.caloriesBurned));
+
+      // Include default exercises that haven't been materialized
+      const defaultExercises = getDefaultExercisesForDate(date);
+      const materializedDefaultExIds = new Set<string>();
+      day.exercises.forEach((e) => {
+        if (e.id?.startsWith("default-ex-")) {
+          const match = e.id.match(/^default-ex-(.+)$/);
+          if (match?.[1]) materializedDefaultExIds.add(match[1]);
+        }
+        const loggedMatch = e.id?.match(/^logged-default-ex-(.+)-\d+$/);
+        if (loggedMatch?.[1]) materializedDefaultExIds.add(loggedMatch[1]);
+      });
+      defaultExercises.forEach((de) => {
+        if (!materializedDefaultExIds.has(de.defaultExerciseId)) {
+          exerciseCals += de.caloriesBurned;
+        }
+      });
+
       return {
         calories: Math.round(calories),
         protein: Math.round(protein * 10) / 10,
@@ -537,7 +555,7 @@ function useUserStoreInternal() {
         b12: Math.round(b12),
       };
     },
-    [getDayEntry, getDefaultMealsForDate]
+    [getDayEntry, getDefaultMealsForDate, getDefaultExercisesForDate]
   );
 
   const DEFAULT_HEALTH: HealthEntry = {
