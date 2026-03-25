@@ -49,32 +49,53 @@ function rowToAppointment(row: any): Appointment {
 
 export function useAppointmentStore() {
   const [appointments, setAppointmentsState] = useState<Appointment[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const loadAppointments = useCallback(async (userId: string | null) => {
+    if (!userId) {
+      setAppointmentsState([]);
+      return;
+    }
 
-  // Load from cloud on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const userId = await getUserId();
-      if (!userId || cancelled) return;
-      const { data } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("user_id", userId)
-        .order("date", { ascending: true });
-      if (!cancelled && data) {
-        setAppointmentsState(data.map(rowToAppointment));
-        setLoaded(true);
-      }
-    })();
-    return () => { cancelled = true; };
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
+
+    if (!error && data) {
+      setAppointmentsState(data.map(rowToAppointment));
+    }
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    const init = async () => {
+      const userId = await getUserId();
+      if (active) {
+        await loadAppointments(userId);
+      }
+    };
+
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void loadAppointments(session?.user?.id ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [loadAppointments]);
+
   const addAppointment = useCallback(async (appt: Appointment) => {
-    setAppointmentsState((prev) => [...prev, appt]);
     const userId = await getUserId();
     if (!userId) return;
-    await supabase.from("appointments").insert({
+
+    const { data, error } = await supabase.from("appointments").insert({
       id: appt.id,
       user_id: userId,
       date: appt.date,
@@ -86,14 +107,19 @@ export function useAppointmentStore() {
       lab_results: appt.labResults,
       follow_up_actions: appt.followUpActions,
       next_appointment_date: appt.nextAppointmentDate,
-    });
+    }).select().single();
+
+    if (!error && data) {
+      const saved = rowToAppointment(data);
+      setAppointmentsState((prev) => [...prev.filter((item) => item.id !== saved.id), saved]);
+    }
   }, []);
 
   const updateAppointment = useCallback(async (updated: Appointment) => {
-    setAppointmentsState((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     const userId = await getUserId();
     if (!userId) return;
-    await supabase.from("appointments").update({
+
+    const { data, error } = await supabase.from("appointments").update({
       date: updated.date,
       time: updated.time,
       provider: updated.provider,
@@ -103,14 +129,22 @@ export function useAppointmentStore() {
       lab_results: updated.labResults,
       follow_up_actions: updated.followUpActions,
       next_appointment_date: updated.nextAppointmentDate,
-    }).eq("id", updated.id).eq("user_id", userId);
+    }).eq("id", updated.id).eq("user_id", userId).select().single();
+
+    if (!error && data) {
+      const saved = rowToAppointment(data);
+      setAppointmentsState((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
+    }
   }, []);
 
   const deleteAppointment = useCallback(async (id: string) => {
-    setAppointmentsState((prev) => prev.filter((a) => a.id !== id));
     const userId = await getUserId();
     if (!userId) return;
-    await supabase.from("appointments").delete().eq("id", id).eq("user_id", userId);
+
+    const { error } = await supabase.from("appointments").delete().eq("id", id).eq("user_id", userId);
+    if (!error) {
+      setAppointmentsState((prev) => prev.filter((a) => a.id !== id));
+    }
   }, []);
 
   const todayStr = new Date().toISOString().slice(0, 10);
